@@ -68,7 +68,7 @@ L'équipe 3L1K0PT3R :
 | Nom | Rôle |
 | --- | --- |
 | Lucas | Product owner et développeur |
-| Théo | Tech lead front et développeur |
+| Théo | Coordination, tech lead front et développeur |
 | Swan | Tech lead back et développeur |
 
 Tout le monde développe, sur le front comme sur le back. Les rôles sont détaillés dans [docs/gestion-de-projet.md](docs/gestion-de-projet.md).
