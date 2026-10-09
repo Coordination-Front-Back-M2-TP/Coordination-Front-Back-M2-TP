@@ -22,7 +22,14 @@ Une toile partagée où des équipes s'affrontent pixel par pixel, aidées par d
 | Palette | Environ 16 couleurs fixes | Proposé |
 | Taille de la toile | Fixe, à choisir | À décider |
 | Taille d'un modèle IA | 32 × 32 pixels au plus | Proposé |
-| Quota de modèles IA | Un nombre de modèles par compte et par jour | Nombre à décider |
+| Quota de modèles IA | 5 par compte et par jour | Décidé |
+| Équipes | 4 équipes de couleur | Décidé |
+| Changement d'équipe | Au plus toutes les 5 minutes, réglable | Décidé |
+| Spectateurs | La toile se regarde sans compte. Poser un pixel demande un compte | Décidé |
+| Modèle actif | Un seul modèle actif par compte | Décidé |
+| Agent hors connexion | L'agent de dessin continue quand le joueur est déconnecté | Décidé |
+
+Les décisions datent du 9 octobre 2026.
 
 **Un compte, un délai.** Pendant que l'agent de dessin travaille, il utilise le délai du compte : le joueur ne pose pas de pixel en plus à la main. L'IA aide à dessiner, elle ne donne pas plus de pixels.
 
@@ -48,21 +55,24 @@ En option : un modèle créé à partir d'une image générée, puis réduite en
 
 ## 5. Périmètre : les EPICs
 
-Chaque EPIC a des tâches front et des tâches back. Sa première user story contient une tâche transverse « contrat » : écrire les routes et les messages temps réel avant de coder, pour que le front et le back avancent en parallèle.
+Les EPICs sortent de la [story map](story-map.md) : ce sont les 6 activités du parcours des joueurs et de la modératrice. Les EPICs 1 à 5 forment la démo du TP, le 6 vient après. Chacun a des tâches front et des tâches back. Sa première user story contient une tâche transverse « contrat » : écrire les routes et les messages temps réel avant de coder, pour que le front et le back avancent en parallèle.
 
 | EPIC | User stories | Front | Back |
 | --- | --- | --- | --- |
-| 1. Toile en temps réel | Voir la toile en direct. Poser un pixel. | Affichage de la toile (zoom, déplacement), palette, compte à rebours | Grille en base SQLite, diffusion Socket.IO, délai vérifié par le serveur |
-| 2. Comptes et équipes | Créer un compte et se connecter. Rejoindre une équipe. | Inscription, connexion, choix de l'équipe | Mot de passe haché, session, API des équipes, pixels rattachés à l'équipe |
-| 3. Modèles IA et agent de dessin | Demander un modèle. Le confier à mon agent. En option : modèle depuis une image. | Saisie de la consigne, aperçu en transparence, bouton de l'agent et progression | Jev puis GPT, validation de la grille, quota, agent de dessin, pixellisation en option |
-| 4. Classement et timelapse | Voir le classement des équipes. Revoir la toile en accéléré. | Podium en direct, lecteur du timelapse | Pixels de chaque équipe, API de l'historique des poses |
+| 1. Découvrir la toile | Voir la toile en direct. Naviguer sur la toile. | Affichage de la toile en direct, zoom, déplacement | Toile en base SQLite, envoi au chargement, diffusion Socket.IO |
+| 2. Rejoindre le jeu | Créer un compte et se connecter. Rejoindre une équipe. | Inscription, connexion, choix de l'équipe | Mot de passe haché, session, API des équipes, changement limité |
+| 3. Dessiner à la main | Poser un pixel. Voir mon délai. | Palette, pose, compte à rebours | Vérification de la pose, délai compté par le serveur, historique |
+| 4. Dessiner avec l'IA | Demander un modèle. Le confier à mon agent. En option : modèle depuis une image. | Saisie de la consigne, aperçu en transparence, bouton de l'agent et progression | Quota, Jev puis GPT, validation de la grille, agent de dessin, pixellisation en option |
+| 5. Suivre la bataille | Voir le classement des équipes. Revoir la toile en accéléré. | Podium en direct, lecteur du timelapse | Pixels de chaque équipe, API de l'historique des poses |
+| 6. Modérer la toile | Nettoyer une zone. Bannir un joueur et annuler ses pixels. | Écran admin : zone à nettoyer, liste des joueurs | Rôle admin, nettoyage de zone, bannissement, annulation des poses, journal des actions |
 
 ## 6. Hors périmètre de la première version
 
 - Chat entre joueurs.
-- Application mobile.
-- Modération à la main par un admin. Un joueur peut toujours dessiner à la main quelque chose de choquant, comme dans toute pixel war.
+- Application mobile native. Le site reste jouable sur le navigateur d'un smartphone.
 - Paiement.
+
+Jusqu'à l'EPIC 6, un joueur peut dessiner à la main quelque chose de choquant, comme dans toute pixel war : Jev ne filtre que les consignes données à l'IA.
 
 ## 7. Critères de réussite pour la démo
 
@@ -80,7 +90,7 @@ Chaque EPIC a des tâches front et des tâches back. Sa première user story con
 
 ## 9. Questions ouvertes
 
-- Taille de la toile, délai définitif et quota de modèles IA.
+- Taille de la toile et délai définitif.
 - Modèle GPT utilisé et son coût par appel.
 - Comment appeler Jev : adresse, format de la réponse, temps de réponse.
 - Ce que les personas changent aux user stories.
