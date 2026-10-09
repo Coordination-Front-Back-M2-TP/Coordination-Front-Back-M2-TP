@@ -1,6 +1,6 @@
 # Coordination-Front-Back-M2-TP
 
-Dépôt du TP du cours Ynov M2 « Coordination Front&Back ». Au 9 octobre 2026, le produit n'est pas encore choisi : les cases `[[à remplir]]` de la documentation attendent ce choix.
+Dépôt du TP du cours Ynov M2 « Coordination Front&Back » : P1X3L, une pixel war en équipes, par l'équipe 3L1K0PT3R. Le produit, la pile technique et l'équipe sont décrits dans le [README.md](README.md). Les cases `[[à remplir]]` qui restent attendent une décision de l'équipe : ne pas les remplir à sa place.
 
 Ce fichier est la source unique des consignes pour tous les agents (Codex, Claude Code, et les autres).
 

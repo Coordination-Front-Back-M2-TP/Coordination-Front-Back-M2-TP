@@ -6,7 +6,7 @@ Git Flow est souvent appliqué par réflexe. Ce document part de notre contexte,
 
 ## 1. Notre contexte
 
-- Une équipe de [[3 ou 4]] personnes : [[un dev front, un dev back, un product owner]].
+- Une équipe de 3 personnes : un product owner, un tech lead front et un tech lead back. Tous les trois développent, sur le front comme sur le back.
 - Une application [[front et back, peut-être découpée en services]], dans [[un seul dépôt]].
 - Du travail en sprints. Chaque ticket de l'outil de gestion de projet est relié à une branche et à une PR.
 - Deux environnements : staging (pré-production) et production. [[Hébergement à préciser.]]

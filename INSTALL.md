@@ -14,7 +14,7 @@ Barème du TD POC (voir `TD_ POC.md`) : explications d'installation /2.
 - Les commandes ne s'écrivent qu'ici : les autres fichiers renvoient vers ce fichier.
 -->
 
-# Installer [[Nom du projet]]
+# Installer P1X3L
 
 Ce guide part d'un poste vide et va jusqu'au projet lancé en local. Compter [[durée]] minutes.
 
