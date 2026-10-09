@@ -68,7 +68,7 @@ La plupart des hébergeurs proposent un hook de déploiement (une adresse secrè
 
 ## 6. Ce qu'il reste à brancher
 
-- **Hébergement** : [[à choisir avec l'équipe]]. Puis créer les secrets et les variables de la section 4.
+- **Hébergement** : le NAS de Théo (règles dans [AGENTS.md](../AGENTS.md), section « Déploiement sur le NAS »). Le NAS n'accepte aucun déclenchement depuis GitHub : l'étape « Déployer » par hook sera remplacée par la publication des images sur GHCR, et le NAS les récupérera à la main. Staging sur le NAS aussi : [[à décider, le NAS est partagé]].
 - **Version déployée** : le hook doit déployer le commit indiqué par `sha`, pas « le dernier commit de `main` ». Sinon un tag peut envoyer en production autre chose que ce qu'il désigne. [[Vérifier avec l'hébergeur choisi.]]
 - **Vérification** : elle contrôle que l'application répond, pas qu'elle tourne la nouvelle version. Une route qui renvoie la version déployée permettrait de le vérifier. [[À ajouter avec le back.]]
 - **Build** : le dépôt n'a pas encore de code. Quand la pile technique est choisie, ajouter la construction (image Docker, fichiers du front) avant l'étape « Déployer ». Si front et back partent séparément, chacun aura ses tags (`api-v1.2.0`, `web-v0.4.0`) et son job, comme le prévoit [strategie-de-branches.md](strategie-de-branches.md).

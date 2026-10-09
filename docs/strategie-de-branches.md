@@ -9,7 +9,7 @@ Git Flow est souvent appliqué par réflexe. Ce document part de notre contexte,
 - Une équipe de [[3 ou 4]] personnes : [[un dev front, un dev back, un product owner]].
 - Une application [[front et back, peut-être découpée en services]], dans [[un seul dépôt]].
 - Du travail en sprints. Chaque ticket de l'outil de gestion de projet est relié à une branche et à une PR.
-- Deux environnements : staging (pré-production) et production. [[Hébergement à préciser.]]
+- Deux environnements : staging (pré-production) et production. La production est hébergée sur le NAS de Théo ([AGENTS.md](../AGENTS.md), section « Déploiement sur le NAS ») ; staging aussi : [[à décider, le NAS est partagé]].
 - Une seule version en production à la fois : personne n'a besoin de maintenir une ancienne version.
 - Des numéros de version lisibles, au format semver.
 
