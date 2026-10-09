@@ -55,7 +55,7 @@ En option : un modèle créé à partir d'une image générée, puis réduite en
 
 ## 5. Périmètre : les EPICs
 
-Les EPICs sortent de la [story map](story-map.md) : ce sont les 5 activités du parcours du joueur. Chacun a des tâches front et des tâches back. Sa première user story contient une tâche transverse « contrat » : écrire les routes et les messages temps réel avant de coder, pour que le front et le back avancent en parallèle.
+Les EPICs sortent de la [story map](story-map.md) : ce sont les 6 activités du parcours des joueurs et de la modératrice. Les EPICs 1 à 5 forment la démo du TP, le 6 vient après. Chacun a des tâches front et des tâches back. Sa première user story contient une tâche transverse « contrat » : écrire les routes et les messages temps réel avant de coder, pour que le front et le back avancent en parallèle.
 
 | EPIC | User stories | Front | Back |
 | --- | --- | --- | --- |
@@ -64,13 +64,15 @@ Les EPICs sortent de la [story map](story-map.md) : ce sont les 5 activités du 
 | 3. Dessiner à la main | Poser un pixel. Voir mon délai. | Palette, pose, compte à rebours | Vérification de la pose, délai compté par le serveur, historique |
 | 4. Dessiner avec l'IA | Demander un modèle. Le confier à mon agent. En option : modèle depuis une image. | Saisie de la consigne, aperçu en transparence, bouton de l'agent et progression | Quota, Jev puis GPT, validation de la grille, agent de dessin, pixellisation en option |
 | 5. Suivre la bataille | Voir le classement des équipes. Revoir la toile en accéléré. | Podium en direct, lecteur du timelapse | Pixels de chaque équipe, API de l'historique des poses |
+| 6. Modérer la toile | Nettoyer une zone. Bannir un joueur et annuler ses pixels. | Écran admin : zone à nettoyer, liste des joueurs | Rôle admin, nettoyage de zone, bannissement, annulation des poses, journal des actions |
 
 ## 6. Hors périmètre de la première version
 
 - Chat entre joueurs.
-- Application mobile.
-- Modération à la main par un admin. Un joueur peut toujours dessiner à la main quelque chose de choquant, comme dans toute pixel war.
+- Application mobile native. Le site reste jouable sur le navigateur d'un smartphone.
 - Paiement.
+
+Jusqu'à l'EPIC 6, un joueur peut dessiner à la main quelque chose de choquant, comme dans toute pixel war : Jev ne filtre que les consignes données à l'IA.
 
 ## 7. Critères de réussite pour la démo
 
