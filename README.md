@@ -27,7 +27,7 @@ Projet du cours « Coordination Front&Back » (Ynov, M2). Une pixel war est une 
 
 **Fonctionnalité principale :** poser des pixels en temps réel sur une toile partagée, à la main ou avec un agent de dessin qui suit un modèle proposé par l'IA.
 
-Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réussite) est dans [docs/besoin.md](docs/besoin.md).
+Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réussite) est dans [docs/besoin.md](docs/besoin.md). Le découpage en EPICs et en user stories est dans la [story map](docs/story-map.md).
 
 ## Fonctionnalités
 
