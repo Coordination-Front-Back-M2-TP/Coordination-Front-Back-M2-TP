@@ -38,5 +38,6 @@ Le board est le projet n° 1 de l'organisation `Coordination-Front-Back-M2-TP` (
 1. Ne rien inventer : produit, stack, membres, rôles, dates de sprint, consignes du prof. Une information inconnue reste `[[à remplir]]` ou devient une question.
 2. Aucun secret dans le dépôt : jeton, mot de passe, fichier `.env`.
 3. Tout changement passe par une issue, une branche et une PR relue. Le dépôt est privé sur le plan gratuit : aucun verrou technique ne protège `main`, la règle repose sur l'équipe.
-4. Commiter, pousser, créer, modifier ou fermer un ticket seulement à la demande d'un membre de l'équipe.
-5. Documentation et commentaires en français.
+4. Commiter souvent, par petites étapes. Pousser, ouvrir une PR, créer, modifier ou fermer un ticket seulement avec l'accord de la personne qui pilote l'agent. Une PR par issue, relue par un autre membre de l'équipe : personne ne merge sa propre PR.
+5. Ne pas modifier la CI/CD (`.github/workflows/`) ni les personas sans l'accord de la personne qui s'en occupe.
+6. Documentation et commentaires en français.
