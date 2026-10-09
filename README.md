@@ -19,26 +19,32 @@ Barème du TD POC (voir `TD_ POC.md`) : mise en forme du Markdown /1, contexte d
 
 # [[Nom du projet]]
 
-[[Une phrase : ce que fait le projet, et pour qui.]]
+Une pixel war en équipes : une toile partagée où chacun pose un pixel à la fois, aidé par un agent qui dessine des modèles proposés par une IA.
 
 ## Contexte
 
-[[Le problème que le projet résout, en trois à cinq phrases.]]
+Projet du cours « Coordination Front&Back » (Ynov, M2). Une pixel war est une toile commune où chaque joueur pose un pixel, puis attend avant le suivant : les dessins naissent de la coordination entre joueurs. Ici, les joueurs s'affrontent en équipes de couleur. Pour les aider, une IA transforme une consigne (« un dragon rouge ») en modèle de pixels, et un agent de dessin le pose au rythme du joueur. Le projet oblige le front et le back à se coordonner en temps réel, ce qui est le sujet du cours.
 
-**Fonctionnalité principale :** [[une phrase]].
+**Fonctionnalité principale :** poser des pixels en temps réel sur une toile partagée, à la main ou avec un agent de dessin qui suit un modèle proposé par l'IA.
+
+Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réussite) est dans [docs/besoin.md](docs/besoin.md).
 
 ## Fonctionnalités
 
-- [[Fonctionnalité 1]]
-- [[Fonctionnalité 2]]
+- Toile partagée en temps réel, avec un délai entre deux pixels.
+- Comptes et équipes de couleur.
+- Modèles de pixels générés par une IA (GPT) à partir d'une consigne, vérifiée par Jev.
+- Agent de dessin qui pose le modèle à la place du joueur, au même rythme que lui.
+- Classement des équipes et timelapse de la toile.
 
 ## Pile technique
 
 | Partie | Technologie |
 | --- | --- |
-| Front | [[technologie et version]] |
-| Back | [[technologie et version]] |
-| Données | [[base de données, ou « aucune »]] |
+| Front | React avec Vite (version fixée au démarrage du code) |
+| Back | Node.js avec Express et Socket.IO (versions fixées au démarrage du code) |
+| Données | SQLite avec Prisma |
+| IA | GPT (OpenAI) pour les modèles, Jev pour la modération des consignes |
 
 ## Installation
 
