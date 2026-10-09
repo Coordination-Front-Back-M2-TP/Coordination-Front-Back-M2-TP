@@ -15,6 +15,7 @@ Ce fichier est la source unique des consignes pour tous les agents (Codex, Claud
 | Écrire du code | [GUIDELINES.md](GUIDELINES.md) |
 | Board, sprints, rôles, réglages GitHub | [docs/gestion-de-projet.md](docs/gestion-de-projet.md) |
 | Branches et versions | [docs/strategie-de-branches.md](docs/strategie-de-branches.md) |
+| Déployer, publier une version | [docs/deploiement.md](docs/deploiement.md) |
 
 ## Commandes
 

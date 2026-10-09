@@ -46,7 +46,7 @@ cp .env.example .env
 | --- | --- | --- |
 | `[[NOM_VARIABLE]]` | [[à quoi elle sert]] | [[valeur de développement, ou : la demander à la personne responsable]] |
 
-Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de `staging` et de `production` sont dans les environnements GitHub (Settings, Environments).
+Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de `staging` et de `production` sont dans les secrets et variables Actions du dépôt : voir [docs/deploiement.md](docs/deploiement.md).
 
 ## 4. Installer les dépendances
 
