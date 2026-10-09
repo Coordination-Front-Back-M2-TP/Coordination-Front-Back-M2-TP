@@ -5,6 +5,8 @@ on:
     types: [opened, edited, synchronize, reopened]
 
 permissions:
+  contents: read
+  issues: read
   pull-requests: read
 
 jobs:
@@ -33,11 +35,43 @@ jobs:
     name: Issue liée
     runs-on: ubuntu-latest
     steps:
-      - name: Vérifier la ligne Closes #numéro
+      - uses: actions/checkout@v7
+      - name: Vérifier la ligne Closes #numéro et l'issue
         uses: actions/github-script@v9
         with:
           script: |
-            const body = context.payload.pull_request.body || '';
-            if (!/\b(closes|fixes|resolves|refs)\s+#\d+/i.test(body)) {
+            const { issueLiee } = require('./.github/scripts/verifier-pr.js');
+            const numero = issueLiee(context.payload.pull_request.body);
+            if (numero === null) {
               core.setFailed('Ajouter une ligne « Closes #numéro » dans la description de la PR.');
+              return;
+            }
+            let issue = null;
+            try {
+              ({ data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: numero,
+              }));
+            } catch (erreur) {
+              if (erreur.status !== 404) throw erreur;
+            }
+            if (!issue || issue.pull_request) {
+              core.setFailed(`#${numero} n'est pas une issue de ce dépôt.`);
+            }
+
+  description:
+    name: Description complète
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Vérifier que le gabarit de PR est rempli
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { verifierDescription } = require('./.github/scripts/verifier-pr.js');
+            const pr = context.payload.pull_request;
+            const erreurs = verifierDescription(pr.title, pr.body);
+            if (erreurs.length > 0) {
+              core.setFailed(['Description de PR incomplète :', ...erreurs.map((e) => `- ${e}`)].join('\n'));
             }
