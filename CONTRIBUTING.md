@@ -26,7 +26,7 @@ Conseils
   prenne pas pour des liens cassés. Dans le dépôt du projet, en faire de vrais liens.
 -->
 
-# Contribuer à [[Nom du projet]]
+# Contribuer à P1X3L
 
 [[Une ou deux phrases : ce que fait le projet, et à qui s'adresse ce guide (équipe, prof, contributeurs externes).]]
 

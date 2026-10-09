@@ -17,7 +17,7 @@ Barème du TD POC (voir `TD_ POC.md`) : mise en forme du Markdown /1, contexte d
 - Les conventions de code vont dans `GUIDELINES.md` (modèle `GUIDELINES.modele.md`).
 -->
 
-# [[Nom du projet]]
+# P1X3L
 
 Une pixel war en équipes : une toile partagée où chacun pose un pixel à la fois, aidé par un agent qui dessine des modèles proposés par une IA.
 
@@ -53,8 +53,8 @@ Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuratio
 ## Structure du dépôt
 
 ```text
-[[dossier/]]    [[ce qu'il contient]]
-[[dossier/]]    [[ce qu'il contient]]
+.github/    Gabarits d'issues et de PR, labels, CI et déploiement continu
+docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement
 ```
 
 ## Contribuer
@@ -63,9 +63,15 @@ Le guide est dans [CONTRIBUTING.md](CONTRIBUTING.md) : tickets, branches, commit
 
 ## Équipe
 
+L'équipe 3L1K0PT3R :
+
 | Nom | Rôle |
 | --- | --- |
-| [[Nom]] | [[Product owner, front ou back]] |
+| Lucas | Product owner et développeur |
+| Théo | Tech lead front et développeur |
+| Swan | Tech lead back et développeur |
+
+Tout le monde développe, sur le front comme sur le back. Les rôles sont détaillés dans [docs/gestion-de-projet.md](docs/gestion-de-projet.md).
 
 ## Licence
 

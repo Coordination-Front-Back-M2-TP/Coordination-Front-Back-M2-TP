@@ -14,7 +14,7 @@ Conseils
 - Garder les exemples courts : un exemple vaut mieux qu'un paragraphe.
 -->
 
-# Conventions de code de [[Nom du projet]]
+# Conventions de code de P1X3L
 
 Ces règles valent pour tout le code du dépôt. Les relecteurs s'en servent pendant la revue ([CONTRIBUTING.md](CONTRIBUTING.md), section 10). Pour changer une règle, ouvrir une issue, comme pour le reste.
 

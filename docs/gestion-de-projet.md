@@ -4,11 +4,11 @@ Ce document décrit comment le projet est découpé, planifié et suivi. Le trav
 
 ## 1. Découpage : EPIC, user story, tâche
 
-| Niveau | Question à laquelle il répond | Taille | Exemple (fictif, à remplacer) |
+| Niveau | Question à laquelle il répond | Taille | Exemple dans P1X3L |
 | --- | --- | --- | --- |
-| EPIC | Quel grand objectif on vise ? | Plusieurs sprints | « Gérer les réservations » |
-| User story | Qu'est-ce que l'utilisateur peut faire ? | Un sprint ou moins, 8 points au maximum | « En tant que visiteur, je veux voir les créneaux libres, afin de choisir une date » |
-| Tâche | Qu'est-ce que l'équipe doit faire concrètement ? | Une à deux journées de travail | « Créer la route qui renvoie les créneaux libres » |
+| EPIC | Quel grand objectif on vise ? | Plusieurs sprints | « Découvrir la toile » (#14) |
+| User story | Qu'est-ce que l'utilisateur peut faire ? | Un sprint ou moins, 8 points au maximum | « En tant que visiteur ou joueur, je veux voir la toile se mettre à jour en direct, afin de suivre la bataille sans recharger la page » (#15) |
+| Tâche | Qu'est-ce que l'équipe doit faire concrètement ? | Une à deux journées de travail | « Afficher la toile et ses mises à jour en direct » (#34) |
 
 Règles :
 
@@ -39,11 +39,14 @@ Ses vues :
 | Board | Les colonnes ci-dessus |
 | Sprint 1 | Le board du sprint en cours (filtre sur la milestone) |
 | EPIC | Les EPIC et l'avancement de leurs sous-issues |
+| Story map | Les user stories, en colonnes par activité et en lignes par tranche, comme la [story map](story-map.md) |
 
 Ses champs, en plus de `Status` :
 
 - `Estimation` : en points (1, 2, 3, 5, 8), comme dans le gabarit de user story.
 - `Priorité` : Haute, Moyenne, Basse.
+- `Activité` : l'EPIC du ticket, c'est-à-dire sa colonne dans la story map.
+- `Tranche` : « 1 : démo du TP », « 2 : après la démo » ou « Option ». C'est la ligne du ticket dans la story map. Une tâche reprend l'activité et la tranche de sa user story.
 - `Labels` : `type:`, `zone:` et `statut: bloqué` (voir [CONTRIBUTING.md](../CONTRIBUTING.md), section 13).
 - `Milestone` : le sprint.
 - `Parent issue` et `Sub-issues progress` : la hiérarchie EPIC, user story, tâche.
@@ -64,14 +67,14 @@ Un sprint est une milestone GitHub, nommée « Sprint 1 », « Sprint 2 », etc.
 
 ## 5. Rôles
 
-À remplir avec l'équipe.
-
 | Rôle | Personne | Responsabilité |
 | --- | --- | --- |
-| Product owner | À définir | Ordonne le backlog, valide les user stories |
+| Product owner | Lucas | Ordonne le backlog, valide les user stories |
 | Coordination | À définir | Anime la planification, la revue et la rétrospective, lève les blocages |
-| Front | À définir | Tâches de la zone `front` |
-| Back | À définir | Tâches de la zone `back` |
+| Tech lead front | Théo | Tranche les choix techniques du front, relit en priorité les PR de la zone `front` |
+| Tech lead back | Swan | Tranche les choix techniques du back, relit en priorité les PR de la zone `back` |
+
+Tout le monde développe, Lucas compris, sur le front comme sur le back : qui prend quelle tâche se décide à la planification du sprint. Le tech lead est la référence de sa zone, pas son seul développeur. Personne ne relit sa propre PR : une PR front de Théo est relue par Swan ou Lucas.
 
 ## 6. Mise en place (une fois)
 
@@ -79,13 +82,14 @@ Ces réglages ne sont pas dans le code : ils se font sur GitHub. La mention « f
 
 1. **Réglages du dépôt** (fait le 09/10/2026) : `main` reste la branche par défaut (sinon `Closes #` ne ferme pas les issues). Seul le merge en squash est permis, avec le titre de la PR comme message, et la branche est supprimée après le merge. Les environnements `staging` et `production` existent : ils gardent l'historique des déploiements. Le plan gratuit ne donne pas accès aux secrets d'environnement sur un dépôt privé : les secrets et variables du déploiement sont au niveau du dépôt (voir [deploiement.md](deploiement.md)). Le pourquoi de ces choix : [strategie-de-branches.md](strategie-de-branches.md).
 2. **Règle de branche sur `main`** : le dépôt est privé et l'organisation est sur le plan gratuit, qui ne permet pas de règle de branche sur un dépôt privé. La règle « tout passe par une PR relue, CI verte » est donc une règle d'équipe : personne ne pousse sur `main`, personne ne merge une PR rouge. Le contrôle « Relecture approuvée » la rend visible : il reste rouge tant qu'un autre membre n'a pas approuvé. Si le dépôt passe en public ou l'organisation sur le plan Team : Settings, Rules ou Branches, activer la PR obligatoire, une approbation minimum, et les contrôles requis « Titre au format Conventional Commits », « Issue liée », « Description complète », « Relecture approuvée », « CI terminée », « Markdown (markdownlint) », « Liens cassés (lychee) ».
-3. **Board** (fait le 09/10/2026) : projet n° 1 de l'organisation, relié au dépôt. Colonnes, champs et vues décrits à la section 2.
-4. **Workflows du board** (à faire à la main : l'API de GitHub ne permet pas de les activer). Dans le projet, menu `…`, Workflows :
-   - « Auto-add to project » : choisir ce dépôt, filtre `is:issue,pr is:open`. Chaque nouvelle issue et PR arrive sur le board, sans jeton à gérer.
+3. **Board** (fait le 09/10/2026) : projet n° 1 de l'organisation, relié au dépôt. Colonnes, champs et vues décrits à la section 2. La vue Story map se règle dans View : Board, Column by `Activité`, Swimlanes `Tranche`, filtre `label:"type: user-story"`.
+4. **Workflows du board** (fait le 09/10/2026, à la main : l'API de GitHub ne permet pas de les activer). Dans le projet, menu `…`, Workflows :
+   - « Auto-add to project » : ce dépôt, filtre `is:issue,pr is:open`. Chaque nouvelle issue et PR arrive sur le board, sans jeton à gérer.
    - « Item added to project » : Status sur Backlog.
    - « Pull request linked to issue » : Status sur En revue.
    - « Item closed » et « Pull request merged » : Status sur Terminé.
-   - « Auto-add sub-issues to project » : déjà actif. Les sous-issues d'un ticket du board y entrent aussi.
+   - « Auto-add sub-issues to project » : éteint. Il s'est désactivé quand « Auto-add to project » a été activé. Ce n'est pas gênant : une sous-issue est une issue du dépôt, « Auto-add to project » l'ajoute déjà.
+   - « Auto-close issue » : laissé éteint. Il fermerait une issue glissée dans Terminé avant le merge de sa PR. C'est le `Closes #` de la PR qui ferme l'issue, au merge.
 5. **Ajout au board par GitHub Actions** (facultatif) : le job « Ajouter au board » de [.github/workflows/issues.yml](../.github/workflows/issues.yml) fait la même chose que « Auto-add to project ». Il est sauté tant que la variable de dépôt `PROJECT_URL` n'existe pas. Pour s'en servir : créer un jeton avec le droit d'écriture sur les projets, le stocker en secret Actions sous le nom `PROJECT_TOKEN` (jamais dans le dépôt), puis créer `PROJECT_URL` avec l'adresse du board.
 6. **Milestones** (« Sprint 1 » créée le 09/10/2026, sans date) : créer les suivantes au fil des sprints, dans l'onglet Issues, Milestones. Fixer les dates avec l'équipe.
 7. **Labels** : après le premier push sur `main`, vérifier dans l'onglet Actions que « Synchroniser les labels » a tourné. Sinon, le lancer une fois (Run workflow).
