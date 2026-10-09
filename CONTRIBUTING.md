@@ -151,7 +151,7 @@ Tant que le projet est en `0.y.z`, l'API n'est pas stable. La version `1.0.0` fi
 
 Le type du commit (section 8) guide le numéro : `feat` donne une version MINEUR, `fix` un CORRECTIF, et un `!` après le type (ou `BREAKING CHANGE:` dans le corps) une version MAJEUR.
 
-Une version se publie en posant un tag `v1.2.0` sur `main`, ce qui crée une release GitHub. Si plusieurs services partent en production séparément, chacun a ses tags (`api-v1.2.0`, `web-v0.4.0`). [[Qui décide de publier, et à quel moment.]]
+Une version se publie en posant un tag `v1.2.0` sur `main` : la CD la déploie en production et crée la release GitHub ([docs/deploiement.md](docs/deploiement.md)). Si plusieurs services partent en production séparément, chacun a ses tags (`api-v1.2.0`, `web-v0.4.0`). [[Qui décide de publier, et à quel moment.]]
 
 ## 8. Messages de commit et titres de PR
 
@@ -218,6 +218,8 @@ Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les cré
 | Une issue est créée ou modifiée | Le label de zone est posé ou mis à jour | [.github/workflows/issues.yml](.github/workflows/issues.yml) |
 | Une PR est ouverte ou modifiée | Le titre et la ligne `Closes #` sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
 | Un fichier Markdown change | Le format et les liens sont vérifiés | [.github/workflows/docs-ci.yml](.github/workflows/docs-ci.yml) |
+| Une PR est mergée sur `main` | Le commit est déployé en staging | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
+| Un tag `vX.Y.Z` est poussé | Le commit est vérifié, déployé en production, et la release GitHub est créée | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
 | `labels.yml` change sur `main` | Les labels du dépôt sont synchronisés | [.github/workflows/labels-sync.yml](.github/workflows/labels-sync.yml) |
 | Une issue ou une PR est créée | Elle arrive sur le board, en Backlog | Workflows intégrés du board |
 | Une sous-issue est créée sous un ticket du board | Elle arrive aussi sur le board | Workflows intégrés du board |

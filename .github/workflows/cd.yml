@@ -1,0 +1,120 @@
+name: Déploiement continu
+
+# Notre flow (docs/strategie-de-branches.md) : chaque merge sur main part en staging,
+# un tag vX.Y.Z posé sur un commit déjà déployé en staging part en production.
+# Mode d'emploi et configuration : docs/deploiement.md.
+
+on:
+  push:
+    branches: [main, 'release/**']
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  staging:
+    name: Déployer en staging
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    # Un seul déploiement à la fois. Celui en cours va au bout, le plus récent attend.
+    concurrency:
+      group: deploiement-staging
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - name: Déployer le commit
+        run: .github/scripts/deployer.sh
+        env:
+          ENVIRONNEMENT: staging
+          VERSION: ${{ github.sha }}
+          DEPLOY_HOOK_URL: ${{ secrets.STAGING_DEPLOY_HOOK_URL }}
+          APP_URL: ${{ vars.STAGING_URL }}
+          HEALTHCHECK_URL: ${{ vars.STAGING_HEALTHCHECK_URL }}
+
+  verifier:
+    name: Vérifier la version
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Le tag suit semver
+        run: |
+          if ! [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::« $TAG » n'est pas une version vMAJEUR.MINEUR.CORRECTIF (semver)."
+            exit 1
+          fi
+
+      - name: Le commit est sur main ou sur une branche release/
+        run: |
+          if ! git branch -r --contains "$GITHUB_SHA" | grep -qE '^\s*origin/(main|release/.+)$'; then
+            echo "::error::Le tag $TAG ne pointe pas sur un commit de main ni d'une branche release/X.Y."
+            exit 1
+          fi
+
+      - name: Le commit a été déployé en staging
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          deploiements=$(gh run list --workflow cd.yml --commit "$GITHUB_SHA" --event push --status success \
+            --json headBranch --jq '[.[] | select(.headBranch == "main" or (.headBranch | startswith("release/")))] | length')
+          if [[ "$deploiements" == 0 ]]; then
+            echo "::error::Le commit $GITHUB_SHA n'a pas encore été déployé en staging. Attendre la fin de « Déployer en staging », puis relancer ce workflow."
+            exit 1
+          fi
+
+  production:
+    name: Déployer en production
+    needs: verifier
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    concurrency:
+      group: deploiement-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - name: Déployer la version
+        run: .github/scripts/deployer.sh
+        env:
+          ENVIRONNEMENT: production
+          VERSION: ${{ github.ref_name }}
+          DEPLOY_HOOK_URL: ${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}
+          APP_URL: ${{ vars.PRODUCTION_URL }}
+          HEALTHCHECK_URL: ${{ vars.PRODUCTION_HEALTHCHECK_URL }}
+
+  release:
+    name: Publier la release GitHub
+    needs: production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Créer la release avec les notes générées
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Relancer le workflow d'un ancien tag le redéploie (retour arrière) : la release existe déjà.
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "La release $TAG existe déjà : rien à publier."
+            exit 0
+          fi
+          options=(--verify-tag --generate-notes --title "$TAG")
+          if [[ "$TAG" == *-* ]]; then
+            options+=(--prerelease)
+          fi
+          gh release create "$TAG" "${options[@]}"
