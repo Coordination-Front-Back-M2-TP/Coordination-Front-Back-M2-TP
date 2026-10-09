@@ -15,15 +15,15 @@ Git Flow est souvent appliqué par réflexe. Ce document part de notre contexte,
 
 ## 2. Critères de choix
 
-| Critère                    | Pourquoi il compte pour nous                                                                                         |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| C1. Simplicité             | Peu de branches longues à retenir et à synchroniser. L'équipe découvre ce process.                               |
+| Critère | Pourquoi il compte pour nous |
+| --- | --- |
+| C1. Simplicité | Peu de branches longues à retenir et à synchroniser. L'équipe découvre ce process. |
 | C2. Intégration fréquente | Front et back avancent en parallèle. Plus on intègre tard, plus les conflits et les surprises d'API coûtent cher. |
-| C3. Environnements          | Passer de staging à production sans que les deux divergent.                                                         |
-| C4. Versions                | Savoir ce qui tourne en production, avec un numéro semver.                                                          |
-| C5. Services indépendants  | Si l'application se découpe en microservices, chacun doit pouvoir partir en production seul.                        |
-| C6. Outillage GitHub        | `Closes #` ne ferme une issue que sur la branche par défaut. Protections et CI doivent rester simples.            |
-| C7. Correctif urgent        | Corriger la production sans embarquer du travail pas prêt.                                                          |
+| C3. Environnements | Passer de staging à production sans que les deux divergent. |
+| C4. Versions | Savoir ce qui tourne en production, avec un numéro semver. |
+| C5. Services indépendants | Si l'application se découpe en microservices, chacun doit pouvoir partir en production seul. |
+| C6. Outillage GitHub | `Closes #` ne ferme une issue que sur la branche par défaut. Protections et CI doivent rester simples. |
+| C7. Correctif urgent | Corriger la production sans embarquer du travail pas prêt. |
 
 ## 3. Les flows étudiés
 
@@ -38,13 +38,13 @@ Git Flow est souvent appliqué par réflexe. Ce document part de notre contexte,
 
 Notre évaluation, pour notre contexte : `+` répond bien, `~` en partie, `-` mal.
 
-| Flow         | C1 | C2 | C3 | C4 | C5 | C6 | C7 |
-| ------------ | -- | -- | -- | -- | -- | -- | -- |
-| Git Flow     | -  | -  | ~  | +  | -  | -  | +  |
-| GitHub flow  | +  | +  | -  | -  | ~  | +  | ~  |
-| GitLab Flow  | ~  | +  | ~  | ~  | ~  | +  | ~  |
-| Trunk-based  | +  | +  | +  | +  | +  | +  | +  |
-| Release Flow | ~  | +  | ~  | +  | ~  | +  | +  |
+| Flow | C1 | C2 | C3 | C4 | C5 | C6 | C7 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Git Flow | - | - | ~ | + | - | - | + |
+| GitHub flow | + | + | - | - | ~ | + | ~ |
+| GitLab Flow | ~ | + | ~ | ~ | ~ | + | ~ |
+| Trunk-based | + | + | + | + | + | + | + |
+| Release Flow | ~ | + | ~ | + | ~ | + | + |
 
 - **Git Flow** perd sur l'essentiel pour nous. Il impose deux branches longues et intègre tard (`develop`, puis `release`). Ses versions sont synchronisées, alors que des microservices partent en production chacun de leur côté. Et il faut faire de `develop` la branche par défaut pour que `Closes #` fonctionne.
 - **Une branche `staging`** règle C3 en apparence seulement. Elle dérive de `main` et oblige à des fusions dans les deux sens. Staging est un environnement, pas une branche.

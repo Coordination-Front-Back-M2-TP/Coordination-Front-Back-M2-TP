@@ -20,12 +20,12 @@ Ce guide part d'un poste vide et va jusqu'au projet lancé en local. Compter [[d
 
 ## 1. Prérequis
 
-| Outil | Version | Vérifier         |
-| ----- | ------- | ----------------- |
-| Git   | [[version]]        | `git --version` |
-| [[Node.js, Python, Docker…]]      | [[version]]        | `[[commande]]`  |
+| Outil | Version | Vérifier |
+| --- | --- | --- |
+| Git | [[version]] | `git --version` |
+| [[Node.js, Python, Docker…]] | [[version]] | `[[commande]]` |
 
-Accès nécessaires : le dépôt GitHub et le board ([TP Coordination Front&amp;Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1)). [[Autres accès : base de données de test, compte de service…]]
+Accès nécessaires : le dépôt GitHub et le board ([TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1)). [[Autres accès : base de données de test, compte de service…]]
 
 ## 2. Récupérer le code
 
@@ -42,9 +42,9 @@ Copier le fichier d'exemple des variables d'environnement :
 cp .env.example .env
 ```
 
-| Variable             | Rôle | Valeur en local |
-| -------------------- | ----- | --------------- |
-| `[[NOM_VARIABLE]]` | [[à quoi elle sert]]      | [[valeur de développement, ou : la demander à la personne responsable]]                |
+| Variable | Rôle | Valeur en local |
+| --- | --- | --- |
+| `[[NOM_VARIABLE]]` | [[à quoi elle sert]] | [[valeur de développement, ou : la demander à la personne responsable]] |
 
 Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de `staging` et de `production` sont dans les environnements GitHub (Settings, Environments).
 
@@ -85,15 +85,15 @@ Front, dans un autre terminal :
 
 ## 7. Tests et lint
 
-| But            | Commande         |
-| -------------- | ---------------- |
-| Tests          | `[[commande]]` |
+| But | Commande |
+| --- | --- |
+| Tests | `[[commande]]` |
 | Lint et format | `[[commande]]` |
 
 ## 8. Problèmes fréquents
 
 | Symptôme | Cause | Solution |
-| --------- | ----- | -------- |
-| [[Le port est déjà utilisé]]          | [[Un autre programme l'occupe]]      | [[Changer le port dans .env]]         |
+| --- | --- | --- |
+| [[Le port est déjà utilisé]] | [[Un autre programme l'occupe]] | [[Changer le port dans .env]] |
 
 Un problème absent de ce tableau : ouvrir une issue avec le gabarit Bug, puis l'ajouter ici une fois résolu.
