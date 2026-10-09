@@ -176,13 +176,14 @@ Le titre de la PR devient le message du commit final (squash). Il suit donc le m
 
 - Une PR par issue. Une PR courte se relit mieux : si elle grossit, la découper.
 - La description contient une ligne `Closes #numéro`. Le merge ferme l'issue tout seul.
-- Compléter le gabarit de PR, section par section.
-- Ne pas merger si la CI est en échec.
+- Compléter le gabarit de PR, section par section : description, issue liée, un seul type (celui du titre), Definition of Done entièrement cochée. Le contrôle « Description complète » dit ce qui manque.
+- Une PR est approuvée par un autre membre de l'équipe que son auteur. Le contrôle « Relecture approuvée » reste rouge jusque-là, et aussi tant qu'un relecteur demande des modifications.
+- Ne pas merger si un contrôle est rouge. Le dépôt privé du plan gratuit ne permet pas de règle de branche : rien n'empêche techniquement le merge, la règle repose sur l'équipe.
 - Une PR vise `main` et se merge avec « Squash and merge » (section 7).
 
 ## 10. Revue de code
 
-- Qui relit : [[nombre]] personne(s) autre(s) que l'auteur.
+- Qui relit : au moins une personne de l'équipe autre que l'auteur, qui approuve la PR (« Approve »). Seule l'approbation d'une personne qui a le droit d'écriture sur le dépôt compte.
 - Délai de première réponse : [[2 jours ouvrés]].
 - Ce qu'on regarde : les critères d'acceptation, le respect de [GUIDELINES.md](GUIDELINES.md), la lisibilité, les tests, la documentation, l'absence de secret.
 - Un commentaire est précis et courtois, et il dit pourquoi. L'auteur répond ou corrige. Le relecteur résout ses propres fils.
@@ -191,6 +192,14 @@ Le titre de la PR devient le message du commit final (squash). Il suit donc le m
 ## 11. Qualité du code
 
 Les conventions de code (structure, nommage, contrat entre le front et le back, tests, sécurité) sont dans [GUIDELINES.md](GUIDELINES.md). La CI vérifie le lint et les tests : ne pas merger si elle échoue.
+
+La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) traite chaque dossier qui contient un `package.json` commité, à la racine comme dans un sous-dossier (`front/`, `back/`…) :
+
+- elle exige le `package-lock.json` du dossier, puis installe avec `npm ci` ;
+- elle lance `npm run lint`, `npm test` et `npm run build`, chacun seulement si le script existe dans le `package.json` ;
+- le contrôle « CI terminée » résume tous les dossiers : c'est lui qu'il faut regarder.
+
+Le script `test` créé par `npm init` échoue exprès (« no test specified ») : le remplacer par la vraie commande de test.
 
 ## 12. Une issue est finie (Definition of Done)
 
@@ -216,7 +225,9 @@ Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les cré
 | Quand | Ce qui se passe | Où |
 | --- | --- | --- |
 | Une issue est créée ou modifiée | Le label de zone est posé ou mis à jour | [.github/workflows/issues.yml](.github/workflows/issues.yml) |
-| Une PR est ouverte ou modifiée | Le titre et la ligne `Closes #` sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
+| Une PR est ouverte ou modifiée | Le titre, l'issue liée et le gabarit rempli sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
+| Une PR est ouverte, modifiée ou relue | Le statut « Relecture approuvée » est recalculé | [.github/workflows/relecture.yml](.github/workflows/relecture.yml) |
+| Du code est poussé dans une PR ou sur `main` | Lint, tests et build de chaque projet Node | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
 | Un fichier Markdown change | Le format et les liens sont vérifiés | [.github/workflows/docs-ci.yml](.github/workflows/docs-ci.yml) |
 | Une PR est mergée sur `main` | Le commit est déployé en staging | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
 | Un tag `vX.Y.Z` est poussé | Le commit est vérifié, déployé en production, et la release GitHub est créée | [.github/workflows/cd.yml](.github/workflows/cd.yml) |

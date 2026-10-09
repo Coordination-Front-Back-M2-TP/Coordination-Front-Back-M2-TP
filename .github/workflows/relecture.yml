@@ -1,0 +1,84 @@
+name: Relecture
+
+# Pose le statut « Relecture approuvée » sur le dernier commit de la PR. Il est vert quand un membre
+# de l'équipe (droit d'écriture sur le dépôt) autre que l'auteur a approuvé la PR, et que personne
+# n'attend de modifications.
+# Le dépôt privé du plan gratuit n'a pas de règle de branche : ce statut rouge est le seul verrou.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  pull-requests: read
+  statuses: write
+
+concurrency:
+  group: relecture-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  statut:
+    name: Calculer le statut de relecture
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poser le statut « Relecture approuvée »
+        uses: actions/github-script@v9
+        with:
+          script: |
+            // Un statut de commit plutôt qu'un job : il garde le même nom quel que soit l'événement,
+            // et chaque calcul remplace le précédent.
+            const pr = context.payload.pull_request;
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+            });
+
+            // L'équipe, ce sont les personnes qui ont le droit d'écriture. Le prof, invité en lecture, n'en fait pas partie.
+            const droits = new Map();
+            async function dansLEquipe(login) {
+              if (!droits.has(login)) {
+                const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  username: login,
+                });
+                droits.set(login, ['admin', 'maintain', 'write'].includes(data.permission));
+              }
+              return droits.get(login);
+            }
+
+            // Dernier avis de chaque relecteur. Un simple commentaire ne change pas son avis.
+            const avis = new Map();
+            for (const review of reviews) {
+              if (!review.user || review.user.type === 'Bot' || review.user.login === pr.user.login) continue;
+              if (review.state === 'COMMENTED' || review.state === 'PENDING') continue;
+              if (!(await dansLEquipe(review.user.login))) continue;
+              avis.set(review.user.login, review.state);
+            }
+            const avisEn = (etat) => [...avis].filter(([, e]) => e === etat).map(([login]) => login);
+            const bloquent = avisEn('CHANGES_REQUESTED');
+            const approuvent = avisEn('APPROVED');
+
+            let state = 'failure';
+            let description = "En attente de l'approbation d'un autre membre de l'équipe";
+            if (bloquent.length > 0) {
+              description = `Modifications demandées par ${bloquent.join(', ')}`;
+            } else if (approuvent.length > 0) {
+              state = 'success';
+              description = `Approuvée par ${approuvent.join(', ')}`;
+            }
+
+            core.info(`${state} : ${description}`);
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: pr.head.sha,
+              state,
+              context: 'Relecture approuvée',
+              description: description.slice(0, 140),
+              target_url: pr.html_url,
+            });
