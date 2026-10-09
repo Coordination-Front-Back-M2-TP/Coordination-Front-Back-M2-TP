@@ -1,0 +1,43 @@
+name: Vérifications de PR
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  titre:
+    name: Titre au format Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            ci
+            chore
+            refactor
+            test
+            style
+            perf
+            build
+            revert
+
+  issue-liee:
+    name: Issue liée
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la ligne Closes #numéro
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            if (!/\b(closes|fixes|resolves|refs)\s+#\d+/i.test(body)) {
+              core.setFailed('Ajouter une ligne « Closes #numéro » dans la description de la PR.');
+            }

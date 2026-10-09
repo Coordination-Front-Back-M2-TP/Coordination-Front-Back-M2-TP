@@ -1,0 +1,16 @@
+# Variables d'environnement : jamais dans le dépôt (voir INSTALL.md, section 3)
+.env
+.env.*
+!.env.example
+
+# Dépendances et fichiers générés
+node_modules/
+dist/
+build/
+coverage/
+
+# Éditeurs et système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

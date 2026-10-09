@@ -1,0 +1,238 @@
+<!--
+Modèle de CONTRIBUTING.md (09/10/2026). À copier à la racine d'un projet sous le nom CONTRIBUTING.md.
+Remplacer chaque [[à remplir]] (chercher « [[ » pour n'en oublier aucun), supprimer ce qui ne sert pas,
+puis supprimer ce commentaire.
+
+D'où vient ce plan
+- Les rubriques des gabarits de référence : nayafia/contributing-template (CC0), CONTRIBUTING d'Angular
+  (angular/angular) et de github/docs. Chacun répond aux mêmes questions : quelles contributions, quelles
+  règles, comment démarrer, comment signaler un bug, comment se passe la revue.
+- La gestion de projet demandée par le cours : EPIC, user stories, tâches, Definition of Ready et of Done,
+  automatisations, stratégie de branches, versions et cycle de vie des tickets (barème du TD POC, voir `TD_ POC.md`).
+- Stratégie de branches : notre flow (tronc unique, branches courtes, promotion par tags), choisi après
+  comparaison de Git Flow, GitHub flow, GitLab Flow, trunk-based et Release Flow. Analyse complète :
+  `docs/strategie-de-branches.md`. Versions : semver.org.
+- Les mots-clés `Closes #` ne ferment l'issue que si la PR vise la branche par défaut (docs GitHub) :
+  c'est `main` ici.
+- GitHub cherche le fichier dans `.github`, puis à la racine, puis dans `docs`, et en met le lien à chaque
+  nouvelle issue et nouvelle PR. Le laisser à la racine.
+  https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors
+
+Conseils
+- Garder le fichier court. Le détail (sprints, rôles, mise en place du board) va dans `docs/gestion-de-projet.md`.
+- Ne pas écrire deux fois la même liste de commandes : elle va dans `INSTALL.md`, les autres fichiers (dont
+  `AGENTS.md`) y renvoient. Les conventions de code vont dans `GUIDELINES.md`.
+- Les chemins de fichiers sont entre accents graves pour que la CI d'un dépôt qui ne les contient pas ne les
+  prenne pas pour des liens cassés. Dans le dépôt du projet, en faire de vrais liens.
+-->
+
+# Contribuer à [[Nom du projet]]
+
+[[Une ou deux phrases : ce que fait le projet, et à qui s'adresse ce guide (équipe, prof, contributeurs externes).]]
+
+Règle de base : rien n'arrive directement sur `main`. Chaque changement passe par une issue, une branche et une pull request relue.
+
+## 1. Avant de commencer
+
+- Lire le [README.md](README.md) pour comprendre le projet.
+- Installer le projet avec [INSTALL.md](INSTALL.md).
+- Lire [GUIDELINES.md](GUIDELINES.md) avant d'écrire du code.
+- Avoir accès au dépôt et au board : [TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1).
+- Respecter le code de conduite : [[lien, ou une phrase : respect, pas de jugement, retours précis et courtois]].
+- Si un agent IA travaille sur le dépôt, il lit `AGENTS.md`.
+
+## 2. Contributions attendues
+
+- Du code : nouvelle fonctionnalité ou correction.
+- De la documentation, des tests, des retours de test.
+- Du tri de tickets : reformuler, découper, rattacher à un EPIC.
+
+Pas dans les issues : les questions d'usage. Les poser dans [[canal : messagerie, forum, cours]].
+
+## 3. Installer et lancer le projet
+
+Tout est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, tests et lint.
+
+## 4. Le flux de travail en bref
+
+1. Créer l'issue avec le bon gabarit (section 5).
+2. Vérifier qu'elle est prête (section 6).
+3. S'assigner l'issue et la passer en « En cours » sur le board.
+4. Créer une branche (section 7).
+5. Commiter par petites étapes (section 8).
+6. Ouvrir une pull request avec `Closes #numéro` (section 9).
+7. Passer la CI et la relecture (section 10).
+8. Merger en squash. L'issue se ferme et le board passe à « Terminé ».
+
+### Cycle de vie d'un ticket
+
+Les statuts sont les options du champ `Status` du board. [[Adapter les noms aux colonnes réelles.]]
+
+| Statut | Le ticket est ici quand | Il passe au suivant quand |
+| --- | --- | --- |
+| Backlog | Il est créé, mais pas encore prêt | La Definition of Ready est remplie (section 6) |
+| Prêt | Il attend un sprint | Quelqu'un se l'assigne |
+| En cours | Quelqu'un travaille dessus, sur sa branche | Une PR est ouverte |
+| En revue | La PR attend une relecture | La PR est approuvée et mergée |
+| Terminé | Le merge a fermé l'issue | Fin du cycle |
+
+## 5. Issues
+
+Chaque travail a une issue. Utiliser le bon gabarit (bouton « New issue ») :
+
+| Gabarit | Sert à | Titre | Label |
+| --- | --- | --- | --- |
+| EPIC | Un grand objectif qui regroupe des user stories | `[EPIC]` | `type: epic` |
+| User story | Une fonctionnalité vue par l'utilisateur | `[US]` | `type: user-story` |
+| Tâche | Un travail technique pour une user story | `[Tâche]` | `type: tâche` |
+| Bug | Un comportement qui ne correspond pas à ce qui est attendu | `[Bug]` | `type: bug` |
+
+Une EPIC contient des user stories, une user story contient des tâches. Les relier avec les sous-issues de GitHub : dans le parent, bouton « Create sub-issue » ou « Add existing issue ». Un parent accepte jusqu'à 100 sous-issues, sur 8 niveaux au maximum ([doc GitHub](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues)).
+
+En ligne de commande, avec gh 2.94 ou plus :
+
+| But | Commande |
+| --- | --- |
+| Créer une issue sous son parent | `gh issue create --parent NUMERO_PARENT` |
+| Rattacher une issue existante | `gh issue edit NUMERO_PARENT --add-sub-issue NUMERO_ENFANT` |
+
+Règles :
+
+- Une issue traite un seul sujet. Chercher avant de créer : elle existe peut-être déjà.
+- Une user story estimée à plus de [[8]] points se découpe.
+- Une tâche tient en [[une à deux journées]] de travail. Au-delà, la découper.
+
+Une user story suit ce format :
+
+> En tant que [rôle], je veux [besoin], afin de [bénéfice].
+
+Les critères d'acceptation disent comment savoir qu'elle est finie. Chacun se vérifie : « Étant donné…, quand…, alors… », ou une case à cocher.
+
+Un bug se signale avec le gabarit Bug : comportement attendu, comportement constaté, étapes pour reproduire, contexte. [[Une faille de sécurité ne s'ouvre pas en issue publique. Écrire à : adresse.]]
+
+## 6. Une issue est prête (Definition of Ready)
+
+Une user story entre dans un sprint seulement si :
+
+- le rôle, le besoin et le bénéfice sont écrits ;
+- les critères d'acceptation sont testables ;
+- elle a une estimation en points et une priorité ;
+- elle est rattachée à un EPIC ;
+- ses dépendances sont connues.
+
+## 7. Stratégie de branches et versions
+
+### Branches
+
+Notre flow : tronc unique, branches courtes, promotion par tags. Le pourquoi (contexte, critères, comparaison avec Git Flow, GitHub flow, GitLab Flow, trunk-based et Release Flow) est dans [docs/strategie-de-branches.md](docs/strategie-de-branches.md).
+
+- `main` est la seule branche longue, toujours déployable, et la branche par défaut. Personne n'y pousse directement.
+- Une branche courte par issue, partie de `main`, tenue par une personne, deux jours au plus. Au-delà, l'issue est trop grosse : la découper.
+- La branche se fusionne dans `main` par PR en squash, puis elle est supprimée.
+- Le travail pas fini part dans `main` caché derrière un flag de configuration, jamais dans une branche longue.
+- `staging` est un environnement, pas une branche : chaque merge sur `main` y est déployé.
+- La production reçoit un tag `vX.Y.Z` posé sur un commit de `main` validé en staging.
+- Correctif urgent : PR `fix/…` sur `main`, puis tag CORRECTIF. Si `main` n'est pas publiable, créer `release/X.Y` depuis le dernier tag et y reporter le correctif par cherry-pick.
+- [[Adapter si le groupe fait un autre choix, et le justifier dans docs/strategie-de-branches.md.]]
+
+Format du nom : `type/numéro-description-courte`, en minuscules, avec des tirets, sans accents ni espaces.
+
+Exemples : `feat/12-[[sujet]]`, `fix/15-[[sujet]]`, `docs/20-[[sujet]]`.
+
+### Versions
+
+Les versions suivent le [versionnage sémantique](https://semver.org/lang/fr/) : `MAJEUR.MINEUR.CORRECTIF`.
+
+- **MAJEUR** : un changement qui casse la compatibilité.
+- **MINEUR** : l'ajout d'une fonctionnalité sans rien casser.
+- **CORRECTIF** : la correction d'un bug sans rien casser.
+
+Tant que le projet est en `0.y.z`, l'API n'est pas stable. La version `1.0.0` fixe l'API publique.
+
+Le type du commit (section 8) guide le numéro : `feat` donne une version MINEUR, `fix` un CORRECTIF, et un `!` après le type (ou `BREAKING CHANGE:` dans le corps) une version MAJEUR.
+
+Une version se publie en posant un tag `v1.2.0` sur `main`, ce qui crée une release GitHub. Si plusieurs services partent en production séparément, chacun a ses tags (`api-v1.2.0`, `web-v0.4.0`). [[Qui décide de publier, et à quel moment.]]
+
+## 8. Messages de commit et titres de PR
+
+Le format suit [Conventional Commits](https://www.conventionalcommits.org/fr/v1.0.0/) :
+
+```text
+type: description
+type(zone): description
+```
+
+Types acceptés : `feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `test`, `style`, `perf`, `build`, `revert`. Zones du projet : [[front, back, transverse]].
+
+La description est en [[français]], à l'impératif, sans point final. Exemples :
+
+- `feat([[zone]]): [[ajouter la page de connexion]]`
+- `fix([[zone]]): [[corriger le format de la date]]`
+- `docs: [[décrire le processus de revue]]`
+
+Le titre de la PR devient le message du commit final (squash). Il suit donc le même format.
+
+## 9. Pull requests
+
+- Une PR par issue. Une PR courte se relit mieux : si elle grossit, la découper.
+- La description contient une ligne `Closes #numéro`. Le merge ferme l'issue tout seul.
+- Compléter le gabarit de PR, section par section.
+- Ne pas merger si la CI est en échec.
+- Une PR vise `main` et se merge avec « Squash and merge » (section 7).
+
+## 10. Revue de code
+
+- Qui relit : [[nombre]] personne(s) autre(s) que l'auteur.
+- Délai de première réponse : [[2 jours ouvrés]].
+- Ce qu'on regarde : les critères d'acceptation, le respect de [GUIDELINES.md](GUIDELINES.md), la lisibilité, les tests, la documentation, l'absence de secret.
+- Un commentaire est précis et courtois, et il dit pourquoi. L'auteur répond ou corrige. Le relecteur résout ses propres fils.
+- Qui merge : [[l'auteur après approbation / le relecteur]]. Personne ne merge sans relecture.
+
+## 11. Qualité du code
+
+Les conventions de code (structure, nommage, contrat entre le front et le back, tests, sécurité) sont dans [GUIDELINES.md](GUIDELINES.md). La CI vérifie le lint et les tests : ne pas merger si elle échoue.
+
+## 12. Une issue est finie (Definition of Done)
+
+Une user story est terminée quand :
+
+- ses critères d'acceptation sont vérifiés ;
+- la PR est relue, mergée, et la CI est verte ;
+- la documentation est à jour ([README.md](README.md) ou `docs/`) si le comportement change ;
+- toutes ses tâches sont fermées.
+
+Un EPIC est terminé quand toutes ses user stories le sont.
+
+## 13. Labels
+
+- `type:` : `epic`, `user-story`, `tâche`, `bug`.
+- `zone:` : [[front, back, transverse]]. Le workflow les pose à partir du champ « Zone » du gabarit.
+- `statut: bloqué` : quand une issue ne peut pas avancer. Expliquer le blocage dans un commentaire.
+
+Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les créer à la main : le workflow de synchronisation les applique depuis ce fichier.
+
+## 14. Ce qui se fait tout seul
+
+| Quand | Ce qui se passe | Où |
+| --- | --- | --- |
+| Une issue est créée ou modifiée | Le label de zone est posé ou mis à jour | [.github/workflows/issues.yml](.github/workflows/issues.yml) |
+| Une PR est ouverte ou modifiée | Le titre et la ligne `Closes #` sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
+| Un fichier Markdown change | Le format et les liens sont vérifiés | [.github/workflows/docs-ci.yml](.github/workflows/docs-ci.yml) |
+| `labels.yml` change sur `main` | Les labels du dépôt sont synchronisés | [.github/workflows/labels-sync.yml](.github/workflows/labels-sync.yml) |
+| Une issue ou une PR est créée | Elle arrive sur le board, en Backlog | Workflows intégrés du board |
+| Une sous-issue est créée sous un ticket du board | Elle arrive aussi sur le board | Workflows intégrés du board |
+| Une PR est liée à une issue | L'issue passe en « En revue » | Workflows intégrés du board |
+| Une PR est mergée ou une issue fermée | Le ticket passe en « Terminé » | Workflows intégrés du board |
+
+La mise en place (règles de branche, colonnes, vues et workflows du board) est dans [docs/gestion-de-projet.md](docs/gestion-de-projet.md).
+
+## 15. Communication
+
+- Les questions et les décisions vont dans l'issue concernée, pas en message privé. Une personne absente doit retrouver la trace.
+- Une décision importante est aussi notée dans `docs/`.
+- Un blocage se signale tout de suite : label `statut: bloqué` et commentaire.
+- Autres canaux : [[messagerie, réunions, créneaux de questions]].
+
+## 16. Licence et droits
+
+[[Licence du projet, ou : projet scolaire, aucun accord de contribution à signer.]]

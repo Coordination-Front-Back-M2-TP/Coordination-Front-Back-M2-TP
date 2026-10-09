@@ -1,0 +1,35 @@
+# Source de vérité des labels du dépôt.
+# Modifier ce fichier, puis merger sur main : le workflow labels-sync.yml applique les changements.
+# Ne pas créer de labels à la main sur GitHub.
+
+- name: "type: epic"
+  color: "5319e7"
+  description: "Grand objectif qui regroupe plusieurs user stories"
+
+- name: "type: user-story"
+  color: "1d76db"
+  description: "Fonctionnalité vue par l'utilisateur"
+
+- name: "type: tâche"
+  color: "0e8a16"
+  description: "Travail technique rattaché à une user story"
+
+- name: "type: bug"
+  color: "d73a4a"
+  description: "Comportement qui ne correspond pas à ce qui est attendu"
+
+- name: "zone: front"
+  color: "c5def5"
+  description: "Travail côté interface"
+
+- name: "zone: back"
+  color: "bfd4f2"
+  description: "Travail côté serveur et données"
+
+- name: "zone: transverse"
+  color: "fbca04"
+  description: "CI, documentation, process, coordination entre front et back"
+
+- name: "statut: bloqué"
+  color: "b60205"
+  description: "L'issue ne peut pas avancer, la raison est dans un commentaire"

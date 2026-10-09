@@ -1,0 +1,46 @@
+name: Bug
+description: Un comportement ne correspond pas à ce qui est attendu
+title: "[Bug] "
+labels: ["type: bug"]
+body:
+  - type: dropdown
+    id: zone
+    attributes:
+      label: Zone
+      description: Pose automatiquement le label de zone.
+      options:
+        - Front
+        - Back
+        - Transverse
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+  - type: textarea
+    id: constate
+    attributes:
+      label: Comportement constaté
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Étapes pour reproduire
+      value: |
+        1.
+    validations:
+      required: true
+  - type: input
+    id: us-liee
+    attributes:
+      label: User story liée
+      description: Numéro de la user story concernée, si elle existe (par exemple `#12`).
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte
+      description: Navigateur, version, environnement, capture d'écran. Facultatif.

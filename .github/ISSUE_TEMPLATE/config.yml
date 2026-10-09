@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Lire le guide de contribution
+    url: https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/blob/main/CONTRIBUTING.md
+    about: Règles de découpage, de branches et de pull requests, à lire avant d'ouvrir une issue.

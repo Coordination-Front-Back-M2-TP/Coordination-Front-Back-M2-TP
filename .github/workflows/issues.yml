@@ -1,0 +1,64 @@
+name: Automatisation des issues
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  zone:
+    name: Label de zone
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poser le label à partir du champ Zone du gabarit
+        uses: actions/github-script@v9
+        with:
+          script: |
+            // Le champ « Zone » devient une section « ### Zone » dans le corps de l'issue.
+            const zones = {
+              'Front': 'zone: front',
+              'Back': 'zone: back',
+              'Transverse': 'zone: transverse',
+            };
+            const body = context.payload.issue.body || '';
+            const match = body.match(/### Zone\s+(\S[^\n]*)/);
+            const label = match ? zones[match[1].trim()] : undefined;
+            if (!label) return;
+
+            // Retirer les autres labels de zone, au cas où le champ a changé.
+            const actuels = context.payload.issue.labels.map((l) => l.name);
+            for (const autre of Object.values(zones)) {
+              if (autre !== label && actuels.includes(autre)) {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: autre,
+                });
+              }
+            }
+
+            if (!actuels.includes(label)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [label],
+              });
+            }
+
+  board:
+    name: Ajouter au board
+    if: vars.PROJECT_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ajouter l'issue ou la PR au board du projet
+        uses: actions/add-to-project@v2.0.0
+        with:
+          project-url: ${{ vars.PROJECT_URL }}
+          github-token: ${{ secrets.PROJECT_TOKEN }}

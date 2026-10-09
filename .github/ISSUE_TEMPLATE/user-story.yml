@@ -1,0 +1,84 @@
+name: User story
+description: Une fonctionnalité décrite du point de vue de l'utilisateur
+title: "[US] "
+labels: ["type: user-story"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Une user story décrit un besoin, pas une solution technique. Au-delà de 8 points, la découper.
+  - type: input
+    id: role
+    attributes:
+      label: En tant que
+      description: Le rôle de la personne concernée.
+      placeholder: un visiteur
+    validations:
+      required: true
+  - type: input
+    id: besoin
+    attributes:
+      label: Je veux
+      description: L'action ou la fonctionnalité attendue.
+      placeholder: consulter la liste des séances
+    validations:
+      required: true
+  - type: input
+    id: benefice
+    attributes:
+      label: Afin de
+      description: Le bénéfice pour cette personne.
+      placeholder: choisir une séance à réserver
+    validations:
+      required: true
+  - type: input
+    id: epic
+    attributes:
+      label: EPIC parent
+      description: Numéro de l'EPIC (par exemple `#3`). Laisser vide si l'EPIC n'existe pas encore.
+  - type: textarea
+    id: criteres
+    attributes:
+      label: Critères d'acceptation
+      description: Chaque critère doit pouvoir se vérifier. Une case par critère.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: dropdown
+    id: estimation
+    attributes:
+      label: Estimation (points)
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+    validations:
+      required: true
+  - type: dropdown
+    id: priorite
+    attributes:
+      label: Priorité
+      options:
+        - Haute
+        - Moyenne
+        - Basse
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes techniques ou liens
+      description: Maquette, contrainte, lien vers une documentation. Facultatif.
+  - type: checkboxes
+    id: dor
+    attributes:
+      label: Définition de « prêt » (Definition of Ready)
+      description: À cocher avant de placer la user story dans un sprint. Rappel, pas une condition pour créer l'issue.
+      options:
+        - label: Le rôle, le besoin et le bénéfice sont clairs
+        - label: Les critères d'acceptation sont testables
+        - label: La user story est estimée et priorisée
+        - label: Les dépendances sont identifiées

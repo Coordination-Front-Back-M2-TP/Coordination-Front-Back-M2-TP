@@ -1,0 +1,44 @@
+name: EPIC
+description: Un grand objectif qui regroupe plusieurs user stories
+title: "[EPIC] "
+labels: ["type: epic"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Un EPIC ne se code pas directement. Il est fini quand toutes ses user stories sont terminées.
+  - type: textarea
+    id: objectif
+    attributes:
+      label: Objectif
+      description: Le problème que l'EPIC résout, ou la valeur qu'il apporte.
+    validations:
+      required: true
+  - type: textarea
+    id: perimetre
+    attributes:
+      label: Périmètre
+      description: Ce qui est inclus, et ce qui ne l'est pas.
+    validations:
+      required: true
+  - type: textarea
+    id: criteres
+    attributes:
+      label: Critères de succès
+      description: Comment savoir que l'EPIC est terminé. Une case par critère.
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: User stories liées
+      description: Une ligne par user story, avec son numéro (par exemple `- [ ] #12`). Créer les user stories avec le gabarit User story.
+      value: |
+        - [ ] #
+  - type: textarea
+    id: risques
+    attributes:
+      label: Risques et dépendances
+      description: Ce qui peut bloquer l'EPIC (autre équipe, technologie, délai). Laisser vide si rien ne bloque.
