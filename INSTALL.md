@@ -67,8 +67,8 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 
 ## 6. Vérifier que ça marche
 
-- Le back répond sur <http://localhost:3000/api/health> : `{"status":"ok"}`.
-- Le front s'ouvre sur <http://localhost:5173> : la page affiche « P1X3L » et « Back : ok ».
+- Le back répond sur `http://localhost:3000/api/health` : `{"status":"ok"}`.
+- Le front s'ouvre sur `http://localhost:5173` : la page affiche « P1X3L » et « Back : ok ».
 
 ## 7. Tests et lint
 
