@@ -1,7 +1,8 @@
 name: Déploiement continu
 
-# Notre flow (docs/strategie-de-branches.md) : chaque merge sur main part en staging,
-# un tag vX.Y.Z posé sur un commit déjà déployé en staging part en production.
+# Notre flow (docs/strategie-de-branches.md) : chaque merge sur main publie des images sur GHCR (staging),
+# un tag vX.Y.Z posé sur un commit déjà publié donne ces mêmes images à la production.
+# GitHub ne joint jamais le NAS : les images y sont tirées à la main (docs/deploiement.md).
 # Mode d'emploi et configuration : docs/deploiement.md.
 
 on:
@@ -14,26 +15,55 @@ permissions:
 
 jobs:
   staging:
-    name: Déployer en staging
+    name: Publier les images (staging)
     if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     environment:
       name: staging
       url: ${{ vars.STAGING_URL }}
-    # Un seul déploiement à la fois. Celui en cours va au bout, le plus récent attend.
+    # Une seule publication à la fois. Celle en cours va au bout, la plus récente attend.
     concurrency:
       group: deploiement-staging
       cancel-in-progress: false
+    strategy:
+      matrix:
+        partie: [front, back]
     steps:
       - uses: actions/checkout@v7
-      - name: Déployer le commit
-        run: .github/scripts/deployer.sh
-        env:
-          ENVIRONNEMENT: staging
-          VERSION: ${{ github.sha }}
-          DEPLOY_HOOK_URL: ${{ secrets.STAGING_DEPLOY_HOOK_URL }}
-          APP_URL: ${{ vars.STAGING_URL }}
-          HEALTHCHECK_URL: ${{ vars.STAGING_HEALTHCHECK_URL }}
+
+      - name: Nom de l'image
+        # GHCR n'accepte que des minuscules, et le nom de l'organisation en contient des majuscules.
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/p1x3l-${{ matrix.partie }}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v4.4.1
+
+      - uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Construire et publier
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ${{ matrix.partie }}
+          push: true
+          # sha-<commit> désigne exactement ce commit, staging suit le dernier commit publié.
+          tags: |
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:staging
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.partie }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.partie }}
+
+      - name: Résumé
+        run: |
+          echo "Image publiée : \`$IMAGE:sha-$GITHUB_SHA\` (aussi \`$IMAGE:staging\`)." >> "$GITHUB_STEP_SUMMARY"
 
   verifier:
     name: Vérifier la version
@@ -63,37 +93,56 @@ jobs:
             exit 1
           fi
 
-      - name: Le commit a été déployé en staging
+      - name: Le commit a été publié en staging
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           deploiements=$(gh run list --workflow cd.yml --commit "$GITHUB_SHA" --event push --status success \
             --json headBranch --jq '[.[] | select(.headBranch == "main" or (.headBranch | startswith("release/")))] | length')
           if [[ "$deploiements" == 0 ]]; then
-            echo "::error::Le commit $GITHUB_SHA n'a pas encore été déployé en staging. Attendre la fin de « Déployer en staging », puis relancer ce workflow."
+            echo "::error::Le commit $GITHUB_SHA n'a pas encore été publié en staging. Attendre la fin de « Publier les images (staging) », puis relancer ce workflow."
             exit 1
           fi
 
   production:
-    name: Déployer en production
+    name: Publier les images (production)
     needs: verifier
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     environment:
       name: production
       url: ${{ vars.PRODUCTION_URL }}
     concurrency:
       group: deploiement-production
       cancel-in-progress: false
+    strategy:
+      matrix:
+        partie: [front, back]
+    env:
+      TAG: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v7
-      - name: Déployer la version
-        run: .github/scripts/deployer.sh
-        env:
-          ENVIRONNEMENT: production
-          VERSION: ${{ github.ref_name }}
-          DEPLOY_HOOK_URL: ${{ secrets.PRODUCTION_DEPLOY_HOOK_URL }}
-          APP_URL: ${{ vars.PRODUCTION_URL }}
-          HEALTHCHECK_URL: ${{ vars.PRODUCTION_HEALTHCHECK_URL }}
+      - name: Nom de l'image
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/p1x3l-${{ matrix.partie }}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v4.4.1
+
+      - uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Étiqueter l'image de staging
+        # Pas de reconstruction : la production reçoit l'image exacte qui a tourné en staging.
+        # Relancer le workflow d'un ancien tag remet latest sur cette version (retour arrière).
+        run: |
+          docker buildx imagetools create \
+            --tag "$IMAGE:$TAG" \
+            --tag "$IMAGE:latest" \
+            "$IMAGE:sha-$GITHUB_SHA"
+          echo "Image de production : \`$IMAGE:$TAG\` (aussi \`$IMAGE:latest\`)." >> "$GITHUB_STEP_SUMMARY"
 
   release:
     name: Publier la release GitHub
