@@ -1,34 +1,6 @@
-<!--
-Modèle de CONTRIBUTING.md (09/10/2026). À copier à la racine d'un projet sous le nom CONTRIBUTING.md.
-Remplacer chaque [[à remplir]] (chercher « [[ » pour n'en oublier aucun), supprimer ce qui ne sert pas,
-puis supprimer ce commentaire.
-
-D'où vient ce plan
-- Les rubriques des gabarits de référence : nayafia/contributing-template (CC0), CONTRIBUTING d'Angular
-  (angular/angular) et de github/docs. Chacun répond aux mêmes questions : quelles contributions, quelles
-  règles, comment démarrer, comment signaler un bug, comment se passe la revue.
-- La gestion de projet demandée par le cours : EPIC, user stories, tâches, Definition of Ready et of Done,
-  automatisations, stratégie de branches, versions et cycle de vie des tickets (barème du TD POC, voir `TD_ POC.md`).
-- Stratégie de branches : notre flow (tronc unique, branches courtes, promotion par tags), choisi après
-  comparaison de Git Flow, GitHub flow, GitLab Flow, trunk-based et Release Flow. Analyse complète :
-  `docs/strategie-de-branches.md`. Versions : semver.org.
-- Les mots-clés `Closes #` ne ferment l'issue que si la PR vise la branche par défaut (docs GitHub) :
-  c'est `main` ici.
-- GitHub cherche le fichier dans `.github`, puis à la racine, puis dans `docs`, et en met le lien à chaque
-  nouvelle issue et nouvelle PR. Le laisser à la racine.
-  https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/setting-guidelines-for-repository-contributors
-
-Conseils
-- Garder le fichier court. Le détail (sprints, rôles, mise en place du board) va dans `docs/gestion-de-projet.md`.
-- Ne pas écrire deux fois la même liste de commandes : elle va dans `INSTALL.md`, les autres fichiers (dont
-  `AGENTS.md`) y renvoient. Les conventions de code vont dans `GUIDELINES.md`.
-- Les chemins de fichiers sont entre accents graves pour que la CI d'un dépôt qui ne les contient pas ne les
-  prenne pas pour des liens cassés. Dans le dépôt du projet, en faire de vrais liens.
--->
-
 # Contribuer à P1X3L
 
-[[Une ou deux phrases : ce que fait le projet, et à qui s'adresse ce guide (équipe, prof, contributeurs externes).]]
+P1X3L est une pixel war en équipes, en temps réel, où une IA propose des modèles à dessiner. Ce guide s'adresse à l'équipe 3L1K0PT3R et au prof : il décrit comment on travaille ensemble, du ticket au merge.
 
 Règle de base : rien n'arrive directement sur `main`. Chaque changement passe par une issue, une branche et une pull request relue.
 
@@ -38,7 +10,7 @@ Règle de base : rien n'arrive directement sur `main`. Chaque changement passe p
 - Installer le projet avec [INSTALL.md](INSTALL.md).
 - Lire [GUIDELINES.md](GUIDELINES.md) avant d'écrire du code.
 - Avoir accès au dépôt et au board : [TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1).
-- Respecter le code de conduite : [[lien, ou une phrase : respect, pas de jugement, retours précis et courtois]].
+- Respecter le code de conduite : respect, pas de jugement, retours précis et courtois.
 - Si un agent IA travaille sur le dépôt, il lit `AGENTS.md`.
 
 ## 2. Contributions attendues
@@ -47,7 +19,7 @@ Règle de base : rien n'arrive directement sur `main`. Chaque changement passe p
 - De la documentation, des tests, des retours de test.
 - Du tri de tickets : reformuler, découper, rattacher à un EPIC.
 
-Pas dans les issues : les questions d'usage. Les poser dans [[canal : messagerie, forum, cours]].
+Pas dans les issues : les questions d'usage. Les poser sur le Discord de l'équipe.
 
 ## 3. Installer et lancer le projet
 
@@ -66,7 +38,7 @@ Tout est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, t
 
 ### Cycle de vie d'un ticket
 
-Les statuts sont les options du champ `Status` du board. [[Adapter les noms aux colonnes réelles.]]
+Les statuts sont les options du champ `Status` du board.
 
 | Statut | Le ticket est ici quand | Il passe au suivant quand |
 | --- | --- | --- |
@@ -99,8 +71,8 @@ En ligne de commande, avec gh 2.94 ou plus :
 Règles :
 
 - Une issue traite un seul sujet. Chercher avant de créer : elle existe peut-être déjà.
-- Une user story estimée à plus de [[8]] points se découpe.
-- Une tâche tient en [[une à deux journées]] de travail. Au-delà, la découper.
+- Une user story estimée à plus de 8 points se découpe.
+- Une tâche tient en une à deux journées de travail. Au-delà, la découper.
 
 Une user story suit ce format :
 
@@ -108,7 +80,7 @@ Une user story suit ce format :
 
 Les critères d'acceptation disent comment savoir qu'elle est finie. Chacun se vérifie : « Étant donné…, quand…, alors… », ou une case à cocher.
 
-Un bug se signale avec le gabarit Bug : comportement attendu, comportement constaté, étapes pour reproduire, contexte. [[Une faille de sécurité ne s'ouvre pas en issue publique. Écrire à : adresse.]]
+Un bug se signale avec le gabarit Bug : comportement attendu, comportement constaté, étapes pour reproduire, contexte. Une faille de sécurité ne s'ouvre pas en issue : la signaler en message privé à un membre de l'équipe, sur Discord.
 
 ## 6. Une issue est prête (Definition of Ready)
 
@@ -133,11 +105,10 @@ Notre flow : tronc unique, branches courtes, promotion par tags. Le pourquoi (co
 - `staging` est un environnement, pas une branche : chaque merge sur `main` y est déployé.
 - La production reçoit un tag `vX.Y.Z` posé sur un commit de `main` validé en staging.
 - Correctif urgent : PR `fix/…` sur `main`, puis tag CORRECTIF. Si `main` n'est pas publiable, créer `release/X.Y` depuis le dernier tag et y reporter le correctif par cherry-pick.
-- [[Adapter si le groupe fait un autre choix, et le justifier dans docs/strategie-de-branches.md.]]
 
 Format du nom : `type/numéro-description-courte`, en minuscules, avec des tirets, sans accents ni espaces.
 
-Exemples : `feat/12-[[sujet]]`, `fix/15-[[sujet]]`, `docs/20-[[sujet]]`.
+Exemples : `feat/43-palette-et-pose`, `fix/46-delai-verifie-par-le-serveur`, `docs/66-nom-equipe-board`.
 
 ### Versions
 
@@ -151,7 +122,7 @@ Tant que le projet est en `0.y.z`, l'API n'est pas stable. La version `1.0.0` fi
 
 Le type du commit (section 8) guide le numéro : `feat` donne une version MINEUR, `fix` un CORRECTIF, et un `!` après le type (ou `BREAKING CHANGE:` dans le corps) une version MAJEUR.
 
-Une version se publie en posant un tag `v1.2.0` sur `main` : la CD la déploie en production et crée la release GitHub ([docs/deploiement.md](docs/deploiement.md)). Si plusieurs services partent en production séparément, chacun a ses tags (`api-v1.2.0`, `web-v0.4.0`). [[Qui décide de publier, et à quel moment.]]
+Une version se publie en posant un tag `v1.2.0` sur `main` : la CD la déploie en production et crée la release GitHub ([docs/deploiement.md](docs/deploiement.md)). Si plusieurs services partent en production séparément, chacun a ses tags (`api-v1.2.0`, `web-v0.4.0`). Le product owner décide de publier une version, à la revue de sprint, une fois staging vérifié.
 
 ## 8. Messages de commit et titres de PR
 
@@ -162,13 +133,13 @@ type: description
 type(zone): description
 ```
 
-Types acceptés : `feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `test`, `style`, `perf`, `build`, `revert`. Zones du projet : [[front, back, transverse]].
+Types acceptés : `feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `test`, `style`, `perf`, `build`, `revert`. Zones du projet : `front`, `back`, `transverse`.
 
-La description est en [[français]], à l'impératif, sans point final. Exemples :
+La description est en français, à l'impératif, sans point final. Exemples :
 
-- `feat([[zone]]): [[ajouter la page de connexion]]`
-- `fix([[zone]]): [[corriger le format de la date]]`
-- `docs: [[décrire le processus de revue]]`
+- `feat(front): ajouter la palette de couleurs`
+- `fix(back): refuser un pixel posé avant la fin du délai`
+- `docs: décrire le processus de revue`
 
 Le titre de la PR devient le message du commit final (squash). Il suit donc le même format.
 
@@ -184,10 +155,10 @@ Le titre de la PR devient le message du commit final (squash). Il suit donc le m
 ## 10. Revue de code
 
 - Qui relit : au moins une personne de l'équipe autre que l'auteur, qui approuve la PR (« Approve »). Seule l'approbation d'une personne qui a le droit d'écriture sur le dépôt compte.
-- Délai de première réponse : [[2 jours ouvrés]].
+- Délai de relecture : pendant une séance du cours, sur le moment. En dehors des séances, pas de délai fixe, tant que la PR est relue avant le cours suivant.
 - Ce qu'on regarde : les critères d'acceptation, le respect de [GUIDELINES.md](GUIDELINES.md), la lisibilité, les tests, la documentation, l'absence de secret.
 - Un commentaire est précis et courtois, et il dit pourquoi. L'auteur répond ou corrige. Le relecteur résout ses propres fils.
-- Qui merge : [[l'auteur après approbation / le relecteur]]. Personne ne merge sans relecture.
+- Qui merge : le relecteur, après son approbation. Personne ne merge sans relecture.
 
 ## 11. Qualité du code
 
@@ -215,7 +186,7 @@ Un EPIC est terminé quand toutes ses user stories le sont.
 ## 13. Labels
 
 - `type:` : `epic`, `user-story`, `tâche`, `bug`.
-- `zone:` : [[front, back, transverse]]. Le workflow les pose à partir du champ « Zone » du gabarit.
+- `zone:` : `front`, `back`, `transverse`. Le workflow les pose à partir du champ « Zone » du gabarit.
 - `statut: bloqué` : quand une issue ne peut pas avancer. Expliquer le blocage dans un commentaire.
 
 Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les créer à la main : le workflow de synchronisation les applique depuis ce fichier.
@@ -244,8 +215,8 @@ La mise en place (règles de branche, colonnes, vues et workflows du board) est 
 - Les questions et les décisions vont dans l'issue concernée, pas en message privé. Une personne absente doit retrouver la trace.
 - Une décision importante est aussi notée dans `docs/`.
 - Un blocage se signale tout de suite : label `statut: bloqué` et commentaire.
-- Autres canaux : [[messagerie, réunions, créneaux de questions]].
+- Autres canaux : le Discord de l'équipe, et les séances du cours.
 
 ## 16. Licence et droits
 
-[[Licence du projet, ou : projet scolaire, aucun accord de contribution à signer.]]
+Projet scolaire (Ynov, M2) : pas de licence open source, aucun accord de contribution à signer.

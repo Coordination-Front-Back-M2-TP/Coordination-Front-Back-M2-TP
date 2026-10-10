@@ -94,4 +94,4 @@ Ces réglages ne sont pas dans le code : ils se font sur GitHub. La mention « f
 6. **Milestones** (« Sprint 1 » créée le 09/10/2026, sans date) : créer les suivantes au fil des sprints, dans l'onglet Issues, Milestones. Fixer les dates avec l'équipe.
 7. **Labels** : après le premier push sur `main`, vérifier dans l'onglet Actions que « Synchroniser les labels » a tourné. Sinon, le lancer une fois (Run workflow).
 8. **Déploiement** : quand l'hébergement est choisi, créer ses secrets et variables Actions, listés dans [deploiement.md](deploiement.md). D'ici là, le workflow « Déploiement continu » tourne sans rien déployer.
-9. **Membres** : inviter les membres de l'équipe dans l'organisation. Le prof est invité en collaborateur externe, en lecture, sur le dépôt et sur le board.
+9. **Membres** (fait) : les membres de l'équipe sont dans l'organisation, et le prof a accès au dépôt et au board.
