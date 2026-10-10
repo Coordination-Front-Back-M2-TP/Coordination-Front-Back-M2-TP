@@ -2,7 +2,7 @@
 
 Ce document décrit la CD du projet : ce qui est publié, comment publier une version, et comment la mettre en ligne. Le pourquoi du flow est dans [strategie-de-branches.md](strategie-de-branches.md). Le workflow est [.github/workflows/cd.yml](../.github/workflows/cd.yml).
 
-L'application tourne sur le NAS de Theo. Pour la sécurité du NAS, GitHub ne peut pas s'y connecter : la CD publie des images Docker sur GHCR (le registre de GitHub), et le NAS les tire à la main (section 5).
+L'application tourne sur le NAS de Theo. Pour la sécurité du NAS, GitHub ne peut pas s'y connecter : la CD publie des images Docker sur GHCR (le registre de GitHub), et c'est le NAS qui vient les chercher (section 5).
 
 ## 1. Ce qui se passe tout seul
 
@@ -33,11 +33,11 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Le tag publie tout seul les images de production. Il reste à les mettre en ligne sur le NAS (section 5). Si la vérification échoue parce que staging n'avait pas fini, relancer le workflow du tag (Re-run all jobs) une fois staging terminé.
+Le tag publie tout seul les images de production. Le NAS les met en ligne dans les 10 minutes (section 5). Si la vérification échoue parce que staging n'avait pas fini, relancer le workflow du tag (Re-run all jobs) une fois staging terminé.
 
 ## 3. Revenir à la version précédente
 
-Dans l'onglet Actions, ouvrir l'exécution du workflow « Déploiement continu » de l'ancien tag, puis « Re-run all jobs ». Elle remet `latest` sur les images de ce tag. Sur le NAS, relancer la section 5 avec cet ancien tag. La release existe déjà : elle n'est pas recréée.
+Dans l'onglet Actions, ouvrir l'exécution du workflow « Déploiement continu » de l'ancien tag, puis « Re-run all jobs ». Elle remet `latest` sur les images de ce tag. Le NAS la remet en ligne dans les 10 minutes. La release existe déjà : elle n'est pas recréée.
 
 Une base de données migrée ne revient pas en arrière toute seule. [[À préciser quand le projet a une base de données.]]
 
@@ -52,20 +52,15 @@ Les variables suivantes se règlent dans Settings, Secrets and variables, Action
 | `STAGING_URL` | Variable, facultative | Adresse publique de staging |
 | `PRODUCTION_URL` | Variable, facultative | Adresse publique de la production |
 
-## 5. Mettre en ligne sur le NAS
+## 5. Mise en ligne sur le NAS
 
-Seul Theo le fait, sur le NAS. Le fichier [deploy/compose.yml](../deploy/compose.yml) décrit la production : le front (nginx) sert les fichiers construits et transmet `/api` au back, WebSocket compris. Le reverse proxy du NAS envoie le sous-domaine vers le front, port 8080, avec « Websocket Support » activé.
+Sur le NAS, Watchtower vérifie toutes les 10 minutes si l'image `latest` de `p1x3l-front` et de `p1x3l-back` a changé, et recrée le conteneur si c'est le cas. Comme `latest` ne bouge qu'au tag `vX.Y.Z`, un merge sur `main` ne touche pas la production.
 
-Le dépôt est privé, donc les images aussi : le NAS se connecte à GHCR une fois, avec un jeton personnel limité à `read:packages`.
+Le fichier [deploy/compose.yml](../deploy/compose.yml) décrit cette production : le front (nginx) sert les fichiers construits et transmet `/api` au back, WebSocket compris. Le reverse proxy du NAS envoie le sous-domaine vers le front, port 8080, avec « Websocket Support » activé. Le même fichier lance une version précise en local :
 
 ```bash
-docker login ghcr.io -u <compte GitHub>
-VERSION=v0.1.0 docker compose -f deploy/compose.yml pull
 VERSION=v0.1.0 docker compose -f deploy/compose.yml up -d
-curl -fsS https://<sous-domaine>/api/health
 ```
-
-Pour revenir en arrière, relancer les mêmes commandes avec la version précédente.
 
 ## 6. Ce qu'il reste à brancher
 
