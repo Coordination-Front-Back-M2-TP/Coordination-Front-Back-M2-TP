@@ -37,7 +37,7 @@ Ses vues :
 | --- | --- |
 | Backlog | Les tickets pas encore terminés, en tableau |
 | Board | Les colonnes ci-dessus |
-| Sprint 1 | Le board du sprint en cours (filtre sur la milestone) |
+| Sprint 1 | Le board du sprint en cours (filtre `milestone:"Sprint 1"`) |
 | EPIC | Les EPIC et l'avancement de leurs sous-issues |
 | Story map | Les user stories, en colonnes par activité et en lignes par tranche, comme la [story map](story-map.md) |
 
@@ -53,11 +53,21 @@ Ses champs, en plus de `Status` :
 
 ## 3. Sprints
 
-Un sprint est une milestone GitHub, nommée « Sprint 1 », « Sprint 2 », etc. La durée se fixe avec l'équipe et le prof.
+Un sprint est une milestone GitHub, nommée « Sprint 1 », « Sprint 2 », etc. Il va d'un cours au suivant : la milestone a pour échéance la date du cours qui termine le sprint.
+
+| Sprint | Du | Au |
+| --- | --- | --- |
+| Sprint 0 | Vendredi 9 octobre 2026 | Vendredi 9 octobre 2026 |
+| Sprint 1 | Vendredi 9 octobre 2026 | Mardi 27 octobre 2026 |
+| Sprint 2 | Mardi 27 octobre 2026 | Mardi 17 novembre 2026 |
+| Sprint 3 | Mardi 17 novembre 2026 | Jeudi 19 novembre 2026 |
+
+Le Sprint 0 est la séance du TD POC : la mise en place du projet. Le Sprint 3 ne dure que deux jours, mais l'équipe travaille surtout pendant les cours.
 
 - **Planification** : on prend dans « Prêt » les user stories que l'équipe peut tenir, mesurées en points. On leur affecte la milestone du sprint.
 - **Revue** : on montre ce qui est terminé. Ce qui ne l'est pas repart dans le sprint suivant, avec une note sur la raison.
 - **Rétrospective** : trois questions. Qu'est-ce qui a bien marché ? Qu'est-ce qui a bloqué ? Qu'est-ce qu'on change au prochain sprint ? La décision se note dans une issue ou dans ce dossier.
+- **Changement de sprint** : fermer la milestone du sprint fini. Dans le board, changer le filtre de la vue « Sprint 1 » pour la milestone suivante, et renommer la vue.
 
 ## 4. Indicateurs
 
@@ -91,7 +101,7 @@ Ces réglages ne sont pas dans le code : ils se font sur GitHub. La mention « f
    - « Auto-add sub-issues to project » : éteint. Il s'est désactivé quand « Auto-add to project » a été activé. Ce n'est pas gênant : une sous-issue est une issue du dépôt, « Auto-add to project » l'ajoute déjà.
    - « Auto-close issue » : laissé éteint. Il fermerait une issue glissée dans Terminé avant le merge de sa PR. C'est le `Closes #` de la PR qui ferme l'issue, au merge.
 5. **Ajout au board par GitHub Actions** (facultatif) : le job « Ajouter au board » de [.github/workflows/issues.yml](../.github/workflows/issues.yml) fait la même chose que « Auto-add to project ». Il est sauté tant que la variable de dépôt `PROJECT_URL` n'existe pas. Pour s'en servir : créer un jeton avec le droit d'écriture sur les projets, le stocker en secret Actions sous le nom `PROJECT_TOKEN` (jamais dans le dépôt), puis créer `PROJECT_URL` avec l'adresse du board.
-6. **Milestones** (« Sprint 1 » créée le 09/10/2026, sans date) : créer les suivantes au fil des sprints, dans l'onglet Issues, Milestones. Fixer les dates avec l'équipe.
+6. **Milestones** (fait le 10/10/2026) : « Sprint 0 » à « Sprint 3 », datées comme à la section 3. « Sprint 0 » est l'ancienne « Sprint 1 », créée le 09/10/2026 : elle regroupe la mise en place du TD POC et elle est fermée. S'il faut un sprint de plus : onglet Issues, Milestones.
 7. **Labels** : après le premier push sur `main`, vérifier dans l'onglet Actions que « Synchroniser les labels » a tourné. Sinon, le lancer une fois (Run workflow).
 8. **Déploiement** : quand l'hébergement est choisi, créer ses secrets et variables Actions, listés dans [deploiement.md](deploiement.md). D'ici là, le workflow « Déploiement continu » tourne sans rien déployer.
 9. **Membres** (fait) : les membres de l'équipe sont dans l'organisation, et le prof a accès au dépôt et au board.
