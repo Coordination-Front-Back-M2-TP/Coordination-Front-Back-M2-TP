@@ -1,15 +1,15 @@
 # Stratégie de branches : analyse et notre flow
 
-<!-- Analyse du 09/10/2026, à copier dans docs/ du dépôt du TP. Les [[…]] dépendent du sujet et de l'architecture, encore inconnus. -->
+<!-- Analyse du 09/10/2026, à copier dans docs/ du dépôt du TP. Le [[…]] restant attend le choix du fichier de contrat d'API. -->
 
 Git Flow est souvent appliqué par réflexe. Ce document part de notre contexte, compare les flows connus sur des critères explicites, puis décrit le flow que nous retenons, ce qu'il nous coûte et ce qui nous ferait changer d'avis.
 
 ## 1. Notre contexte
 
 - Une équipe de 3 personnes : un product owner, un tech lead front et un tech lead back. Tous les trois développent, sur le front comme sur le back.
-- Une application [[front et back, peut-être découpée en services]], dans [[un seul dépôt]].
+- Une application en deux parties, un front React et un back Node.js, dans un seul dépôt : `front/` et `back/`.
 - Du travail en sprints. Chaque ticket de l'outil de gestion de projet est relié à une branche et à une PR.
-- Deux environnements : staging (pré-production) et production. [[Hébergement à préciser.]]
+- Deux environnements : staging (pré-production) et production. Ils seront hébergés sur le NAS de Théo et mis à jour par Watchtower. Ce n'est pas encore en place : il n'y avait pas de code à déployer.
 - Une seule version en production à la fois : personne n'a besoin de maintenir une ancienne version.
 - Des numéros de version lisibles, au format semver.
 
@@ -66,7 +66,7 @@ prod    <- seul un tag vX.Y.Z validé en staging part en production
 2. **Une branche courte par ticket** (`type/numéro-sujet`), partie de `main`, tenue par une personne, deux jours au plus. Si ça dépasse, le ticket est trop gros : on le découpe dans l'outil de gestion de projet. Le flow et le découpage en tickets se tiennent l'un l'autre.
 3. **Merge en squash** dans `main`, puis suppression de la branche. Un ticket donne un commit lisible dans l'historique.
 4. **Le travail pas fini ne reste pas dans une branche.** Il part dans `main` caché derrière un flag de configuration, ou en branchant l'interface en dernier ([feature toggles](https://martinfowler.com/articles/feature-toggles.html)).
-5. **Staging est un environnement, pas une branche.** Chaque merge sur `main` y est déployé automatiquement ([deploiement.md](deploiement.md)). [[Hébergement à brancher.]]
+5. **Staging est un environnement, pas une branche.** Chaque merge sur `main` y est déployé automatiquement ([deploiement.md](deploiement.md)). Le déploiement sur le NAS de Théo reste à brancher.
 6. **La production reçoit un tag.** On tague `vX.Y.Z` un commit de `main` déjà validé en staging. Le tag déclenche le déploiement et la release GitHub. Le numéro suit semver, guidé par le type des commits (`feat`, `fix`, `!`).
 7. **Correctif urgent : d'abord sur `main`.** On ouvre une PR `fix/…` sur `main`. Si `main` est publiable, on pose un nouveau tag CORRECTIF. Sinon, on crée `release/X.Y` à partir du dernier tag, on y reporte le correctif par cherry-pick, et on tague depuis cette branche. Elle est supprimée quand la version quitte la production.
 8. **Le contrat entre front et back a sa propre PR.** Le contrat d'API ([[`contrat/openapi.yaml`]]) change dans une PR relue par une personne front et une personne back. Un changement cassant se fait en plusieurs temps : on ajoute le nouveau, on migre le front, puis on retire l'ancien ([parallel change](https://martinfowler.com/bliki/ParallelChange.html)). Ainsi front et back partent en production chacun à leur rythme.

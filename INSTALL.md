@@ -1,50 +1,33 @@
-<!--
-Modèle de INSTALL.md (09/10/2026). À copier à la racine d'un projet sous le nom INSTALL.md.
-Remplacer chaque [[à remplir]] (chercher « [[ » pour n'en oublier aucun), supprimer ce qui ne sert pas,
-puis supprimer ce commentaire.
-
-Rôle du fichier : tout ce qu'il faut pour passer d'un poste vide au projet lancé en local.
-Le README.md donne le contexte et renvoie ici. Le CONTRIBUTING.md dit comment travailler en équipe,
-le GUIDELINES.md comment écrire le code.
-
-Barème du TD POC (voir `TD_ POC.md`) : explications d'installation /2.
-- Une personne qui n'a jamais vu le projet doit pouvoir le lancer en suivant les étapes dans l'ordre,
-  sans deviner. Tester les étapes sur un clone neuf, si possible sur une autre machine, avant de rendre.
-- Une commande par bloc, avec le langage du bloc. Dire ce qu'on doit voir quand l'étape a marché.
-- Les commandes ne s'écrivent qu'ici : les autres fichiers renvoient vers ce fichier.
--->
-
 # Installer P1X3L
 
-Ce guide part d'un poste vide et va jusqu'au projet lancé en local. Compter [[durée]] minutes.
+Ce guide part d'un poste vide et va jusqu'au projet lancé en local : le back (API Node.js) et le front (React), chacun dans son terminal. Toutes les commandes se lancent depuis la racine du dépôt.
 
 ## 1. Prérequis
 
 | Outil | Version | Vérifier |
 | --- | --- | --- |
-| Git | [[version]] | `git --version` |
-| [[Node.js, Python, Docker…]] | [[version]] | `[[commande]]` |
+| Git | Une version récente | `git --version` |
+| Node.js, avec npm | 22.12 ou plus (testé avec la 24.14) | `node --version` |
 
-Accès nécessaires : le dépôt GitHub et le board ([TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1)). [[Autres accès : base de données de test, compte de service…]]
+Accès nécessaires : le dépôt GitHub et le board ([TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1)). Les deux sont privés : il faut y être invité.
 
 ## 2. Récupérer le code
 
+Sous Windows, choisir un dossier dont le chemin ne contient pas « & » : npm ne pourrait pas lancer ses outils (voir section 8).
+
 ```bash
-git clone git@github.com:Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP.git
+git clone https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP.git
+```
+
+```bash
 cd Coordination-Front-Back-M2-TP
 ```
 
+Le dépôt est privé : Git demande de se connecter avec un compte GitHub qui y a accès.
+
 ## 3. Configurer
 
-Copier le fichier d'exemple des variables d'environnement :
-
-```bash
-cp .env.example .env
-```
-
-| Variable | Rôle | Valeur en local |
-| --- | --- | --- |
-| `[[NOM_VARIABLE]]` | [[à quoi elle sert]] | [[valeur de développement, ou : la demander à la personne responsable]] |
+Rien à configurer pour l'instant : le projet n'a pas de fichier `.env`. Le back écoute sur le port 3000, et le front envoie ses appels `/api` vers ce port (`front/vite.config.js`). La variable `PORT` change le port du back, mais le front ne le suivrait pas : la laisser vide en local.
 
 Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de `staging` et de `production` sont dans les secrets et variables Actions du dépôt : voir [docs/deploiement.md](docs/deploiement.md).
 
@@ -53,47 +36,56 @@ Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de 
 Back :
 
 ```bash
-[[commande qui installe le back]]
+npm ci --prefix back
 ```
 
 Front :
 
 ```bash
-[[commande qui installe le front]]
+npm ci --prefix front
 ```
 
-[[Si une base de données est nécessaire : comment la lancer, créer le schéma et charger les données de test.]]
+Chaque commande se termine par `added … packages`. `npm ci` installe exactement les versions du `package-lock.json`.
 
 ## 5. Lancer
 
 Back :
 
 ```bash
-[[commande qui lance le back]]
+npm run dev --prefix back
 ```
+
+Le terminal affiche `Back P1X3L prêt : http://localhost:3000/api/health`. Le back redémarre tout seul quand un fichier change.
 
 Front, dans un autre terminal :
 
 ```bash
-[[commande qui lance le front]]
+npm run dev --prefix front
 ```
+
+Vite affiche l'adresse du front : `http://localhost:5173/`.
 
 ## 6. Vérifier que ça marche
 
-- Le back répond sur [[adresse locale du back]] : [[ce qu'on doit voir]].
-- Le front s'ouvre sur [[adresse locale du front]] : [[ce qu'on doit voir]].
+- Le back répond sur `http://localhost:3000/api/health` : `{"status":"ok"}`.
+- Le front s'ouvre sur `http://localhost:5173` : la page affiche « P1X3L » et « Back : ok ».
 
 ## 7. Tests et lint
 
 | But | Commande |
 | --- | --- |
-| Tests | `[[commande]]` |
-| Lint et format | `[[commande]]` |
+| Tests du back | `npm test --prefix back` |
+| Lint du front | `npm run lint --prefix front` |
+| Build du front | `npm run build --prefix front` |
+
+Le front n'a pas encore de tests, et le back pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
 
 ## 8. Problèmes fréquents
 
 | Symptôme | Cause | Solution |
 | --- | --- | --- |
-| [[Le port est déjà utilisé]] | [[Un autre programme l'occupe]] | [[Changer le port dans .env]] |
+| Sous Windows, `npm run` affiche « … n'est pas reconnu en tant que commande interne ou externe », puis `Cannot find module` | Le chemin du dossier contient « & » : `cmd.exe`, qu'utilise npm, coupe la commande à ce caractère | Cloner le dépôt dans un dossier sans « & » |
+| Le back s'arrête avec `EADDRINUSE` | Un autre programme occupe le port 3000, peut-être un back déjà lancé | Fermer ce programme, puis relancer le back |
+| Le front affiche « Back : injoignable » | Le back n'est pas lancé | Lancer le back (section 5) |
 
 Un problème absent de ce tableau : ouvrir une issue avec le gabarit Bug, puis l'ajouter ici une fois résolu.

@@ -70,7 +70,7 @@ Un sprint est une milestone GitHub, nommée « Sprint 1 », « Sprint 2 », etc.
 | Rôle | Personne | Responsabilité |
 | --- | --- | --- |
 | Product owner | Lucas | Ordonne le backlog, valide les user stories |
-| Coordination | À définir | Anime la planification, la revue et la rétrospective, lève les blocages |
+| Coordination | Théo | Anime la planification, la revue et la rétrospective, lève les blocages |
 | Tech lead front | Théo | Tranche les choix techniques du front, relit en priorité les PR de la zone `front` |
 | Tech lead back | Swan | Tranche les choix techniques du back, relit en priorité les PR de la zone `back` |
 

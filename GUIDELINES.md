@@ -27,8 +27,8 @@ Ces règles valent pour tout le code du dépôt. Les relecteurs s'en servent pen
 ## 2. Structure du dépôt
 
 ```text
-[[front/]]    [[application front]]
-[[back/]]     [[API]]
+front/        application React (Vite)
+back/         API Node.js (Express)
 docs/         documentation (stratégie de branches, gestion de projet)
 ```
 
@@ -48,14 +48,14 @@ Langue du code : [[anglais pour le code, français pour la documentation et les 
 
 ## 4. Front
 
-- Framework : [[nom et version]].
+- Framework : React 19 avec Vite 8.
 - [[Un composant par fichier, où vont les appels à l'API, où vit l'état de l'application.]]
 - Accessibilité : niveau [[AA]] du WCAG. Chaque champ a un libellé, tout se fait au clavier, les contrastes sont suffisants.
 - Styles : [[outil]]. Les couleurs, polices et espacements viennent de `DESIGN.md`.
 
 ## 5. Back
 
-- Framework : [[nom et version]].
+- Framework : Express 5, sur Node.js 22.12 ou plus.
 - [[Les couches : routes, logique métier, accès aux données.]]
 - Chaque entrée de l'API est validée avant d'être utilisée.
 - Une erreur renvoie le bon code HTTP et un corps au format de la section 6.
@@ -77,13 +77,13 @@ Format d'une erreur :
 
 ## 7. Tests
 
-- Outils : [[outil de test du front]], [[outil de test du back]].
+- Outils : [[outil de test du front]], `node:test` (intégré à Node.js) pour le back.
 - Une nouvelle fonctionnalité a au moins un test. Un bug corrigé reçoit un test qui l'aurait détecté.
 - Les tests passent en local avant d'ouvrir la PR. La CI les relance.
 
 ## 8. Lint et format
 
-- Outils : [[outil de lint]], [[outil de format]]. La CI les vérifie. Les commandes sont dans [INSTALL.md](INSTALL.md).
+- Outils : oxlint pour le front (pas encore de lint pour le back), [[outil de format]]. La CI les vérifie. Les commandes sont dans [INSTALL.md](INSTALL.md).
 - Une règle désactivée l'est avec un commentaire qui dit pourquoi.
 
 ## 9. Sécurité
