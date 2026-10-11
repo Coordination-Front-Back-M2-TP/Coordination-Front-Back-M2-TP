@@ -1,0 +1,34 @@
+# Production de P1X3L sur le NAS. Mode d'emploi : docs/deploiement.md, section 5.
+# VERSION choisit le tag tiré sur GHCR : vX.Y.Z, ou latest pour la dernière version publiée.
+name: p1x3l
+
+services:
+  front:
+    image: ghcr.io/coordination-front-back-m2-tp/p1x3l-front:${VERSION:?VERSION manquante}
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      back:
+        condition: service_healthy
+    networks: [public, interne]
+    deploy:
+      resources:
+        limits: { cpus: '0.25', memory: 64M }
+
+  back:
+    image: ghcr.io/coordination-front-back-m2-tp/p1x3l-back:${VERSION:?VERSION manquante}
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    networks: [interne]
+    deploy:
+      resources:
+        limits: { cpus: '0.5', memory: 256M }
+
+networks:
+  # Seuls le reverse proxy du NAS et le front y sont branchés.
+  public:
+    name: p1x3l_public
+  # Le back n'est joignable que par le front, et ne sort pas sur Internet.
+  # Quand il appellera une API externe (Jev, GPT), lui ajouter un réseau non interne.
+  interne:
+    internal: true

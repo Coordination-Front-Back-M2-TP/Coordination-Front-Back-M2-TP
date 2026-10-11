@@ -1,24 +1,28 @@
 # Déploiement continu
 
-Ce document décrit la CD du projet : ce qui part où, comment publier une version, et ce qu'il reste à brancher. Le pourquoi du flow est dans [strategie-de-branches.md](strategie-de-branches.md). Le workflow est [.github/workflows/cd.yml](../.github/workflows/cd.yml).
+Ce document décrit la CD du projet : ce qui est publié, comment publier une version, et comment la mettre en ligne. Le pourquoi du flow est dans [strategie-de-branches.md](strategie-de-branches.md). Le workflow est [.github/workflows/cd.yml](../.github/workflows/cd.yml).
+
+L'application tourne sur le NAS de Theo. Pour la sécurité du NAS, GitHub ne peut pas s'y connecter : la CD publie des images Docker sur GHCR (le registre de GitHub), et c'est le NAS qui vient les chercher (section 5).
 
 ## 1. Ce qui se passe tout seul
 
 | Événement | Job | Résultat |
 | --- | --- | --- |
-| Merge d'une PR sur `main` | Déployer en staging | Le commit part en staging |
-| Push sur une branche `release/X.Y` (correctif) | Déployer en staging | Le commit part en staging |
-| Push d'un tag `vX.Y.Z` | Vérifier la version | Le tag suit semver, il pointe sur `main` ou `release/X.Y`, et ce commit a déjà été déployé en staging |
-| Vérification réussie | Déployer en production | La version part en production |
-| Production déployée | Publier la release GitHub | La release `vX.Y.Z` est créée, avec les notes générées à partir des PR |
+| Merge d'une PR sur `main` | Publier les images (staging) | Les images `p1x3l-front` et `p1x3l-back` sont construites et publiées avec les tags `sha-<commit>` et `staging` |
+| Push sur une branche `release/X.Y` (correctif) | Publier les images (staging) | Pareil |
+| Push d'un tag `vX.Y.Z` | Vérifier la version | Le tag suit semver, il pointe sur `main` ou `release/X.Y`, et ce commit a déjà été publié en staging |
+| Vérification réussie | Publier les images (production) | Les images `sha-<commit>` reçoivent les tags `vX.Y.Z` et `latest`, sans être reconstruites |
+| Images de production publiées | Publier la release GitHub | La release `vX.Y.Z` est créée, avec les notes générées à partir des PR |
 
-Un seul déploiement tourne à la fois par environnement. Celui en cours va au bout, le suivant attend.
+Les images sont dans l'onglet Packages de l'organisation : `ghcr.io/coordination-front-back-m2-tp/p1x3l-front` et `ghcr.io/coordination-front-back-m2-tp/p1x3l-back`.
+
+Une seule publication tourne à la fois par environnement. Celle en cours va au bout, la suivante attend.
 
 Un tag avec un suffixe (`v1.0.0-rc.1`) donne une pré-release.
 
 ## 2. Mettre une version en production
 
-1. Vérifier en staging le commit à publier. L'onglet Actions, workflow « Déploiement continu », indique ce qui y tourne.
+1. Choisir un commit déjà publié en staging : l'onglet Actions, workflow « Déploiement continu », liste les publications.
 2. Choisir le numéro avec semver (section 7 de [CONTRIBUTING.md](../CONTRIBUTING.md)).
 3. Poser le tag sur ce commit et le pousser :
 
@@ -29,46 +33,37 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Le tag part tout seul en production. Si la vérification échoue parce que staging n'avait pas fini, relancer le workflow du tag (Re-run all jobs) une fois staging terminé.
+Le tag publie tout seul les images de production. Le NAS les met en ligne dans les 10 minutes (section 5). Si la vérification échoue parce que staging n'avait pas fini, relancer le workflow du tag (Re-run all jobs) une fois staging terminé.
 
 ## 3. Revenir à la version précédente
 
-Dans l'onglet Actions, ouvrir l'exécution du workflow « Déploiement continu » de l'ancien tag, puis « Re-run all jobs ». Elle redéploie ce tag en production. La release existe déjà : elle n'est pas recréée.
+Dans l'onglet Actions, ouvrir l'exécution du workflow « Déploiement continu » de l'ancien tag, puis « Re-run all jobs ». Elle remet `latest` sur les images de ce tag. Le NAS la remet en ligne dans les 10 minutes. La release existe déjà : elle n'est pas recréée.
 
 Une base de données migrée ne revient pas en arrière toute seule. [[À préciser quand le projet a une base de données.]]
 
 ## 4. Configuration
 
-Les adresses et les hooks se règlent dans GitHub, jamais dans le dépôt : Settings, Secrets and variables, Actions. Le dépôt est privé sur le plan gratuit, qui ne donne pas accès aux secrets d'environnement : tout est donc au niveau du dépôt, préfixé par l'environnement. Les environnements `staging` et `production` gardent l'historique des déploiements.
+La publication n'a besoin d'aucun secret : le workflow utilise le jeton fourni par GitHub, avec le droit `packages: write`.
+
+Les variables suivantes se règlent dans Settings, Secrets and variables, Actions. Elles servent seulement à afficher l'adresse dans les environnements GitHub.
 
 | Nom | Type | Rôle |
 | --- | --- | --- |
-| `STAGING_DEPLOY_HOOK_URL` | Secret | Hook de déploiement de l'hébergeur pour staging |
-| `PRODUCTION_DEPLOY_HOOK_URL` | Secret | Hook de déploiement de l'hébergeur pour la production |
-| `STAGING_URL` | Variable | Adresse publique de staging, affichée dans GitHub |
-| `PRODUCTION_URL` | Variable | Adresse publique de la production, affichée dans GitHub |
-| `STAGING_HEALTHCHECK_URL` | Variable, facultative | Adresse vérifiée après le déploiement. Par défaut, `STAGING_URL` |
-| `PRODUCTION_HEALTHCHECK_URL` | Variable, facultative | Adresse vérifiée après le déploiement. Par défaut, `PRODUCTION_URL` |
+| `STAGING_URL` | Variable, facultative | Adresse publique de staging |
+| `PRODUCTION_URL` | Variable, facultative | Adresse publique de la production |
 
-Tant qu'un hook manque, le job passe au vert avec un avertissement « rien n'a été déployé ». Le résumé de l'exécution le dit aussi. La CD fonctionne donc dès maintenant : les vérifications de version et les releases tournent, et le déploiement s'active dès que le secret existe.
+## 5. Mise en ligne sur le NAS
 
-## 5. Comment un déploiement se fait
+Sur le NAS, Watchtower vérifie toutes les 10 minutes si l'image `latest` de `p1x3l-front` et de `p1x3l-back` a changé, et recrée le conteneur si c'est le cas. Comme `latest` ne bouge qu'au tag `vX.Y.Z`, un merge sur `main` ne touche pas la production.
 
-Le script [.github/scripts/deployer.sh](../.github/scripts/deployer.sh) fait deux choses :
+Le fichier [deploy/compose.yml](../deploy/compose.yml) décrit cette production : le front (nginx) sert les fichiers construits et transmet `/api` au back, WebSocket compris. Le reverse proxy du NAS envoie le sous-domaine vers le front, port 8080, avec « Websocket Support » activé. Le même fichier lance une version précise en local :
 
-1. Il envoie un `POST` au hook de l'environnement, avec ce corps :
-
-   ```json
-   { "environnement": "production", "version": "v0.1.0", "sha": "<commit>" }
-   ```
-
-2. Il interroge l'adresse de vérification toutes les 10 secondes, pendant 5 minutes au plus. Si elle ne répond pas, le job échoue et la release n'est pas publiée.
-
-La plupart des hébergeurs proposent un hook de déploiement (une adresse secrète qui lance un déploiement). Si celui choisi n'en a pas, remplacer l'étape « Déployer » du job par l'action de l'hébergeur, sans changer le reste du workflow.
+```bash
+VERSION=v0.1.0 docker compose -f deploy/compose.yml up -d
+```
 
 ## 6. Ce qu'il reste à brancher
 
-- **Hébergement** : [[à choisir avec l'équipe]]. Puis créer les secrets et les variables de la section 4.
-- **Version déployée** : le hook doit déployer le commit indiqué par `sha`, pas « le dernier commit de `main` ». Sinon un tag peut envoyer en production autre chose que ce qu'il désigne. [[Vérifier avec l'hébergeur choisi.]]
-- **Vérification** : elle contrôle que l'application répond, pas qu'elle tourne la nouvelle version. Une route qui renvoie la version déployée permettrait de le vérifier. [[À ajouter avec le back.]]
-- **Build** : le dépôt n'a pas encore de code. Quand la pile technique est choisie, ajouter la construction (image Docker, fichiers du front) avant l'étape « Déployer ». Si front et back partent séparément, chacun aura ses tags (`api-v1.2.0`, `web-v0.4.0`) et son job, comme le prévoit [strategie-de-branches.md](strategie-de-branches.md).
+- **Staging** : les images `staging` sont publiées à chaque merge, mais rien ne les fait tourner. [[À décider en équipe : un second sous-domaine sur le NAS, ou les lancer en local avec `VERSION=staging`.]]
+- **Version en ligne** : `/api/health` dit que le back répond, pas quelle version tourne. Une route qui renvoie la version (lue dans le label `org.opencontainers.image.revision`) permettrait de le vérifier. [[À ajouter avec le back.]]
+- **Base de données** : le compose n'en a pas encore. Elle ira dans le réseau `interne`, avec un volume pour ses données.
