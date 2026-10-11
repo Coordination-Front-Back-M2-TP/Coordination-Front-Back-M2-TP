@@ -2,6 +2,9 @@
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+# Commit de l'image, renvoyé par /api/health : on voit ce qui tourne vraiment en production.
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY src ./src
