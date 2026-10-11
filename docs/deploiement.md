@@ -71,11 +71,29 @@ Le front sert les fichiers construits et transmet `/api` au back, WebSocket comp
 
 ### Réglages du reverse proxy
 
-| Onglet | Réglage |
-| --- | --- |
-| Details | `http`, `p1x3l_front`, port `8080`. Block Common Exploits et Websockets Support activés, Cache Assets désactivé |
-| SSL | Certificat Let's Encrypt, Force SSL et HTTP/2 activés. HSTS désactivé : le NAS l'ajoute déjà à tous les sites |
-| Advanced | `proxy_read_timeout 3600s;` et `proxy_send_timeout 3600s;` : sans eux, une connexion WebSocket inactive est coupée au bout de 60 secondes |
+Le Proxy Host de Nginx Proxy Manager, champ par champ. Un champ absent de ce tableau n'existe pas dans la fenêtre.
+
+| Onglet | Champ | Valeur |
+| --- | --- | --- |
+| Details | Domain Names | `p1x3l.theo-stoffelbach.fr` |
+| Details | Scheme | `http` : le HTTPS s'arrête au reverse proxy, la suite reste dans le réseau Docker |
+| Details | Forward Hostname / IP | `p1x3l_front` (nom du conteneur, jamais une IP) |
+| Details | Forward Port | `8080` (port interne du front) |
+| Details | Access List | Publicly Accessible |
+| Details | Cache Assets | Désactivé : il pourrait servir d'anciens fichiers après une mise à jour |
+| Details | Block Common Exploits | Activé |
+| Details | Websockets Support | Activé : le temps réel passe par WebSocket |
+| Custom Locations | (aucune) | Le front transmet déjà `/api` au back |
+| SSL | SSL Certificate | Request a new SSL Certificate (Let's Encrypt), conditions acceptées |
+| SSL | Force SSL | Activé : HTTP redirige vers HTTPS |
+| SSL | HTTP/2 Support | Activé |
+| SSL | HSTS Enabled | Désactivé : le NAS ajoute déjà cet en-tête à tous les sites, il serait en double |
+| SSL | HSTS Sub-domains | Désactivé |
+| SSL | Use DNS Challenge | Désactivé : la validation HTTP suffit |
+| SSL | Advanced → Trust Upstream Forwarded Proto Headers | Désactivé : aucun autre proxy devant |
+| Roue dentée | Custom Nginx Configuration | `proxy_read_timeout 3600s;` et `proxy_send_timeout 3600s;` : sans eux, une connexion WebSocket inactive est coupée au bout de 60 secondes |
+
+Les en-têtes de sécurité (HSTS, `X-Frame-Options`, `Referrer-Policy`…) viennent de la configuration commune du NAS : ne pas les ajouter dans la roue dentée.
 
 ### Première installation (déjà faite)
 
