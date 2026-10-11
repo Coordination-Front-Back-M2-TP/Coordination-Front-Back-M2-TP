@@ -54,9 +54,45 @@ Les variables suivantes se règlent dans Settings, Secrets and variables, Action
 
 ## 5. Mise en ligne sur le NAS
 
+La production est en ligne sur <https://p1x3l.theo-stoffelbach.fr> depuis la `v0.1.0` (11 octobre 2026).
+
 Sur le NAS, Watchtower vérifie toutes les 10 minutes si l'image `latest` de `p1x3l-front` et de `p1x3l-back` a changé, et recrée le conteneur si c'est le cas. Comme `latest` ne bouge qu'au tag `vX.Y.Z`, un merge sur `main` ne touche pas la production.
 
-Le fichier [deploy/compose.yml](../deploy/compose.yml) décrit cette production : le front (nginx) sert les fichiers construits et transmet `/api` au back, WebSocket compris. Le reverse proxy du NAS envoie le sous-domaine vers le front, port 8080, avec « Websocket Support » activé. Le même fichier lance une version précise en local :
+### Ce qui tourne
+
+| Élément | Valeur |
+| --- | --- |
+| Conteneurs | `p1x3l_front` (nginx, port 8080) et `p1x3l_back` (Express, port 3000) |
+| Réseaux | `p1x3l_public` : le reverse proxy et le front seulement. `p1x3l_internal` : le front et le back, sans accès à Internet |
+| Ports ouverts sur le NAS | Aucun : tout passe par le reverse proxy (Nginx Proxy Manager), en HTTPS |
+| Vérification | `https://p1x3l.theo-stoffelbach.fr/api/health` renvoie `{"status":"ok"}` |
+
+Le front sert les fichiers construits et transmet `/api` au back, WebSocket compris : le navigateur ne parle qu'à une seule origine, comme en local avec le proxy de Vite.
+
+### Réglages du reverse proxy
+
+| Onglet | Réglage |
+| --- | --- |
+| Details | `http`, `p1x3l_front`, port `8080`. Block Common Exploits et Websockets Support activés, Cache Assets désactivé |
+| SSL | Certificat Let's Encrypt, Force SSL et HTTP/2 activés. HSTS désactivé : le NAS l'ajoute déjà à tous les sites |
+| Advanced | `proxy_read_timeout 3600s;` et `proxy_send_timeout 3600s;` : sans eux, une connexion WebSocket inactive est coupée au bout de 60 secondes |
+
+### Première installation (déjà faite)
+
+Pour mémoire, ou pour réinstaller. Les commandes se lancent en root sur le NAS, dans `/volume2/docker/p1x3l`. Les images sont privées : `DOCKER_CONFIG` désigne les identifiants GHCR du NAS (un jeton `read:packages`). Sans lui, Docker répond `denied`.
+
+```bash
+docker network create --subnet 10.240.0.48/28 p1x3l_public
+DOCKER_CONFIG=/volume2/docker/watchtower-central docker compose pull
+DOCKER_CONFIG=/volume2/docker/watchtower-central docker compose up -d --wait
+docker network connect p1x3l_public nginx-proxy-manager
+```
+
+`manifest unknown` au `pull` veut dire que `latest` n'existe pas encore : aucun tag `vX.Y.Z` n'a été publié.
+
+### Lancer une version en local
+
+Le fichier [deploy/compose.yml](../deploy/compose.yml) reprend la production et lance une version précise :
 
 ```bash
 VERSION=v0.1.0 docker compose -f deploy/compose.yml up -d
