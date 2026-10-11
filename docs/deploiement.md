@@ -65,5 +65,4 @@ VERSION=v0.1.0 docker compose -f deploy/compose.yml up -d
 ## 6. Ce qu'il reste à brancher
 
 - **Staging** : les images `staging` sont publiées à chaque merge, mais rien ne les fait tourner. [[À décider en équipe : un second sous-domaine sur le NAS, ou les lancer en local avec `VERSION=staging`.]]
-- **Version en ligne** : `/api/health` dit que le back répond, pas quelle version tourne. Une route qui renvoie la version (lue dans le label `org.opencontainers.image.revision`) permettrait de le vérifier. [[À ajouter avec le back.]]
 - **Base de données** : le compose n'en a pas encore. Elle ira dans le réseau `interne`, avec un volume pour ses données.
