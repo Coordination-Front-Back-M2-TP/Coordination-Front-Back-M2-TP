@@ -1,9 +1,8 @@
 name: Relecture
 
-# Pose le statut « Relecture approuvée » sur le dernier commit de la PR. Il est vert quand un membre
-# de l'équipe (droit d'écriture sur le dépôt) autre que l'auteur a approuvé la PR, et que personne
-# n'attend de modifications.
-# Le dépôt privé du plan gratuit n'a pas de règle de branche : ce statut rouge est le seul verrou.
+# Le job « Relecture approuvée » échoue tant qu'une PR attend une approbation de l'équipe
+# ou qu'un membre demande des modifications. Il lit seulement les avis et les droits.
+# Le dépôt privé du plan gratuit n'a pas de règle de branche : l'équipe respecte ce contrôle avant le merge.
 
 on:
   pull_request:
@@ -13,7 +12,6 @@ on:
 
 permissions:
   pull-requests: read
-  statuses: write
 
 concurrency:
   group: relecture-${{ github.event.pull_request.number }}
@@ -21,15 +19,13 @@ concurrency:
 
 jobs:
   statut:
-    name: Calculer le statut de relecture
+    name: Relecture approuvée
     runs-on: ubuntu-latest
     steps:
-      - name: Poser le statut « Relecture approuvée »
+      - name: Vérifier les avis de l'équipe
         uses: actions/github-script@v9
         with:
           script: |
-            // Un statut de commit plutôt qu'un job : il garde le même nom quel que soit l'événement,
-            // et chaque calcul remplace le précédent.
             const pr = context.payload.pull_request;
             const reviews = await github.paginate(github.rest.pulls.listReviews, {
               owner: context.repo.owner,
@@ -63,22 +59,10 @@ jobs:
             const bloquent = avisEn('CHANGES_REQUESTED');
             const approuvent = avisEn('APPROVED');
 
-            let state = 'failure';
-            let description = "En attente de l'approbation d'un autre membre de l'équipe";
             if (bloquent.length > 0) {
-              description = `Modifications demandées par ${bloquent.join(', ')}`;
-            } else if (approuvent.length > 0) {
-              state = 'success';
-              description = `Approuvée par ${approuvent.join(', ')}`;
+              core.setFailed(`Modifications demandées par ${bloquent.join(', ')}`);
+            } else if (approuvent.length === 0) {
+              core.setFailed("En attente de l'approbation d'un autre membre de l'équipe");
+            } else {
+              core.info(`Approuvée par ${approuvent.join(', ')}`);
             }
-
-            core.info(`${state} : ${description}`);
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: pr.head.sha,
-              state,
-              context: 'Relecture approuvée',
-              description: description.slice(0, 140),
-              target_url: pr.html_url,
-            });

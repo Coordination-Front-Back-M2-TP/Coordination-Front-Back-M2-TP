@@ -37,7 +37,7 @@ Ses vues :
 | --- | --- |
 | Backlog | Les tickets pas encore terminés, en tableau |
 | Board | Les colonnes ci-dessus |
-| Sprint 1 | Le board du sprint en cours (filtre `milestone:"Sprint 1"`) |
+| Sprint 2 | Le board du sprint en cours (filtre `milestone:"Sprint 2"`) |
 | EPIC | Les EPIC et l'avancement de leurs sous-issues |
 | Story map | Les user stories, en colonnes par activité et en lignes par tranche, comme la [story map](story-map.md) |
 
@@ -50,6 +50,18 @@ Ses champs, en plus de `Status` :
 - `Labels` : `type:`, `zone:` et `statut: bloqué` (voir [CONTRIBUTING.md](../CONTRIBUTING.md), section 13).
 - `Milestone` : le sprint.
 - `Parent issue` et `Sub-issues progress` : la hiérarchie EPIC, user story, tâche.
+
+### Dépendances et orchestration
+
+Une dépendance signifie qu'une issue ne peut pas être considérée comme terminée avant une autre. Relier la tâche bloquée à son prérequis avec la relation GitHub **Blocked by** ; par exemple, « Front : afficher la toile » (#34) est bloquée par le contrat (#33). La relation apparaît dans les deux sens : #33 bloque #34, et #34 est bloquée par #33. Ne pas relier deux tâches seulement parce qu'elles appartiennent à la même user story.
+
+Pour le Sprint 2, les dépendances retenues sont :
+
+- #34 et #35 sont bloquées par leur contrat #33 ; #43 et #44 sont bloquées par leur contrat #42. Les contrats peuvent ainsi être relus avant que le front et le back avancent en parallèle.
+- La tâche de tests #95 dépend de la livraison front #43 et back #44 pour valider le parcours intégré.
+- La user story #21 dépend des user stories #15 et #18. #18 (« Créer un compte et se connecter ») n'est pas planifiée au Sprint 2 : la livraison complète de #21 dépend donc d'une décision de planification, à rendre visible plutôt qu'à masquer.
+
+Le board ne lance ni ne parallélise le travail automatiquement : il rend les prérequis visibles, mais l'équipe doit décider de l'ordre, vérifier les contrats et lever les blocages. Les tests unitaires peuvent être préparés en parallèle ; la validation intégrée attend les fonctionnalités dont elle dépend.
 
 ## 3. Sprints
 
@@ -67,7 +79,9 @@ Le Sprint 0 est la séance du TD POC : la mise en place du projet. Le Sprint 3 n
 - **Planification** : on prend dans « Prêt » les user stories que l'équipe peut tenir, mesurées en points. On leur affecte la milestone du sprint.
 - **Revue** : on montre ce qui est terminé. Ce qui ne l'est pas repart dans le sprint suivant, avec une note sur la raison.
 - **Rétrospective** : trois questions. Qu'est-ce qui a bien marché ? Qu'est-ce qui a bloqué ? Qu'est-ce qu'on change au prochain sprint ? La décision se note dans une issue ou dans ce dossier.
-- **Changement de sprint** : fermer la milestone du sprint fini. Dans le board, changer le filtre de la vue « Sprint 1 » pour la milestone suivante, et renommer la vue.
+- **Changement de sprint** : fermer la milestone du sprint fini. Dans le board, modifier le filtre de la vue du sprint courant pour la milestone suivante, puis renommer la vue.
+
+Pour le TD « Road to MVP », la répartition prévue respecte la consigne d'une story fullstack pour l'équipe et d'une pour le stagiaire : #15 « Voir la toile en direct » est portée par l'équipe ; #21 « Poser un pixel » est proposée au stagiaire. Le compte du stagiaire étant à confirmer à son arrivée, ne pas l'assigner à l'avance. La story #21 dépend aussi de #18, qui est hors du Sprint 2 ; confirmer avec l'équipe comment traiter ce prérequis avant de s'engager sur sa livraison complète.
 
 ## 4. Indicateurs
 
@@ -91,7 +105,7 @@ Tout le monde développe, Lucas compris, sur le front comme sur le back : qui pr
 Ces réglages ne sont pas dans le code : ils se font sur GitHub. La mention « fait le » indique ce qui est déjà en place.
 
 1. **Réglages du dépôt** (fait le 09/10/2026) : `main` reste la branche par défaut (sinon `Closes #` ne ferme pas les issues). Seul le merge en squash est permis, avec le titre de la PR comme message, et la branche est supprimée après le merge. Les environnements `staging` et `production` existent : ils gardent l'historique des déploiements. Le plan gratuit ne donne pas accès aux secrets d'environnement sur un dépôt privé : les secrets et variables du déploiement sont au niveau du dépôt (voir [deploiement.md](deploiement.md)). Le pourquoi de ces choix : [strategie-de-branches.md](strategie-de-branches.md).
-2. **Règle de branche sur `main`** : le dépôt est privé et l'organisation est sur le plan gratuit, qui ne permet pas de règle de branche sur un dépôt privé. La règle « tout passe par une PR relue, CI verte » est donc une règle d'équipe : personne ne pousse sur `main`, personne ne merge une PR rouge. Le contrôle « Relecture approuvée » la rend visible : il reste rouge tant qu'un autre membre n'a pas approuvé. Si le dépôt passe en public ou l'organisation sur le plan Team : Settings, Rules ou Branches, activer la PR obligatoire, une approbation minimum, et les contrôles requis « Titre au format Conventional Commits », « Issue liée », « Description complète », « Relecture approuvée », « CI terminée », « Markdown (markdownlint) », « Liens cassés (lychee) ».
+2. **Règle de branche sur `main`** : le dépôt est privé et l'organisation est sur le plan gratuit, qui ne permet pas de règle de branche sur un dépôt privé. La règle « tout passe par une PR relue, CI verte » est donc une règle d'équipe : personne ne pousse sur `main`, personne ne merge une PR rouge. Le contrôle « Relecture approuvée » la rend visible : son job échoue tant qu'un autre membre n'a pas approuvé. Sur une PR issue d'un fork, il lit les avis avec un jeton en lecture seule, sans écrire de statut. Si le dépôt passe en public ou l'organisation sur le plan Team : Settings, Rules ou Branches, activer la PR obligatoire, une approbation minimum, et les contrôles requis « Titre au format Conventional Commits », « Issue liée », « Description complète », « Relecture approuvée », « CI terminée », « Markdown (markdownlint) », « Liens cassés (lychee) ».
 3. **Board** (fait le 09/10/2026) : projet n° 1 de l'organisation, relié au dépôt. Colonnes, champs et vues décrits à la section 2. La vue Story map se règle dans View : Board, Column by `Activité`, Swimlanes `Tranche`, filtre `label:"type: user-story"`.
 4. **Workflows du board** (fait le 09/10/2026, à la main : l'API de GitHub ne permet pas de les activer). Dans le projet, menu `…`, Workflows :
    - « Auto-add to project » : ce dépôt, filtre `is:issue,pr is:open`. Chaque nouvelle issue et PR arrive sur le board, sans jeton à gérer.

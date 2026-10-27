@@ -13,6 +13,20 @@ La story map range les user stories selon le parcours des utilisateurs : les jou
 
 Hors de la carte pour l'instant : chat, application mobile native, paiement. La toile reste utilisable sur le navigateur d'un smartphone (persona Sam).
 
+## Personas et user stories
+
+Les personas personnalisés de P1X3L (Alex, Sam et Léa) sont conservés. Les deux personas imposés par le cours sont ajoutés séparément dans [personas.md](personas.md) ; le persona imposé Alex ne doit pas être confondu avec Alex, l'artiste et stratège de communauté.
+
+| Persona | Besoin relié au parcours | User stories associées et décision de périmètre |
+| --- | --- | --- |
+| Alex — artiste et stratège de communauté | Suivre la toile, préparer un dessin, coordonner sa pose et voir le délai | Voir la toile en direct (#15), voir mon délai (#22), demander un modèle à l'IA (#24), confier le modèle à mon agent (#25) |
+| Sam — joueur occasionnel | Découvrir le jeu, jouer sur smartphone et poser un pixel rapidement | Naviguer sur la toile (#16), créer un compte et se connecter (#18), poser un pixel (#21) |
+| Léa — modératrice | Surveiller la toile et intervenir sur les contenus ou comptes | Nettoyer une zone (#31), bannir un joueur et annuler ses pixels (#32) |
+| Alex — persona imposé du cours | Comparer les équipes et voir sa progression personnelle | Voir le classement des équipes (#28) ; la story de badges (#108) est proposée pour les réussites individuelles et reste à affiner dans le backlog. |
+| Margueritte — persona imposé du cours | Utiliser la toile sur un ordinateur de bureau à basse résolution | Naviguer sur la toile (#16) : son critère d'acceptation couvre l'usage en 800×600. |
+
+Le persona imposé Alex demande aussi un endroit sécurisé pour conserver ses fichiers et projets. Ce besoin est techniquement réalisable, mais le stockage général de fichiers ne fait pas partie du périmètre actuel de P1X3L. Les options examinées et la recommandation sont détaillées dans [les options de stockage pour le persona Alex](personas.md#options-de-stockage-pour-le-persona-alex). La sauvegarde des créations du jeu reste une piste future, non décidée. Pour son besoin de réussites, la story de badges #108 est proposée, mais pas encore prête ni planifiée.
+
 ## EPICs et user stories
 
 Estimations en points et priorités de départ, à revoir en équipe.
@@ -42,7 +56,7 @@ Chaque EPIC commence par une tâche transverse « contrat », rangée sous sa pr
 | User story | Front | Back |
 | --- | --- | --- |
 | Voir la toile en direct | Afficher la toile et ses mises à jour en direct | Stocker la toile, l'envoyer au chargement, diffuser chaque pixel posé |
-| Naviguer sur la toile | Zoom et déplacement, à la souris et au doigt | Aucune tâche |
+| Naviguer sur la toile | Zoom et déplacement, à la souris et au doigt ; commandes utilisables en 800×600 | Aucune tâche |
 | Créer un compte et se connecter | Pages d'inscription et de connexion, état connecté | Inscription, connexion, déconnexion, mot de passe haché, session |
 | Rejoindre une équipe | Choix de l'équipe, équipe affichée près du pseudo | API des équipes, changement au plus toutes les 5 minutes |
 | Poser un pixel | Palette et clic de pose | Vérifier les coordonnées et la couleur, enregistrer la pose |

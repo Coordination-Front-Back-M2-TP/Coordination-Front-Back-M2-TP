@@ -54,9 +54,63 @@ Les variables suivantes se règlent dans Settings, Secrets and variables, Action
 
 ## 5. Mise en ligne sur le NAS
 
+La production est en ligne sur <https://p1x3l.theo-stoffelbach.fr> depuis la `v0.1.0` (11 octobre 2026).
+
 Sur le NAS, Watchtower vérifie toutes les 10 minutes si l'image `latest` de `p1x3l-front` et de `p1x3l-back` a changé, et recrée le conteneur si c'est le cas. Comme `latest` ne bouge qu'au tag `vX.Y.Z`, un merge sur `main` ne touche pas la production.
 
-Le fichier [deploy/compose.yml](../deploy/compose.yml) décrit cette production : le front (nginx) sert les fichiers construits et transmet `/api` au back, WebSocket compris. Le reverse proxy du NAS envoie le sous-domaine vers le front, port 8080, avec « Websocket Support » activé. Le même fichier lance une version précise en local :
+### Ce qui tourne
+
+| Élément | Valeur |
+| --- | --- |
+| Conteneurs | `p1x3l_front` (nginx, port 8080) et `p1x3l_back` (Express, port 3000) |
+| Réseaux | `p1x3l_public` : le reverse proxy et le front seulement. `p1x3l_internal` : le front et le back, sans accès à Internet |
+| Ports ouverts sur le NAS | Aucun : tout passe par le reverse proxy (Nginx Proxy Manager), en HTTPS |
+| Vérification | `https://p1x3l.theo-stoffelbach.fr/api/health` renvoie `{"status":"ok"}` |
+
+Le front sert les fichiers construits et transmet `/api` au back, WebSocket compris : le navigateur ne parle qu'à une seule origine, comme en local avec le proxy de Vite.
+
+### Réglages du reverse proxy
+
+Le Proxy Host de Nginx Proxy Manager, champ par champ. Un champ absent de ce tableau n'existe pas dans la fenêtre.
+
+| Onglet | Champ | Valeur |
+| --- | --- | --- |
+| Details | Domain Names | `p1x3l.theo-stoffelbach.fr` |
+| Details | Scheme | `http` : le HTTPS s'arrête au reverse proxy, la suite reste dans le réseau Docker |
+| Details | Forward Hostname / IP | `p1x3l_front` (nom du conteneur, jamais une IP) |
+| Details | Forward Port | `8080` (port interne du front) |
+| Details | Access List | Publicly Accessible |
+| Details | Cache Assets | Désactivé : il pourrait servir d'anciens fichiers après une mise à jour |
+| Details | Block Common Exploits | Activé |
+| Details | Websockets Support | Activé : le temps réel passe par WebSocket |
+| Custom Locations | (aucune) | Le front transmet déjà `/api` au back |
+| SSL | SSL Certificate | Request a new SSL Certificate (Let's Encrypt), conditions acceptées |
+| SSL | Force SSL | Activé : HTTP redirige vers HTTPS |
+| SSL | HTTP/2 Support | Activé |
+| SSL | HSTS Enabled | Désactivé : le NAS ajoute déjà cet en-tête à tous les sites, il serait en double |
+| SSL | HSTS Sub-domains | Désactivé |
+| SSL | Use DNS Challenge | Désactivé : la validation HTTP suffit |
+| SSL | Advanced → Trust Upstream Forwarded Proto Headers | Désactivé : aucun autre proxy devant |
+| Roue dentée | Custom Nginx Configuration | `proxy_read_timeout 3600s;` et `proxy_send_timeout 3600s;` : sans eux, une connexion WebSocket inactive est coupée au bout de 60 secondes |
+
+Les en-têtes de sécurité (HSTS, `X-Frame-Options`, `Referrer-Policy`…) viennent de la configuration commune du NAS : ne pas les ajouter dans la roue dentée.
+
+### Première installation (déjà faite)
+
+Pour mémoire, ou pour réinstaller. Les commandes se lancent en root sur le NAS, dans `/volume2/docker/p1x3l`. Les images sont privées : `DOCKER_CONFIG` désigne les identifiants GHCR du NAS (un jeton `read:packages`). Sans lui, Docker répond `denied`.
+
+```bash
+docker network create --subnet 10.240.0.48/28 p1x3l_public
+DOCKER_CONFIG=/volume2/docker/watchtower-central docker compose pull
+DOCKER_CONFIG=/volume2/docker/watchtower-central docker compose up -d --wait
+docker network connect p1x3l_public nginx-proxy-manager
+```
+
+`manifest unknown` au `pull` veut dire que `latest` n'existe pas encore : aucun tag `vX.Y.Z` n'a été publié.
+
+### Lancer une version en local
+
+Le fichier [deploy/compose.yml](../deploy/compose.yml) reprend la production et lance une version précise :
 
 ```bash
 VERSION=v0.1.0 docker compose -f deploy/compose.yml up -d
