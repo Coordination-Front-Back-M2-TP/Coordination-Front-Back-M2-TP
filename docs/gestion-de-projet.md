@@ -99,7 +99,7 @@ Le Sprint 0 est la séance du TD POC : la mise en place du projet. Le Sprint 3 n
 - **Rétrospective** : trois questions. Qu'est-ce qui a bien marché ? Qu'est-ce qui a bloqué ? Qu'est-ce qu'on change au prochain sprint ? La décision se note dans une issue ou dans ce dossier.
 - **Changement de sprint** : fermer la milestone du sprint fini. Dans le board, modifier le filtre de la vue du sprint courant pour la milestone suivante, puis renommer la vue.
 
-Pour le TD « Road to MVP », la répartition prévue respecte la consigne d'une story fullstack pour l'équipe et d'une pour le stagiaire : #15 « Voir la toile en direct » est portée par l'équipe ; #21 « Poser un pixel » est proposée au stagiaire. Le compte du stagiaire étant à confirmer à son arrivée, ne pas l'assigner à l'avance. La story #21 dépend aussi de #18 « Créer un compte et se connecter » : le 27/10/2026, le product owner a ajouté #18 et ses tâches au Sprint 2 pour que #21 puisse être livrée en entier.
+Pour le TD « Road to MVP », la répartition prévue respecte la consigne d'une story fullstack pour l'équipe et d'une pour le stagiaire : #15 « Voir la toile en direct » est portée par l'équipe ; #21 « Poser un pixel » est proposée au stagiaire. L'équipe écrit d'abord son contrat (#42), pour que le stagiaire parte de routes et de messages déjà relus ; il garde le front (#43), le back (#44) et les tests (#95). Le compte du stagiaire étant à confirmer à son arrivée, ne pas l'assigner à l'avance. La story #21 dépend aussi de #18 « Créer un compte et se connecter » : le 27/10/2026, le product owner a ajouté #18 et ses tâches au Sprint 2 pour que #21 puisse être livrée en entier.
 
 ## 4. Indicateurs
 
