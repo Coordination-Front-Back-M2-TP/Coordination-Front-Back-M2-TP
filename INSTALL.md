@@ -76,11 +76,14 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 | But | Commande |
 | --- | --- |
 | Tests du back | `npm test --prefix back` |
+| Tests du front | `npm test --prefix front` |
 | Lint du front | `npm run lint --prefix front` |
 | Build du front | `npm run build --prefix front` |
 | Atelier composants (Ladle) | `npm run ladle --prefix front` |
 
-La documentation des composants front avec Ladle est décrite dans [docs/composants.md](docs/composants.md). Le front n'a pas encore de tests, et le back pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
+La documentation des composants front avec Ladle est décrite dans [docs/composants.md](docs/composants.md). Les tests front utilisent Vitest et Testing Library, avec jsdom pour le rendu React. Le back n'a pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
+
+Les états affichés lorsqu'une connexion ou un rendu échoue sont décrits dans [docs/erreurs-front.md](docs/erreurs-front.md).
 
 ## 8. Problèmes fréquents
 
