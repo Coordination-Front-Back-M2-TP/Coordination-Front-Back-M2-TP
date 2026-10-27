@@ -53,8 +53,24 @@ Ces profils sont distincts des personas personnalisés ci-dessus. En particulier
 | **Aisance avec la technologie** | Élevée. |
 | **Plateformes utilisées** | Ordinateur et mobile. |
 | **Besoin exprimé** | Conserver ses fichiers et projets importants dans un endroit sécurisé ; utiliser un site avec des réussites et de la gamification. |
-| **Correspondance avec P1X3L** | Le classement des équipes (#28) répond en partie au besoin de comparaison et de gamification. |
-| **Limites et arbitrages** | Le stockage sécurisé de fichiers ne correspond pas à la vision actuelle de P1X3L, une pixel war. Il reste hors périmètre tant que le product owner n’en décide pas autrement. Les réussites ou badges ne sont pas inclus dans le périmètre actuel ; le classement ne signifie pas qu’un système de badges est prévu. |
+| **Correspondance avec P1X3L** | Le classement des équipes (#28) répond au besoin de comparer leur progression. Une story de badges (#108) est proposée pour couvrir les réussites individuelles ; elle reste à affiner et n'est pas planifiée. |
+| **Limites et arbitrages** | Le besoin de stockage sécurisé n’est pas couvert par le périmètre actuel. Les options examinées et la recommandation sont détaillées ci-dessous ; elles ne constituent pas une décision antérieure de l’équipe. |
+
+#### Options de stockage pour le persona Alex
+
+Le stockage sécurisé est **techniquement réalisable**. Le projet prévoit déjà des comptes (#18), mais cela ne suffit pas à en faire un espace sûr pour des fichiers : il faudrait définir ce qui peut être stocké, qui peut y accéder, combien de temps les données sont gardées, comment elles sont supprimées, et prévoir les coûts et protections adaptés. Ce n’est donc pas une impossibilité technique ; c’est une extension de produit qui n’est pas spécifiée.
+
+Pour la version actuelle, la recommandation est de **ne pas ajouter de stockage général de fichiers personnels** : la vision validée de P1X3L est une pixel war, pas un service de stockage. Les options examinées pour clarifier ce choix sont :
+
+| Option | Évaluation pour P1X3L |
+| --- | --- |
+| Stocker des fichiers et projets personnels de tout type | Non retenu pour la version actuelle : cela élargirait fortement le produit et demanderait un cadrage distinct des accès, de la conservation, de la suppression, des protections et des coûts. |
+| Sauvegarder les créations propres au jeu, par exemple des modèles en pixel art | Piste future plus cohérente avec P1X3L, mais non incluse dans les stories actuelles. À réexaminer si l’équipe veut permettre aux joueurs de retrouver leurs créations. |
+| Envoyer les fichiers vers un service de stockage tiers | Non retenu : aucune intégration ni aucun service externe ne sont prévus, et cette option introduirait des comptes, permissions et dépendances supplémentaires. |
+
+Ainsi, aucune story du périmètre actuel ne promet à Alex un espace de stockage sécurisé. Si l’équipe décide plus tard d’ajouter une option, elle devra d’abord préciser le besoin et les garanties attendues, puis créer et affiner une user story avant de planifier du développement.
+
+Pour les réussites et la gamification, le classement #28 permet de comparer les équipes, mais **ne fournit pas de badges ni de succès individuels**. La nouvelle story #108 propose des badges liés aux actions de jeu. Elle est rattachée à l'EPIC #27, mais reste dans le backlog : les critères, les badges et leurs seuils doivent être affinés et validés en équipe avant de la passer à « Prêt » ou de la planifier.
 
 ### Margueritte — Persona imposé : pharmacienne
 
