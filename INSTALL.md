@@ -75,10 +75,11 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 | But | Commande |
 | --- | --- |
 | Tests du back | `npm test --prefix back` |
+| Tests du front | `npm test --prefix front` |
 | Lint du front | `npm run lint --prefix front` |
 | Build du front | `npm run build --prefix front` |
 
-Le front n'a pas encore de tests, et le back pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
+Le back n'a pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
 
 ## 8. Problèmes fréquents
 

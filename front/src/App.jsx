@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react'
+import { getHealth } from './api/health.js'
 
 // Page de départ : elle montre si le front joint le back, ce qui valide l'installation (INSTALL.md, section 6).
 function App() {
   const [backStatus, setBackStatus] = useState('vérification…')
 
   useEffect(() => {
-    fetch('/api/health')
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(response.statusText))))
-      .then((body) => setBackStatus(body.status))
-      .catch(() => setBackStatus('injoignable'))
+    const controller = new AbortController()
+    getHealth(controller.signal)
+      .then(() => setBackStatus('ok'))
+      .catch((error) => {
+        if (error.name !== 'AbortError') setBackStatus('injoignable')
+      })
+    return () => controller.abort()
   }, [])
 
   return (
