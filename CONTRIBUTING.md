@@ -161,7 +161,17 @@ Ce flux s'applique notamment au stagiaire, qui a un accès en lecture au dépôt
 3. Ouvrir une PR dont la base est `Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP:main` et la source `<compte-github>:<nom-de-branche>`.
 4. Remplir le gabarit de PR et demander une relecture à l'équipe, comme pour toute autre PR.
 
-Ne pas essayer de pousser sur `upstream` : l'accès en lecture seule est intentionnel. L'accès au board privé est distinct de l'accès au dépôt ; le tuteur gère l'issue et l'assignation si le stagiaire ne peut pas les modifier.
+Ne pas essayer de pousser sur `upstream` : l'accès en lecture seule est intentionnel. Le stagiaire lit aussi le board en lecture seule, et le tuteur lui assigne ses tickets ([docs/onboarding.md](docs/onboarding.md), section 2).
+
+### Relire une PR de fork
+
+Un contributeur en lecture seule ne peut rien casser seul : le seul risque est qu'on merge une PR piégée. Ce qui est mergé part en staging, puis en production au prochain tag. En plus de la section 10, le relecteur vérifie :
+
+- **Les fichiers sensibles**, lus ligne à ligne : `.github/` (workflows, gabarits, labels), `AGENTS.md`, `package.json` et `package-lock.json`, `front/Dockerfile`, `back/Dockerfile` et `front/nginx.conf`. Un changement sans rapport avec le ticket est refusé.
+- **L'issue liée** : une seule ligne `Closes`, vers le ticket du contributeur. Au merge, chaque `Closes #numéro` ferme l'issue citée.
+- **Les dépendances, avant de lancer la PR en local** : une nouvelle dépendance ou un script `postinstall` s'exécute sur la machine du relecteur, avec ses accès GitHub. Tant que le diff n'est pas lu, installer avec `npm ci --ignore-scripts`.
+- **Les workflows, avant de cliquer sur « Approve and run »** : GitHub demande cette approbation avant de lancer la CI d'une PR de fork. La CI tourne alors sans secret et avec un jeton en lecture, mais elle exécute la version des workflows de la PR.
+- **Avant un tag de version** : relire ce qui a été mergé depuis un fork depuis le tag précédent.
 
 ## 10. Revue de code
 
