@@ -67,7 +67,7 @@ Sur le NAS, Watchtower vérifie toutes les 10 minutes si l'image `latest` de `p1
 | Ports ouverts sur le NAS | Aucun : tout passe par le reverse proxy (Nginx Proxy Manager), en HTTPS |
 | Vérification | `https://p1x3l.theo-stoffelbach.fr/api/health` renvoie `{"status":"ok"}` |
 
-Le front sert les fichiers construits et transmet `/api` au back, WebSocket compris : le navigateur ne parle qu'à une seule origine, comme en local avec le proxy de Vite.
+Le front sert les fichiers construits et transmet `/api` ainsi que `/socket.io/` au back, WebSocket compris : le navigateur ne parle qu'à une seule origine, comme en local avec le proxy de Vite. Le flux de la toile utilise le chemin Socket.IO par défaut `/socket.io/`.
 
 ### Réglages du reverse proxy
 
@@ -83,7 +83,7 @@ Le Proxy Host de Nginx Proxy Manager, champ par champ. Un champ absent de ce tab
 | Details | Cache Assets | Désactivé : il pourrait servir d'anciens fichiers après une mise à jour |
 | Details | Block Common Exploits | Activé |
 | Details | Websockets Support | Activé : le temps réel passe par WebSocket |
-| Custom Locations | (aucune) | Le front transmet déjà `/api` au back |
+| Custom Locations | (aucune) | Le front transmet déjà `/api` et `/socket.io/` au back |
 | SSL | SSL Certificate | Request a new SSL Certificate (Let's Encrypt), conditions acceptées |
 | SSL | Force SSL | Activé : HTTP redirige vers HTTPS |
 | SSL | HTTP/2 Support | Activé |
