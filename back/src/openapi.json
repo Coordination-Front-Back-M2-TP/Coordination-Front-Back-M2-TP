@@ -1,0 +1,104 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API P1X3L",
+    "version": "0.1.0",
+    "description": "API REST du projet P1X3L (pixel war en temps réel). Documente le contrat entre le front-end React et le back-end Node.js."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Serveur local de développement"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Vérifier l'état et la version du back-end",
+        "description": "Permet au front et aux outils de surveillance de vérifier que l'API répond et d'identifier la version déployée.",
+        "responses": {
+          "200": {
+            "description": "API opérationnelle",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "ok",
+                  "version": "dev"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne du serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "Une erreur inattendue est survenue."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "version"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "État du serveur ('ok')",
+            "example": "ok"
+          },
+          "version": {
+            "type": "string",
+            "description": "Commit ou identifiant de version déployé ('dev' hors Docker)",
+            "example": "dev"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Code d'erreur machine en majuscules avec tirets bas",
+                "example": "COOLDOWN_ACTIVE"
+              },
+              "message": {
+                "type": "string",
+                "description": "Message d'erreur explicatif en français à destination de l'utilisateur",
+                "example": "Attends encore 12 secondes avant de poser un pixel."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

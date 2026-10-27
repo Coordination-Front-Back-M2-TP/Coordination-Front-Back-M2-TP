@@ -29,14 +29,14 @@ Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réu
 
 ## Installation
 
-Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md).
+Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md). La documentation de l'API (Swagger UI) est dans [docs/api.md](docs/api.md).
 
 ## Structure du dépôt
 
 ```text
 .github/    Gabarits d'issues et de PR, labels, CI et déploiement continu
 back/       API Node.js (Express)
-docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement, onboarding, composants
+docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement, onboarding, composants, api
 front/      Application React (Vite)
 ```
 
