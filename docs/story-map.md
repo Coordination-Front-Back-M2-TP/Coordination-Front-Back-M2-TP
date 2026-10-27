@@ -25,7 +25,7 @@ Les personas personnalisés de P1X3L (Alex, Sam et Léa) sont conservés. Les de
 | Alex — persona imposé du cours | Comparer les équipes et voir leur progression | Voir le classement des équipes (#28) répond en partie au besoin de gamification. Les réussites ou badges ne sont pas prévus dans le périmètre actuel. |
 | Margueritte — persona imposé du cours | Utiliser la toile sur un ordinateur de bureau à basse résolution | Naviguer sur la toile (#16) : son critère d'acceptation couvre l'usage en 800×600. |
 
-Le persona imposé Alex demande aussi un endroit sécurisé pour conserver ses fichiers et projets. Ce besoin ne correspond pas à la vision actuelle de P1X3L, une pixel war : il reste hors périmètre, sans ajouter de fonctionnalité de stockage.
+Le persona imposé Alex demande aussi un endroit sécurisé pour conserver ses fichiers et projets. Ce besoin est techniquement réalisable, mais le stockage général de fichiers ne fait pas partie du périmètre actuel de P1X3L. Les options examinées et la recommandation sont détaillées dans [les options de stockage pour le persona Alex](personas.md#options-de-stockage-pour-le-persona-alex). La sauvegarde des créations du jeu reste une piste future, non décidée.
 
 ## EPICs et user stories
 
