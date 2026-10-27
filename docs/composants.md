@@ -1,0 +1,68 @@
+# Documentation des composants front-end
+
+Ce document présente l'outil de documentation des composants UI du front-end P1X3L, la comparaison ayant mené au choix technique, ainsi que le mode d'emploi pour visualiser et créer des stories.
+
+---
+
+## 1. Choix technique : Ladle vs Storybook
+
+Pour documenter et tester visuellement les composants React en isolation, deux outils majeurs de l'écosystème ont été étudiés : **Storybook** et **Ladle**.
+
+### Tableau comparatif
+
+| Critère | Storybook | Ladle | Choix pour P1X3L |
+| --- | --- | --- | --- |
+| Intégration Vite | Nécessite un framework spécifique (`@storybook/react-vite`) et une configuration dédiée | Intégration native avec Vite, réutilise directement `vite.config.js` | **Ladle** |
+| Temps de démarrage | Plusieurs secondes (lourd au lancement) | Instantané (< 100 ms) | **Ladle** |
+| Poids des dépendances | Plusieurs dizaines de packages, ~100 Mo+ dans `node_modules` | Très léger (1 seul package `@ladle/react`) | **Ladle** |
+| Compatibilité React 19 et Vite 8 | Historiquement plus complexe lors des montées de version majeures | Support fluide sans friction | **Ladle** |
+| Format des stories | Component Story Format (CSF) | Component Story Format (CSF) standard compatible | Égalité |
+
+### Décision validée
+
+**Ladle** est retenu comme atelier de composants pour P1X3L. Sa rapidité d'exécution, son intégration native avec Vite 8 et son empreinte minimale dans la CI permettent de développer et tester nos composants sans alourdir le projet.
+
+---
+
+## 2. Commandes et accès
+
+Toutes les commandes se lancent depuis la racine du dépôt :
+
+| Action | Commande | Description |
+| --- | --- | --- |
+| Lancer l'atelier en local | `npm run ladle --prefix front` | Démarre le serveur Ladle sur `http://localhost:61000` |
+| Construire la version statique | `npm run build:ladle --prefix front` | Génère les fichiers statiques de documentation dans `build/` |
+
+---
+
+## 3. Composants documentés
+
+### `ServerStatus`
+
+Le composant [`ServerStatus`](../front/src/components/ServerStatus.jsx) affiche l'état de la connexion entre l'application React et l'API Express :
+
+- Fichier source : `front/src/components/ServerStatus.jsx`
+- Fichier de stories : `front/src/components/ServerStatus.stories.jsx`
+
+#### États documentés
+
+- **Connecté (`Connecte`)** : le serveur répond correctement (`status = "ok"`).
+- **En cours de vérification (`EnVerification`)** : l'appel à `/api/health` est en cours (`status = "vérification…"`).
+- **Injoignable (`Injoignable`)** : l'API ne répond pas ou est arrêtée (`status = "injoignable"`).
+
+---
+
+## 4. Conventions pour ajouter un nouveau composant
+
+- Créer le composant dans `front/src/components/NomDuComposant.jsx` (nom en PascalCase conformément à [GUIDELINES.md](../GUIDELINES.md)).
+- Créer le fichier de stories attenant `front/src/components/NomDuComposant.stories.jsx`.
+- Exporter chaque variante sous forme de fonction nommée :
+
+```jsx
+import { NomDuComposant } from './NomDuComposant.jsx'
+
+export const VarianteParDefaut = () => <NomDuComposant />
+export const VarianteActive = () => <NomDuComposant actif={true} />
+```
+
+- Vérifier avec `npm run lint --prefix front` et `npm run build --prefix front` que tout compile sans avertissement.
