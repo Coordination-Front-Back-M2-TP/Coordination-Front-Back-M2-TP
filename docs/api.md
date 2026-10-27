@@ -2,6 +2,8 @@
 
 Ce document décrit la formalisation du contrat d'API pour P1X3L, la comparaison technique ayant conduit au choix d'OpenAPI/Swagger, ainsi que les points d'accès et les exemples de réponses.
 
+Le contrat proposé pour la lecture de la toile et ses événements temps réel est décrit dans [docs/contrat-api.md](contrat-api.md). Il reste à valider par le front et le back avant implémentation.
+
 ---
 
 ## 1. Choix technique : Swagger/OpenAPI vs Postman
@@ -108,7 +110,9 @@ Conformément aux conventions définies dans [GUIDELINES.md](../GUIDELINES.md) (
 {
   "error": {
     "code": "INTERNAL_SERVER_ERROR",
-    "message": "Une erreur inattendue est survenue côté serveur."
+    "message": "Une erreur inattendue est survenue."
   }
 }
 ```
+
+En production, le middleware proposé dans la PR [#110](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/pull/110) masque le message interne avec cette réponse générique. En développement, il peut ajouter `details` et `stack` à l’objet `error` pour faciliter le diagnostic.
