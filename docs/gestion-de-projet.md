@@ -31,7 +31,7 @@ Il utilise le champ `Status`. Ses colonnes :
 | En revue | Une PR est ouverte et attend une relecture |
 | Terminé | L'issue est fermée, la PR est mergée |
 
-Une tâche suit sa user story jusqu'au sprint : elle passe en Prêt en même temps qu'elle, et entre dans le même sprint. Ensuite elle avance seule : En cours quand quelqu'un se l'assigne, En revue quand sa PR est ouverte, Terminé au merge. Une tâche sans user story (réglage, documentation) passe en Prêt quand sa description et son critère de fin sont écrits.
+Une tâche suit sa user story jusqu'au sprint : elle passe en Prêt en même temps qu'elle, et entre dans le même sprint. Ensuite elle avance seule : En cours quand la personne assignée commence (elle crée sa branche), En revue quand sa PR est ouverte, Terminé au merge. Une assignation faite à la planification ne change pas le statut. Une tâche sans user story (réglage, documentation) passe en Prêt quand sa description et son critère de fin sont écrits.
 
 Un parent avance avec ses enfants. Un EPIC passe en Prêt dès qu'une de ses user stories est prête. Une user story ou un EPIC passe en En cours dès que le premier de ses enfants commence, et en Terminé quand on le ferme, une fois tous ses enfants terminés. Aucun workflow ne fait ces changements de parent : la personne qui fait avancer l'enfant met le parent à jour.
 

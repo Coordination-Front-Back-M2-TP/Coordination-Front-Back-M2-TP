@@ -43,7 +43,7 @@ Les statuts sont les options du champ `Status` du board.
 | Statut | Le ticket est ici quand | Il passe au suivant quand |
 | --- | --- | --- |
 | Backlog | Il est créé, mais pas encore prêt | La Definition of Ready est remplie (section 6) |
-| Prêt | Il attend un sprint | Quelqu'un se l'assigne |
+| Prêt | Il attend un sprint, ou que la personne assignée commence | La personne assignée commence et crée sa branche |
 | En cours | Quelqu'un travaille dessus, sur sa branche | Une PR est ouverte |
 | En revue | La PR attend une relecture | La PR est approuvée et mergée |
 | Terminé | Le merge a fermé l'issue | Fin du cycle |
