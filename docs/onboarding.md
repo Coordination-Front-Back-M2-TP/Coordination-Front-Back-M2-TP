@@ -23,19 +23,31 @@ Avant le premier jour ou dès l'arrivée, s'assurer d'avoir :
 
 | Élément | Rôle | Action |
 | --- | --- | --- |
-| Organisation GitHub | Accès au dépôt privé et au board | Être invité dans l'organisation `Coordination-Front-Back-M2-TP` |
+| Dépôt GitHub | Lire le dépôt privé et proposer une contribution depuis un fork | Recevoir un accès en lecture au dépôt amont, puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
+| Board GitHub | Consulter les tickets du stage | Vérifier séparément avec le tuteur si l'accès au projet privé peut être accordé ; l'accès au dépôt ne donne pas automatiquement accès au board. |
 | Discord de l'équipe | Communication quotidienne, questions, alertes | Rejoindre le serveur Discord de l'équipe 3L1K0PT3R |
 | Outils locaux | Git, Node.js (>= 22.12), GitHub CLI (`gh` >= 2.94) | Vérifier avec `git --version`, `node --version`, `gh --version` |
+
+Le fork privé dépend également des réglages de l'organisation GitHub. Si GitHub refuse sa création, demander au tuteur de vérifier que le fork des dépôts privés est autorisé ; ne pas demander de droit d'écriture sur le dépôt amont pour contourner ce réglage.
 
 ### Installation locale
 
 Suivre scrupuleusement le guide pas à pas dans [INSTALL.md](../INSTALL.md) :
 
-1. Cloner le dépôt dans un chemin sans caractère « & » (`git clone`).
-2. Installer les dépendances du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
-3. Lancer le back dans un terminal (`npm run dev --prefix back`, écoute sur `http://localhost:3000`).
-4. Lancer le front dans un autre terminal (`npm run dev --prefix front`, ouvre `http://localhost:5173`).
-5. Vérifier que la page d'accueil affiche « P1X3L » et « Back : ok ».
+1. Créer le fork du dépôt amont `Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP` dans son compte GitHub personnel.
+2. Cloner son fork dans un chemin sans caractère « & » :
+
+   ```bash
+   git clone https://github.com/<compte-github-du-stagiaire>/Coordination-Front-Back-M2-TP.git
+   cd Coordination-Front-Back-M2-TP
+   git remote add upstream https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP.git
+   git fetch upstream
+   ```
+
+3. Installer les dépendances du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
+4. Lancer le back dans un terminal (`npm run dev --prefix back`, écoute sur `http://localhost:3000`).
+5. Lancer le front dans un autre terminal (`npm run dev --prefix front`, ouvre `http://localhost:5173`).
+6. Vérifier que la page d'accueil affiche « P1X3L » et « Back : ok ».
 
 ---
 
@@ -74,17 +86,16 @@ Le suivi du travail se fait sur le board GitHub Projects : [TP Coordination Fron
 
 ### Choisir un ticket
 
-1. Consulter la colonne **Prêt** du board avec le maître de stage ou lors de la réunion de planification.
-2. Pour démarrer, des user stories ou tâches candidates du backlog peuvent être ciblées, par exemple :
-   - `#15` : « Voir la toile en direct » (front / Socket.IO) ;
-   - `#21` : « Poser un pixel » (pose de pixel avec respect du délai) ;
-   - Ou une tâche technique préparatoire rattachée à une user story.
-3. Le choix précis du premier ticket est validé avec le tuteur de stage.
+Pour le TD « Road to MVP », le plan respecte la consigne d'une story fullstack pour l'équipe et d'une pour le stagiaire :
+
+- `#15` « Voir la toile en direct » est la story de l'équipe ; ses tâches de contrat, front et back sont déjà réparties entre ses membres.
+- `#21` « Poser un pixel » est la story proposée au stagiaire. Son compte GitHub n'étant pas encore connu, l'issue ne lui est pas assignée à l'avance.
+
+Le tuteur confirme le ticket et son périmètre à l'arrivée du stagiaire. La story #21 dépend aussi de #18 (« Créer un compte et se connecter »), qui n'est pas planifiée au Sprint 2 : confirmer avec l'équipe comment traiter ce prérequis avant de promettre la livraison complète.
 
 ### S'assigner le ticket
 
-1. S'assigner l'issue sur GitHub (`Assignees`).
-2. Déplacer la carte sur le board dans la colonne **En cours**.
+Le stagiaire n'ayant qu'un accès en lecture au dépôt amont, il ne peut pas nécessairement s'assigner lui-même l'issue ni modifier le board. Il prévient le tuteur du ticket choisi ; un membre autorisé met à jour l'assignation et le statut du board.
 
 ---
 
@@ -94,15 +105,14 @@ Tout le flux de travail est décrit dans [CONTRIBUTING.md](../CONTRIBUTING.md). 
 
 ### Créer une branche
 
-Rien n'est poussé directement sur `main`. Chaque issue a sa propre branche courte (durée maximale : 2 jours) :
+Le stagiaire travaille dans son fork : il ne pousse jamais sur le dépôt amont. Pour partir de la dernière version de `main`, après avoir configuré `origin` sur son fork et `upstream` sur le dépôt de l'équipe :
 
 ```bash
-git checkout main
-git pull
-git checkout -b <type>/<numéro>-<description-courte>
+git fetch upstream
+git switch -c <type>/<numéro>-<description-courte> upstream/main
 ```
 
-Exemple : `feat/21-poser-un-pixel` ou `docs/92-onboarding-stagiaire`.
+Exemple : `feat/21-poser-un-pixel`. Après les commits, il pousse la branche sur son fork (`origin`) et ouvre une PR vers `main` du dépôt amont. Le détail est dans [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ### Commits réguliers et atomiques
 
