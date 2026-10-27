@@ -168,7 +168,8 @@ Le stagiaire documente son parcours tout au long du stage afin de préparer son 
 - **Coordination front/back** : exemples concrets de collaboration autour du contrat d'API et des événements temps réel.
 - **Compétences acquises** : pratique de Git (trunk-based, PRs, conventional commits), mise en œuvre des tests, CI/CD, revues de code.
 - **Difficultés et solutions** : problèmes techniques rencontrés, démarche de diagnostic et résolutions trouvées.
-- `[[à remplir : consignes détaillées, plan imposé et barème de notation fournis par le professeur]]`
+
+Cette trame aide à garder une trace des activités pendant le stage. Le plan et les critères de notation officiels seront intégrés dès que le professeur les aura communiqués ; cette proposition ne les remplace pas.
 
 ### Évaluation par le maître de stage
 
@@ -178,4 +179,5 @@ Le maître de stage (ou tuteur au sein de l'équipe 3L1K0PT3R) prépare l'évalu
 - **Qualité technique et rigueur** : respect des conventions de code ([GUIDELINES.md](../GUIDELINES.md)), écriture des tests, clarté des commits et des descriptions de PR.
 - **Autonomie et proactivité** : capacité à chercher l'information, à lever des alertes rapidement et à proposer des améliorations.
 - **Respect des délais et des engagements** : progression sur les tickets pris en charge par rapport aux estimations.
-- `[[à remplir : grille d'évaluation officielle et modalités de transmission du retour de stage]]`
+
+Ces axes constituent une base de suivi interne, pas la grille officielle de notation. Les critères définitifs et les modalités de transmission seront alignés sur les consignes du professeur lorsqu'elles auront été communiquées.
