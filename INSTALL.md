@@ -1,6 +1,6 @@
 # Installer P1X3L
 
-Ce guide part d'un poste vide et va jusqu'au projet lancé en local : le back (API Node.js) et le front (React), chacun dans son terminal. Toutes les commandes se lancent depuis la racine du dépôt.
+Ce guide part d'un poste vide et va jusqu'au projet lancé en local : le back (API Node.js) et le front (React), chacun dans son terminal. Toutes les commandes se lancent depuis la racine du dépôt. Pour le parcours d'accueil complet d'un stagiaire ou d'un nouveau membre (accès, premier ticket, conventions et retours de stage), voir [docs/onboarding.md](docs/onboarding.md).
 
 ## 1. Prérequis
 
@@ -68,6 +68,7 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 ## 6. Vérifier que ça marche
 
 - Le back répond sur `http://localhost:3000/api/health` : `{"status":"ok"}`.
+- La documentation de l'API (Swagger UI) est accessible sur `http://localhost:3000/api/docs` (détails dans [docs/api.md](docs/api.md)).
 - Le front s'ouvre sur `http://localhost:5173` : la page affiche « P1X3L » et « Back : ok ».
 
 ## 7. Tests et lint
@@ -75,10 +76,14 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 | But | Commande |
 | --- | --- |
 | Tests du back | `npm test --prefix back` |
+| Tests du front | `npm test --prefix front` |
 | Lint du front | `npm run lint --prefix front` |
 | Build du front | `npm run build --prefix front` |
+| Atelier composants (Ladle) | `npm run ladle --prefix front` |
 
-Le front n'a pas encore de tests, et le back pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
+La documentation des composants front avec Ladle est décrite dans [docs/composants.md](docs/composants.md). Les tests front utilisent Vitest et Testing Library, avec jsdom pour le rendu React. Le back n'a pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
+
+Les états affichés lorsqu'une connexion ou un rendu échoue sont décrits dans [docs/erreurs-front.md](docs/erreurs-front.md).
 
 ## 8. Problèmes fréquents
 

@@ -9,7 +9,7 @@ Règle de base : rien n'arrive directement sur `main`. Chaque changement passe p
 - Lire le [README.md](README.md) pour comprendre le projet.
 - Installer le projet avec [INSTALL.md](INSTALL.md).
 - Lire [GUIDELINES.md](GUIDELINES.md) avant d'écrire du code.
-- Avoir accès au dépôt et au board : [TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1).
+- Avoir accès au dépôt et au board : [TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1). Les contributeurs en lecture seule travaillent depuis un fork ; voir « Contribuer depuis un fork ».
 - Respecter le code de conduite : respect, pas de jugement, retours précis et courtois.
 - Si un agent IA travaille sur le dépôt, il lit `AGENTS.md`.
 
@@ -29,7 +29,7 @@ Tout est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, t
 
 1. Créer l'issue avec le bon gabarit (section 5).
 2. Vérifier qu'elle est prête (section 6).
-3. S'assigner l'issue et la passer en « En cours » sur le board.
+3. S'assigner l'issue et la passer en « En cours » sur le board, si l'on dispose des droits nécessaires. Un contributeur en lecture seule demande au tuteur de mettre à jour l'issue et le board.
 4. Créer une branche (section 7).
 5. Commiter par petites étapes (section 8).
 6. Ouvrir une pull request avec `Closes #numéro` (section 9).
@@ -90,7 +90,7 @@ Une user story entre dans un sprint seulement si :
 - les critères d'acceptation sont testables ;
 - elle a une estimation en points et une priorité ;
 - elle est rattachée à un EPIC ;
-- ses dépendances sont connues.
+- ses dépendances sont connues et les tickets bloquants sont reliés dans GitHub quand c'est possible (voir [docs/gestion-de-projet.md](docs/gestion-de-projet.md)).
 
 ## 7. Stratégie de branches et versions
 
@@ -152,6 +152,17 @@ Le titre de la PR devient le message du commit final (squash). Il suit donc le m
 - Ne pas merger si un contrôle est rouge. Le dépôt privé du plan gratuit ne permet pas de règle de branche : rien n'empêche techniquement le merge, la règle repose sur l'équipe.
 - Une PR vise `main` et se merge avec « Squash and merge » (section 7).
 
+### Contribuer depuis un fork
+
+Ce flux s'applique notamment au stagiaire, qui a un accès en lecture au dépôt amont et pousse uniquement sur son fork personnel :
+
+1. Créer une branche basée sur la dernière version de `upstream/main` (voir [docs/onboarding.md](docs/onboarding.md)).
+2. Pousser la branche sur `origin`, qui doit pointer vers le fork : `git push -u origin <nom-de-branche>`.
+3. Ouvrir une PR dont la base est `Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP:main` et la source `<compte-github>:<nom-de-branche>`.
+4. Remplir le gabarit de PR et demander une relecture à l'équipe, comme pour toute autre PR.
+
+Ne pas essayer de pousser sur `upstream` : l'accès en lecture seule est intentionnel. L'accès au board privé est distinct de l'accès au dépôt ; le tuteur gère l'issue et l'assignation si le stagiaire ne peut pas les modifier.
+
 ## 10. Revue de code
 
 - Qui relit : au moins une personne de l'équipe autre que l'auteur, qui approuve la PR (« Approve »). Seule l'approbation d'une personne qui a le droit d'écriture sur le dépôt compte.
@@ -197,7 +208,7 @@ Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les cré
 | --- | --- | --- |
 | Une issue est créée ou modifiée | Le label de zone est posé ou mis à jour | [.github/workflows/issues.yml](.github/workflows/issues.yml) |
 | Une PR est ouverte ou modifiée | Le titre, l'issue liée et le gabarit rempli sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
-| Une PR est ouverte, modifiée ou relue | Le statut « Relecture approuvée » est recalculé | [.github/workflows/relecture.yml](.github/workflows/relecture.yml) |
+| Une PR est ouverte, modifiée ou relue | Le job « Relecture approuvée » lit les avis et réussit seulement après une approbation valide | [.github/workflows/relecture.yml](.github/workflows/relecture.yml) |
 | Du code est poussé dans une PR ou sur `main` | Lint, tests et build de chaque projet Node | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
 | Un fichier Markdown change | Le format et les liens sont vérifiés | [.github/workflows/docs-ci.yml](.github/workflows/docs-ci.yml) |
 | Une PR est mergée sur `main` | Le commit est déployé en staging | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
