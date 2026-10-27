@@ -35,11 +35,11 @@ Ses vues :
 
 | Vue | Ce qu'elle montre |
 | --- | --- |
-| Backlog | Les tickets pas encore terminés, en tableau |
-| Board | Les colonnes ci-dessus |
-| Sprint 2 | Le board du sprint en cours (filtre `milestone:"Sprint 2"`) |
-| EPIC | Les EPIC et l'avancement de leurs sous-issues |
-| Story map | Les user stories, en colonnes par activité et en lignes par tranche, comme la [story map](story-map.md) |
+| Backlog | Les issues ouvertes pas encore terminées, en tableau (filtre `is:issue is:open`) |
+| Board | Les issues seulement, dans les colonnes ci-dessus (filtre `is:issue`) |
+| Sprint 2 | Les issues du sprint en cours (filtre `is:issue milestone:"Sprint 2"`) |
+| EPIC | Les EPIC et l'avancement de leurs sous-issues (filtre `is:issue label:"type: epic"`) |
+| Story map | Les user stories, en colonnes par activité et en lignes par tranche (filtre `is:issue label:"type: user-story"`), comme dans la [story map](story-map.md) |
 
 Ses champs, en plus de `Status` :
 
@@ -106,9 +106,9 @@ Ces réglages ne sont pas dans le code : ils se font sur GitHub. La mention « f
 
 1. **Réglages du dépôt** (fait le 09/10/2026) : `main` reste la branche par défaut (sinon `Closes #` ne ferme pas les issues). Seul le merge en squash est permis, avec le titre de la PR comme message, et la branche est supprimée après le merge. Les environnements `staging` et `production` existent : ils gardent l'historique des déploiements. Le plan gratuit ne donne pas accès aux secrets d'environnement sur un dépôt privé : les secrets et variables du déploiement sont au niveau du dépôt (voir [deploiement.md](deploiement.md)). Le pourquoi de ces choix : [strategie-de-branches.md](strategie-de-branches.md).
 2. **Règle de branche sur `main`** : le dépôt est privé et l'organisation est sur le plan gratuit, qui ne permet pas de règle de branche sur un dépôt privé. La règle « tout passe par une PR relue, CI verte » est donc une règle d'équipe : personne ne pousse sur `main`, personne ne merge une PR rouge. Le contrôle « Relecture approuvée » la rend visible : son job échoue tant qu'un autre membre n'a pas approuvé. Sur une PR issue d'un fork, il lit les avis avec un jeton en lecture seule, sans écrire de statut. Si le dépôt passe en public ou l'organisation sur le plan Team : Settings, Rules ou Branches, activer la PR obligatoire, une approbation minimum, et les contrôles requis « Titre au format Conventional Commits », « Issue liée », « Description complète », « Relecture approuvée », « CI terminée », « Markdown (markdownlint) », « Liens cassés (lychee) ».
-3. **Board** (fait le 09/10/2026) : projet n° 1 de l'organisation, relié au dépôt. Colonnes, champs et vues décrits à la section 2. La vue Story map se règle dans View : Board, Column by `Activité`, Swimlanes `Tranche`, filtre `label:"type: user-story"`.
-4. **Workflows du board** (fait le 09/10/2026, à la main : l'API de GitHub ne permet pas de les activer). Dans le projet, menu `…`, Workflows :
-   - « Auto-add to project » : ce dépôt, filtre `is:issue,pr is:open`. Chaque nouvelle issue et PR arrive sur le board, sans jeton à gérer.
+3. **Board** (fait le 09/10/2026) : projet n° 1 de l'organisation, relié au dépôt. Colonnes, champs et vues décrits à la section 2. La vue Story map se règle dans View : Board, Column by `Activité`, Swimlanes `Tranche`, filtre `is:issue label:"type: user-story"`.
+4. **Workflows du board** (réglés à la main : l'API de GitHub ne permet pas de les activer). Dans le projet, menu `…`, Workflows :
+   - « Auto-add to project » : ce dépôt, filtre `is:issue is:open` (filtre à appliquer dans le réglage du workflow). Seules les nouvelles issues ouvertes doivent arriver sur le board, sans jeton à gérer. Les PR restent consultables dans « Linked pull requests » sur leur issue ; « Pull request linked to issue » continue de passer l'issue en revue.
    - « Item added to project » : Status sur Backlog.
    - « Pull request linked to issue » : Status sur En revue.
    - « Item closed » et « Pull request merged » : Status sur Terminé.
