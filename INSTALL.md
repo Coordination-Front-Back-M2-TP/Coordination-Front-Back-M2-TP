@@ -1,6 +1,6 @@
 # Installer P1X3L
 
-Ce guide part d'un poste vide et va jusqu'au projet lancé en local : le back (API Node.js) et le front (React), chacun dans son terminal. Toutes les commandes se lancent depuis la racine du dépôt.
+Ce guide part d'un poste vide et va jusqu'au projet lancé en local : le back (API Node.js) et le front (React), chacun dans son terminal. Toutes les commandes se lancent depuis la racine du dépôt. Pour le parcours d'accueil complet d'un stagiaire ou d'un nouveau membre (accès, premier ticket, conventions et retours de stage), voir [docs/onboarding.md](docs/onboarding.md).
 
 ## 1. Prérequis
 
