@@ -36,7 +36,7 @@ Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuratio
 ```text
 .github/    Gabarits d'issues et de PR, labels, CI et déploiement continu
 back/       API Node.js (Express)
-docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement, onboarding
+docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement, onboarding, composants
 front/      Application React (Vite)
 ```
 
