@@ -53,7 +53,7 @@ Ces profils sont distincts des personas personnalisés ci-dessus. En particulier
 | **Aisance avec la technologie** | Élevée. |
 | **Plateformes utilisées** | Ordinateur et mobile. |
 | **Besoin exprimé** | Conserver ses fichiers et projets importants dans un endroit sécurisé ; utiliser un site avec des réussites et de la gamification. |
-| **Correspondance avec P1X3L** | Le classement des équipes (#28) répond au besoin de comparer leur progression ; il apporte une part de gamification, sans réussites ni badges. |
+| **Correspondance avec P1X3L** | Le classement des équipes (#28) répond au besoin de comparer leur progression. Une story de badges (#108) est proposée pour couvrir les réussites individuelles ; elle reste à affiner et n'est pas planifiée. |
 | **Limites et arbitrages** | Le besoin de stockage sécurisé n’est pas couvert par le périmètre actuel. Les options examinées et la recommandation sont détaillées ci-dessous ; elles ne constituent pas une décision antérieure de l’équipe. |
 
 #### Options de stockage pour le persona Alex
@@ -70,7 +70,7 @@ Pour la version actuelle, la recommandation est de **ne pas ajouter de stockage 
 
 Ainsi, aucune story du périmètre actuel ne promet à Alex un espace de stockage sécurisé. Si l’équipe décide plus tard d’ajouter une option, elle devra d’abord préciser le besoin et les garanties attendues, puis créer et affiner une user story avant de planifier du développement.
 
-Pour les réussites et la gamification, le classement #28 permet de comparer les équipes, mais **ne fournit ni badges ni succès individuels**. Ces derniers ne sont pas prévus pour la version actuelle ; leur ajout serait une décision de produit distincte.
+Pour les réussites et la gamification, le classement #28 permet de comparer les équipes, mais **ne fournit pas de badges ni de succès individuels**. La nouvelle story #108 propose des badges liés aux actions de jeu. Elle est rattachée à l'EPIC #27, mais reste dans le backlog : les critères, les badges et leurs seuils doivent être affinés et validés en équipe avant de la passer à « Prêt » ou de la planifier.
 
 ### Margueritte — Persona imposé : pharmacienne
 

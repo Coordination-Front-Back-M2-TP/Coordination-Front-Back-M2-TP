@@ -22,10 +22,10 @@ Les personas personnalisés de P1X3L (Alex, Sam et Léa) sont conservés. Les de
 | Alex — artiste et stratège de communauté | Suivre la toile, préparer un dessin, coordonner sa pose et voir le délai | Voir la toile en direct (#15), voir mon délai (#22), demander un modèle à l'IA (#24), confier le modèle à mon agent (#25) |
 | Sam — joueur occasionnel | Découvrir le jeu, jouer sur smartphone et poser un pixel rapidement | Naviguer sur la toile (#16), créer un compte et se connecter (#18), poser un pixel (#21) |
 | Léa — modératrice | Surveiller la toile et intervenir sur les contenus ou comptes | Nettoyer une zone (#31), bannir un joueur et annuler ses pixels (#32) |
-| Alex — persona imposé du cours | Comparer les équipes et voir leur progression | Voir le classement des équipes (#28) répond en partie au besoin de gamification. Les réussites ou badges ne sont pas prévus dans le périmètre actuel. |
+| Alex — persona imposé du cours | Comparer les équipes et voir sa progression personnelle | Voir le classement des équipes (#28) ; la story de badges (#108) est proposée pour les réussites individuelles et reste à affiner dans le backlog. |
 | Margueritte — persona imposé du cours | Utiliser la toile sur un ordinateur de bureau à basse résolution | Naviguer sur la toile (#16) : son critère d'acceptation couvre l'usage en 800×600. |
 
-Le persona imposé Alex demande aussi un endroit sécurisé pour conserver ses fichiers et projets. Ce besoin est techniquement réalisable, mais le stockage général de fichiers ne fait pas partie du périmètre actuel de P1X3L. Les options examinées et la recommandation sont détaillées dans [les options de stockage pour le persona Alex](personas.md#options-de-stockage-pour-le-persona-alex). La sauvegarde des créations du jeu reste une piste future, non décidée.
+Le persona imposé Alex demande aussi un endroit sécurisé pour conserver ses fichiers et projets. Ce besoin est techniquement réalisable, mais le stockage général de fichiers ne fait pas partie du périmètre actuel de P1X3L. Les options examinées et la recommandation sont détaillées dans [les options de stockage pour le persona Alex](personas.md#options-de-stockage-pour-le-persona-alex). La sauvegarde des créations du jeu reste une piste future, non décidée. Pour son besoin de réussites, la story de badges #108 est proposée, mais pas encore prête ni planifiée.
 
 ## EPICs et user stories
 
