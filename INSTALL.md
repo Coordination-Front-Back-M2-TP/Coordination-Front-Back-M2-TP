@@ -68,6 +68,7 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 ## 6. Vérifier que ça marche
 
 - Le back répond sur `http://localhost:3000/api/health` : `{"status":"ok"}`.
+- La documentation de l'API (Swagger UI) est accessible sur `http://localhost:3000/api/docs` (détails dans [docs/api.md](docs/api.md)).
 - Le front s'ouvre sur `http://localhost:5173` : la page affiche « P1X3L » et « Back : ok ».
 
 ## 7. Tests et lint
