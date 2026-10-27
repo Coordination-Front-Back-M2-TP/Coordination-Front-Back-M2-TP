@@ -55,11 +55,22 @@ Ses champs, en plus de `Status` :
 
 Une dépendance signifie qu'une issue ne peut pas être considérée comme terminée avant une autre. Relier la tâche bloquée à son prérequis avec la relation GitHub **Blocked by** ; par exemple, « Front : afficher la toile » (#34) est bloquée par le contrat (#33). La relation apparaît dans les deux sens : #33 bloque #34, et #34 est bloquée par #33. Ne pas relier deux tâches seulement parce qu'elles appartiennent à la même user story.
 
-Pour le Sprint 2, les dépendances retenues sont :
+Une user story peut respecter la Definition of Ready et être « Prêt » tout en étant bloquée par un prérequis non terminé. Le statut indique qu'elle est planifiable ; la relation **Blocked by** et le label `statut: bloqué` signalent qu'on ne peut pas encore la commencer. La personne qui planifie décide dans quel sprint placer le prérequis.
+
+Les dépendances entre user stories retenues sont :
+
+- #16 est bloquée par #15 ; #19 par #18.
+- #21 est bloquée par #15 et #18 ; #22 par #21.
+- #24 est bloquée par #15 et #18 ; #25 par #24 et #22 ; #26 par #24.
+- #28 est bloquée par #19 et #21 ; #29 par #21.
+- #31 est bloquée par #18 et #21 ; #32 par #31 (rôle admin) et #21 (historique des poses).
+- La story de badges #108, encore au backlog et à affiner, est bloquée par #18 et #21.
+
+Pour le Sprint 2, les dépendances entre tâches retenues sont :
 
 - #34 et #35 sont bloquées par leur contrat #33 ; #43 et #44 sont bloquées par leur contrat #42. Les contrats peuvent ainsi être relus avant que le front et le back avancent en parallèle.
 - La tâche de tests #95 dépend de la livraison front #43 et back #44 pour valider le parcours intégré.
-- La user story #21 dépend des user stories #15 et #18. #18 (« Créer un compte et se connecter ») n'est pas planifiée au Sprint 2 : la livraison complète de #21 dépend donc d'une décision de planification, à rendre visible plutôt qu'à masquer.
+- #21 dépend de #15 et #18. #18 (« Créer un compte et se connecter ») est prête, mais n'est pas planifiée au Sprint 2 : la livraison complète de #21 dépend d'une décision de planification.
 
 Le board ne lance ni ne parallélise le travail automatiquement : il rend les prérequis visibles, mais l'équipe doit décider de l'ordre, vérifier les contrats et lever les blocages. Les tests unitaires peuvent être préparés en parallèle ; la validation intégrée attend les fonctionnalités dont elle dépend.
 
