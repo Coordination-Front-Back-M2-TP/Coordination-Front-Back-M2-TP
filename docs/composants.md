@@ -52,6 +52,12 @@ Le composant [`ServerStatus`](../front/src/components/ServerStatus.jsx) affiche 
 
 ---
 
+### `PixelCanvas`
+
+Le composant [`PixelCanvas`](../front/src/components/PixelCanvas.jsx) affiche la toile publique avec les dimensions et les couleurs fournies par le serveur. Les cases vides sont sur un damier ; une liste textuelle donne les coordonnées et les couleurs au clavier. Le fichier `front/src/components/PixelCanvas.stories.jsx` présente une toile vide et une toile avec trois pixels. Les dimensions et couleurs des stories sont des exemples, pas une décision sur la résolution ou la palette du jeu.
+
+`LiveCanvas` gère l’abonnement, les états de connexion et le bouton de reprise sur la page d’accueil. Le protocole et ses tests sont décrits dans [toile-front.md](toile-front.md).
+
 ## 4. Conventions pour ajouter un nouveau composant
 
 - Créer le composant dans `front/src/components/NomDuComposant.jsx` (nom en PascalCase conformément à [GUIDELINES.md](../GUIDELINES.md)).

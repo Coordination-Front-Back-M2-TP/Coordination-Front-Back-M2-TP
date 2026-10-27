@@ -4,6 +4,8 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
 
+vi.mock('./api/canvas.js', () => ({ subscribeCanvas: () => () => {} }))
+
 const healthyResponse = () => ({ ok: true, json: async () => ({ status: 'ok', version: 'dev' }) })
 
 afterEach(() => {
@@ -16,14 +18,14 @@ describe('état de connexion', () => {
   it('affiche une vérification en cours tant que le serveur ne répond pas', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})))
     render(<App />)
-    expect(screen.getByRole('status').textContent).toBe('Back : vérification…')
+    expect(screen.getByText(/^Back :/).textContent).toBe('Back : vérification…')
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('affiche la connexion lorsque le serveur répond correctement', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(healthyResponse()))
     render(<App />)
-    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Back : ok'))
+    await waitFor(() => expect(screen.getByText(/^Back :/).textContent).toBe('Back : ok'))
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
@@ -44,7 +46,7 @@ describe('état de connexion', () => {
   ])('affiche un message compréhensible sans détail interne après %s', async (_case, response) => {
     vi.stubGlobal('fetch', vi.fn(response))
     render(<App />)
-    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Back : injoignable'))
+    await waitFor(() => expect(screen.getByText(/^Back :/).textContent).toBe('Back : injoignable'))
     expect(screen.getByRole('alert').textContent).toContain('Rechargez la page pour réessayer')
     expect(document.body.textContent).not.toContain('secret')
   })
@@ -63,9 +65,9 @@ describe('état de connexion', () => {
     expect(pending[0].signal.aborted).toBe(true)
 
     await act(async () => pending[1].resolve(currentResponse()))
-    await waitFor(() => expect(screen.getByRole('status').textContent).toBe(`Back : ${status}`))
+    await waitFor(() => expect(screen.getByText(/^Back :/).textContent).toBe(`Back : ${status}`))
     await act(async () => pending[0].resolve(staleResponse()))
-    expect(screen.getByRole('status').textContent).toBe(`Back : ${status}`)
+    expect(screen.getByText(/^Back :/).textContent).toBe(`Back : ${status}`)
 
     unmount()
     expect(pending[1].signal.aborted).toBe(true)

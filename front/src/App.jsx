@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getHealth } from './api/health.js'
 import { ServerStatus } from './components/ServerStatus.jsx'
+import { LiveCanvas } from './components/LiveCanvas.jsx'
 
 // Page de départ : elle montre si le front joint le back, ce qui valide l'installation (INSTALL.md, section 6).
 function App() {
@@ -26,6 +27,7 @@ function App() {
       {backStatus === 'injoignable' && (
         <p role="alert">Impossible de vérifier la connexion au serveur. Rechargez la page pour réessayer.</p>
       )}
+      <LiveCanvas />
     </main>
   )
 }
