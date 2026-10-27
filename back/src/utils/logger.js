@@ -14,6 +14,12 @@ const SENSITIVE_KEYS = new Set([
   'jwt',
 ])
 
+function isSensitiveKey(key) {
+  const normalizedKey = key.toLowerCase().replace(/[_-]/g, '')
+  return SENSITIVE_KEYS.has(normalizedKey)
+    || /(?:password|token|secret|apikey|privatekey)$/.test(normalizedKey)
+}
+
 export function sanitize(data) {
   if (data === null || data === undefined) return data
   if (typeof data !== 'object') return data
@@ -24,7 +30,7 @@ export function sanitize(data) {
 
   const clean = {}
   for (const [key, value] of Object.entries(data)) {
-    if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+    if (isSensitiveKey(key)) {
       clean[key] = '[MASQUÉ]'
     } else if (typeof value === 'object' && value !== null) {
       clean[key] = sanitize(value)

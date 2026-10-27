@@ -47,17 +47,31 @@ function createTestApp() {
   return testApp
 }
 
-test('Route inexistante renvoie 404 avec le format d’erreur standard', async (t) => {
+test('Route inexistante renvoie 404 sans refléter l’URL de la requête', async (t) => {
   const testApp = createTestApp()
   const server = testApp.listen(0)
   t.after(() => server.close())
   await once(server, 'listening')
 
-  const res = await fetch(`http://localhost:${server.address().port}/api/route-inexistante`)
-  assert.equal(res.status, 404)
-  const body = await res.json()
-  assert.equal(body.error.code, 'NOT_FOUND')
-  assert.match(body.error.message, /Route introuvable/i)
+  const originalWarn = console.warn
+  let logOutput = ''
+  console.warn = (message) => {
+    logOutput = message
+  }
+
+  try {
+    const secret = 'query-secret-that-must-not-leak'
+    const res = await fetch(`http://localhost:${server.address().port}/api/route-inexistante?token=${secret}`)
+    assert.equal(res.status, 404)
+    const body = await res.json()
+    assert.equal(body.error.code, 'NOT_FOUND')
+    assert.equal(body.error.message, 'Route introuvable.')
+    assert.doesNotMatch(JSON.stringify(body), new RegExp(secret))
+    assert.doesNotMatch(logOutput, new RegExp(secret))
+    assert.doesNotMatch(logOutput, /route-inexistante/)
+  } finally {
+    console.warn = originalWarn
+  }
 })
 
 test('Erreur opérationnelle renvoie le code HTTP et le format attendus', async (t) => {
@@ -167,6 +181,8 @@ test('La fonction sanitize filtre les données sensibles dans les objets et mét
       password: 'mon-mot-de-passe-secret',
       nested: {
         token: 'refresh-token-xyz',
+        refresh_token: 'refresh-token-xyz',
+        apiKey: 'api-key-xyz',
         publicInfo: 'visible',
       },
     },
@@ -179,5 +195,33 @@ test('La fonction sanitize filtre les données sensibles dans les objets et mét
   assert.equal(cleaned.body.password, '[MASQUÉ]')
   assert.equal(cleaned.body.username, 'Alex')
   assert.equal(cleaned.body.nested.token, '[MASQUÉ]')
+  assert.equal(cleaned.body.nested.refresh_token, '[MASQUÉ]')
+  assert.equal(cleaned.body.nested.apiKey, '[MASQUÉ]')
   assert.equal(cleaned.body.nested.publicInfo, 'visible')
+})
+
+test('Un statut HTTP invalide est remplacé par une erreur 500', async (t) => {
+  const testApp = express()
+  testApp.get('/test/invalid-status', (req, res, next) => {
+    const error = new Error('Status invalide')
+    error.status = 200
+    next(error)
+  })
+  testApp.use(notFoundHandler)
+  testApp.use(errorHandler)
+
+  const server = testApp.listen(0)
+  t.after(() => server.close())
+  await once(server, 'listening')
+
+  const originalError = console.error
+  console.error = () => {}
+  try {
+    const res = await fetch(`http://localhost:${server.address().port}/test/invalid-status`)
+    assert.equal(res.status, 500)
+    const body = await res.json()
+    assert.equal(body.error.code, 'INTERNAL_SERVER_ERROR')
+  } finally {
+    console.error = originalError
+  }
 })

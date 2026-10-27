@@ -62,7 +62,8 @@ Conformément à la règle d'or 2 et à [GUIDELINES.md](../GUIDELINES.md) (secti
 
 - **Niveaux de log** :
   - `WARN` : erreurs opérationnelles client (4xx) avec méthode, URL, statut et code d'erreur.
-  - `ERROR` : erreurs serveur inattendues (5xx) avec stack trace complète dans les logs du serveur.
+  - `ERROR` : erreurs serveur inattendues (5xx) avec les frames de stack, sans recopier le message brut de l'exception.
 - **Assainissement strict (`sanitize`)** :
   - Les en-têtes d'authentification (`authorization`, `cookie`, `set-cookie`, `x-api-key`) sont automatiquement remplacés par `[MASQUÉ]`.
-  - Les champs sensibles de corps de requête (`password`, `token`, `secret`, `key`) sont masqués récursivement avant écriture dans les logs.
+  - Les champs sensibles de corps de requête (`password`, `token`, `secret`, `key` et leurs variantes avec préfixes ou séparateurs) sont masqués récursivement avant écriture dans les logs.
+  - Les URL complètes et messages bruts d'erreur ne sont pas écrits dans les logs ; les 404 n'incluent pas non plus leur URL dans la réponse. Cela évite de journaliser des secrets transmis dans une query string ou un message d'exception.

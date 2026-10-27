@@ -3,7 +3,7 @@ import { logger } from '../utils/logger.js'
 
 // Middleware pour les routes non trouvées (404).
 export function notFoundHandler(req, res, next) {
-  next(notFound(`Route introuvable : ${req.method} ${req.originalUrl}`))
+  next(notFound('Route introuvable.'))
 }
 
 // Convertit les erreurs de base de données (ex: Prisma, SQLite) en AppError standardisées.
@@ -52,22 +52,27 @@ export function errorHandler(err, req, res, next) {
     error = normalizeDatabaseError(error)
   }
 
-  const statusCode = error.statusCode || error.status || 500
+  const requestedStatus = error.statusCode || error.status
+  const statusCode = Number.isInteger(requestedStatus) && requestedStatus >= 400 && requestedStatus <= 599
+    ? requestedStatus
+    : 500
   const isOperational = error.isOperational ?? (statusCode < 500)
   const isProd = process.env.NODE_ENV === 'production'
 
   // Journalisation sécurisée sans données sensibles
   const logMeta = {
     method: req.method,
-    url: req.originalUrl,
+    route: req.route?.path,
     statusCode,
     code: error.code || 'UNKNOWN_ERROR',
+    errorName: error.name,
   }
 
   if (statusCode >= 500 || !isOperational) {
-    logger.error(error.message, { ...logMeta, stack: error.stack })
+    const stackFrames = error.stack?.split('\n').slice(1).join('\n')
+    logger.error('Erreur serveur inattendue', { ...logMeta, stack: stackFrames })
   } else {
-    logger.warn(error.message, logMeta)
+    logger.warn('Erreur opérationnelle client', logMeta)
   }
 
   // En production, ne jamais exposer les détails internes, stacks ou messages d'erreurs 500
