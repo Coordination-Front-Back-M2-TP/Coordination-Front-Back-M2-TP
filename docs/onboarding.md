@@ -91,7 +91,7 @@ Pour le TD « Road to MVP », le plan respecte la consigne d'une story fullstack
 - `#15` « Voir la toile en direct » est la story de l'équipe ; ses tâches de contrat, front et back sont déjà réparties entre ses membres.
 - `#21` « Poser un pixel » est la story proposée au stagiaire. Son compte GitHub n'étant pas encore connu, l'issue ne lui est pas assignée à l'avance.
 
-Le tuteur confirme le ticket et son périmètre à l'arrivée du stagiaire. La story #21 dépend aussi de #18 (« Créer un compte et se connecter »), ajoutée au Sprint 2 le 27/10/2026 pour cette raison. Les tâches de #21 (#42, #43, #44 et #95) restent sans assignation jusqu'à l'arrivée du stagiaire.
+Le tuteur confirme le ticket et son périmètre à l'arrivée du stagiaire. La story #21 dépend aussi de #18 (« Créer un compte et se connecter »), ajoutée au Sprint 2 le 27/10/2026 pour cette raison. Les tâches de #21 (#42, #43, #44 et #95) restent sans assignation jusqu'à l'arrivée du stagiaire. Pour les tests (#95), le stagiaire écrit les tests de la pose avec l'outil E2E que l'équipe met en place dans #114 : il n'installe rien et ne touche pas à la CI.
 
 ### S'assigner le ticket
 

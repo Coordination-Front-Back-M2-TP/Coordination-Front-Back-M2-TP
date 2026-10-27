@@ -76,7 +76,8 @@ Les dépendances entre user stories retenues sont :
 Pour le Sprint 2, les dépendances entre tâches retenues sont :
 
 - #34 et #35 sont bloquées par leur contrat #33 ; #43 et #44 sont bloquées par leur contrat #42. Les contrats peuvent ainsi être relus avant que le front et le back avancent en parallèle.
-- La tâche de tests #95 dépend de la livraison front #43 et back #44 pour valider le parcours intégré.
+- La mise en place des tests E2E #114 (outil, commande, CI et premier scénario sur la toile) est bloquée par le back de la toile #35. Elle revient à l'équipe, pas au stagiaire.
+- La tâche de tests #95 dépend de la livraison front #43 et back #44, et de l'outil E2E de #114, pour valider le parcours intégré.
 
 Le board ne lance ni ne parallélise le travail automatiquement : il rend les prérequis visibles, mais l'équipe doit décider de l'ordre, vérifier les contrats et lever les blocages. Les tests unitaires peuvent être préparés en parallèle ; la validation intégrée attend les fonctionnalités dont elle dépend.
 
