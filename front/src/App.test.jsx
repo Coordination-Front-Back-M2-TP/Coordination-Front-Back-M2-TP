@@ -56,8 +56,9 @@ describe('état de connexion', () => {
     ['un ancien échec', () => ({ ok: false }), healthyResponse, 'ok'],
   ])('ignore %s après le redémarrage de l’effet en StrictMode', async (_case, staleResponse, currentResponse, status) => {
     const pending = []
-    vi.stubGlobal('fetch', vi.fn((_url, { signal }) => new Promise((resolve) => {
-      pending.push({ signal, resolve })
+    // Seules les requêtes de santé sont suivies ; la requête de session reste en attente.
+    vi.stubGlobal('fetch', vi.fn((url, { signal }) => new Promise((resolve) => {
+      if (url === '/api/health') pending.push({ signal, resolve })
     })))
 
     const { unmount } = render(<StrictMode><App /></StrictMode>)
@@ -71,5 +72,23 @@ describe('état de connexion', () => {
 
     unmount()
     expect(pending[1].signal.aborted).toBe(true)
+  })
+})
+
+describe('session du joueur', () => {
+  const route = (me) => vi.fn((url) => Promise.resolve(
+    url === '/api/auth/me' ? me : healthyResponse()))
+
+  it('retrouve le joueur connecté au rechargement', async () => {
+    vi.stubGlobal('fetch', route({ ok: true, status: 200, json: async () => ({ user: { pseudo: 'sam' } }) }))
+    render(<App />)
+    expect(await screen.findByText('sam')).toBeTruthy()
+    expect(screen.queryByLabelText('Mot de passe')).toBeNull()
+  })
+
+  it('propose le formulaire à un visiteur', async () => {
+    vi.stubGlobal('fetch', route({ ok: false, status: 401, json: async () => ({}) }))
+    render(<App />)
+    expect(await screen.findByLabelText('Mot de passe')).toBeTruthy()
   })
 })
