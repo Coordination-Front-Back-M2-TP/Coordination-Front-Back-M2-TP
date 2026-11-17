@@ -76,6 +76,97 @@
             }
           }
         }
+      },
+      "post": {
+        "summary": "Poser un pixel",
+        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Tant que l'authentification (#18) n'est pas branchée, la route renvoie 401.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "x",
+                  "y",
+                  "color"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "y": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$",
+                    "example": "#D93A3A"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pixel enregistré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "pixel",
+                    "cooldownEndsAt"
+                  ],
+                  "properties": {
+                    "pixel": {
+                      "$ref": "#/components/schemas/Pixel"
+                    },
+                    "cooldownEndsAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Coordonnées ou couleur invalides (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -83,28 +174,71 @@
     "schemas": {
       "CanvasSnapshot": {
         "type": "object",
-        "required": ["width", "height", "revision", "snapshotAt", "pixels"],
+        "required": [
+          "width",
+          "height",
+          "revision",
+          "snapshotAt",
+          "pixels"
+        ],
         "properties": {
-          "width": { "type": "integer", "example": 101 },
-          "height": { "type": "integer", "example": 101 },
-          "revision": { "type": "integer", "minimum": 0 },
-          "snapshotAt": { "type": "string", "format": "date-time" },
+          "width": {
+            "type": "integer",
+            "example": 101
+          },
+          "height": {
+            "type": "integer",
+            "example": 101
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "snapshotAt": {
+            "type": "string",
+            "format": "date-time"
+          },
           "pixels": {
             "type": "array",
             "maxItems": 10201,
-            "items": { "$ref": "#/components/schemas/Pixel" }
+            "items": {
+              "$ref": "#/components/schemas/Pixel"
+            }
           }
         }
       },
       "Pixel": {
         "type": "object",
-        "required": ["x", "y", "color", "updatedAt", "revision"],
+        "required": [
+          "x",
+          "y",
+          "color",
+          "updatedAt",
+          "revision"
+        ],
         "properties": {
-          "x": { "type": "integer", "minimum": -50, "maximum": 50 },
-          "y": { "type": "integer", "minimum": -50, "maximum": 50 },
-          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
-          "updatedAt": { "type": "string", "format": "date-time" },
-          "revision": { "type": "integer", "minimum": 1 }
+          "x": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          }
         }
       },
       "HealthResponse": {

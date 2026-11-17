@@ -38,7 +38,9 @@ export function createCanvasRepository(client = prisma) {
       })
     },
 
-    async savePixel({ x, y, color }) {
+    // placement (facultatif) : { accountId, teamId } de la session, inscrit dans l'historique
+    // dans la même transaction que le pixel visible.
+    async savePixel({ x, y, color }, placement = null) {
       return client.$transaction(async (transaction) => {
         const state = await transaction.canvasState.update({
           where: { id: 1 },
@@ -50,6 +52,19 @@ export function createCanvasRepository(client = prisma) {
           create: { x, y, color, updatedAt, revision: state.revision },
           update: { color, updatedAt, revision: state.revision },
         })
+        if (placement) {
+          await transaction.pixelPlacement.create({
+            data: {
+              x,
+              y,
+              color,
+              accountId: placement.accountId,
+              teamId: placement.teamId,
+              placedAt: updatedAt,
+              revision: state.revision,
+            },
+          })
+        }
 
         return toPixelRecord(pixel)
       })

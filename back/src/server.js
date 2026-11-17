@@ -8,13 +8,13 @@ import { createCanvasService } from './canvas/canvas-service.js'
 
 const CANVAS_ROOM = 'canvas'
 
-export function createCanvasServer({ repository = canvasRepository } = {}) {
+export function createCanvasServer({ repository = canvasRepository, resolvePlayer } = {}) {
   let io
   const canvasService = createCanvasService({
     repository,
     publish: (pixel) => io.to(CANVAS_ROOM).emit('pixel:updated', pixel),
   })
-  const app = createApp({ canvasService })
+  const app = createApp({ canvasService, resolvePlayer })
   const httpServer = createServer(app)
   io = new Server(httpServer)
 

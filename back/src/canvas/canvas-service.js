@@ -1,6 +1,12 @@
+import { badRequest } from '../errors/app-error.js'
+
 const MIN_COORDINATE = -50
 const MAX_COORDINATE = 50
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i
+
+function isCoordinate(value) {
+  return Number.isSafeInteger(value) && value >= MIN_COORDINATE && value <= MAX_COORDINATE
+}
 
 export function createCanvasService({ repository, publish = () => {} }) {
   return {
@@ -8,15 +14,19 @@ export function createCanvasService({ repository, publish = () => {} }) {
       return repository.getSnapshot()
     },
 
-    async savePixel(pixel) {
+    // placement : { accountId, teamId } issus de la session, pour l'historique.
+    async savePixel(pixel, placement = null) {
       if (!pixel || typeof pixel !== 'object'
-        || !Number.isSafeInteger(pixel.x) || pixel.x < MIN_COORDINATE || pixel.x > MAX_COORDINATE
-        || !Number.isSafeInteger(pixel.y) || pixel.y < MIN_COORDINATE || pixel.y > MAX_COORDINATE
+        || !isCoordinate(pixel.x) || !isCoordinate(pixel.y)
         || typeof pixel.color !== 'string' || !COLOR_PATTERN.test(pixel.color)) {
-        throw new TypeError('Pixel invalide')
+        throw badRequest('Cette case ou cette couleur n’est pas acceptée.', 'INVALID_INPUT')
       }
 
-      const savedPixel = await repository.savePixel(pixel)
+      // Seuls x, y et color sont gardés : un champ en trop dans le corps n'atteint pas la base.
+      const savedPixel = await repository.savePixel(
+        { x: pixel.x, y: pixel.y, color: pixel.color.toUpperCase() },
+        placement,
+      )
       publish(savedPixel)
       return savedPixel
     },
