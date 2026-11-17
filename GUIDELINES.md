@@ -40,7 +40,7 @@ Langue du code : anglais pour le code (noms, routes, clés JSON), français pour
 ## 5. Back
 
 - Framework : Express 5, sur Node.js 22.12 ou plus.
-- Trois couches : `routes/` lit la requête et répond, `services/` applique les règles du jeu (délai, quota, équipes), `db/` accède aux données avec Prisma.
+- Trois couches : `routes/` lit la requête et répond, `services/` applique les règles du jeu (délai, quota, équipes), `db/` accède aux données avec Prisma. En attendant la base de données, `services/` stocke la toile en mémoire. `realtime/` branche Socket.IO sur le serveur HTTP (abonnement et diffusion de la toile), sur le même port que l'API.
 - Chaque entrée de l'API est validée avant d'être utilisée.
 - Une erreur renvoie le bon code HTTP et un corps au format de la section 6.
 
