@@ -54,6 +54,28 @@ export function createCanvasRepository(client = prisma) {
         return toPixelRecord(pixel)
       })
     },
+
+    // Pose d'un pixel par un joueur : le contrat exige que l'historique, la toile
+    // et la révision soient écrits dans la même transaction.
+    async placePixel({ x, y, color, accountId, teamId }) {
+      return client.$transaction(async (transaction) => {
+        const state = await transaction.canvasState.update({
+          where: { id: 1 },
+          data: { revision: { increment: 1 } },
+        })
+        const placedAt = new Date()
+        const pixel = await transaction.pixel.upsert({
+          where: { x_y: { x, y } },
+          create: { x, y, color, updatedAt: placedAt, revision: state.revision },
+          update: { color, updatedAt: placedAt, revision: state.revision },
+        })
+        await transaction.pixelPlacement.create({
+          data: { accountId, teamId, x, y, color, placedAt, revision: state.revision },
+        })
+
+        return toPixelRecord(pixel)
+      })
+    },
   }
 }
 
