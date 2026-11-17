@@ -27,7 +27,7 @@ Le dépôt est privé : Git demande de se connecter avec un compte GitHub qui y 
 
 ## 3. Configurer
 
-Rien à configurer pour l'instant : le projet n'a pas de fichier `.env`. Le back écoute sur le port 3000, et le front envoie ses appels `/api` vers ce port (`front/vite.config.js`). La variable `PORT` change le port du back, mais le front ne le suivrait pas : la laisser vide en local.
+Le back utilise SQLite dans `back/prisma/dev.db` par défaut. Il n'y a pas de secret à configurer. Le back écoute sur le port 3000, et le front envoie ses appels `/api` vers ce port (`front/vite.config.js`). La variable `PORT` change le port du back, mais le front ne le suivrait pas : la laisser vide en local.
 
 Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de `staging` et de `production` sont dans les secrets et variables Actions du dépôt : voir [docs/deploiement.md](docs/deploiement.md).
 
@@ -46,6 +46,14 @@ npm ci --prefix front
 ```
 
 Chaque commande se termine par `added … packages`. `npm ci` installe exactement les versions du `package-lock.json`.
+
+Initialiser la base locale après l'installation :
+
+```bash
+npm run db:migrate:deploy --prefix back
+```
+
+Le serveur déployé applique automatiquement les migrations avant de démarrer.
 
 ## 5. Lancer
 
@@ -71,7 +79,7 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 - La documentation de l'API (Swagger UI) est accessible sur `http://localhost:3000/api/docs` (détails dans [docs/api.md](docs/api.md)).
 - Le front s'ouvre sur `http://localhost:5173` : la page affiche « P1X3L » et « Back : ok ».
 
-La page affiche aussi la toile en direct, dès que le back implémente le contrat de lecture et d’abonnement Socket.IO (tâche #35). Le proxy Vite transmet `/socket.io/` au port 3000, avec le passage à WebSocket. Le comportement, les états d’erreur et les tests sont décrits dans [docs/toile-front.md](docs/toile-front.md).
+La page affiche aussi la toile en direct avec le contrat de lecture et d’abonnement Socket.IO du back. Le proxy Vite transmet `/socket.io/` au port 3000, avec le passage à WebSocket. Le comportement, les états d’erreur et les tests sont décrits dans [docs/toile-front.md](docs/toile-front.md) et [docs/toile-back.md](docs/toile-back.md).
 
 ## 7. Tests et lint
 

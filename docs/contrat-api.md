@@ -1,7 +1,6 @@
 # Contrat API — découvrir la toile
 
-> **Proposition pour l’issue #33 — à relire et valider par le front et le back avant implémentation.**
-> Les routes et événements ci-dessous décrivent le contrat visé ; ils ne sont pas encore implémentés.
+> Pour livrer l’issue #35, l’implémentation reprend la proposition de résolution 101 × 101 ; l’axe Y augmente vers le bas. L’instantané contient au plus les 10 201 pixels de la toile et `canvas:error` expose uniquement un code et un message. Ces choix de livraison restent révisables par l’équipe.
 
 Ce contrat couvre la lecture de la toile et sa mise à jour en direct pour la user story [#15 — Voir la toile en direct](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/15). Il ne couvre pas la pose d’un pixel : ce parcours relève de la story #21 et de son contrat dédié.
 
@@ -9,12 +8,13 @@ Ce contrat couvre la lecture de la toile et sa mise à jour en direct pour la us
 
 - L’API HTTP est préfixée par `/api`. Les corps HTTP sont en JSON ; les clés sont en `camelCase`.
 - La consultation de la toile et l’abonnement temps réel sont publics : aucun compte n’est nécessaire pour regarder.
-- **Proposition de résolution pour la démo : 101 × 101 pixels.** Avec une origine au centre, les coordonnées vont de `-50` à `50` sur les deux axes ; `(0, 0)` est le pixel central. Cette taille est assez compacte pour un instantané JSON de démonstration et s’affiche sur un écran 800 × 600 avec une marge pour les commandes. Elle reste à confirmer par l’équipe avant implémentation.
-- `x` augmente vers la droite et `y` augmente vers le bas, pour correspondre aux coordonnées écran. Les deux bornes sont inclusives ; toute coordonnée hors de `-50..50` est invalide pour cette proposition.
+- La toile fait 101 × 101 pixels. Avec une origine au centre, les coordonnées vont de `-50` à `50` sur les deux axes ; `(0, 0)` est le pixel central. Cette taille compacte s’affiche sur un écran 800 × 600 avec une marge pour les commandes.
+- `x` augmente vers la droite et `y` augmente vers le bas, pour correspondre aux coordonnées écran. Les deux bornes sont inclusives ; toute coordonnée hors de `-50..50` est invalide.
 - `color` est une couleur hexadécimale `#RRGGBB` appartenant à la palette du jeu. La palette exacte reste à valider.
 - Les dates sont en UTC au format ISO 8601, par exemple `2026-10-27T14:30:00.000Z`.
 - Les données publiques représentent uniquement l’état visuel courant de la toile. Elles ne contiennent ni historique des poses, ni pseudo, ni identifiant de compte, ni autre identité de joueur. L’historique relève d’un contrat distinct.
 - `revision` est un entier strictement croissant pour chaque changement de la toile. Le serveur l’attribue au moment où il persiste l’état ; il permet au client de distinguer les mises à jour nouvelles des événements déjà inclus dans un instantané.
+- Un instantané contient au plus 10 201 pixels (un par case). Il n’y a pas de limite d’octets distincte : la taille est bornée par la résolution de la toile.
 
 ## Modèle `Pixel`
 
@@ -163,9 +163,7 @@ Le gestionnaire Express de la PR #110 ne traite pas les erreurs Socket.IO. Le se
 
 ## Points restant à valider avant implémentation
 
-- Confirmer la proposition de résolution `101 × 101`, centrée en `(0, 0)`, ou décider d’une autre taille avant de fixer les bornes.
-- Le front et le back retiennent le format de couleur `#RRGGBB` et l’origine `(0, 0)` au centre. Confirmer seulement le sens des axes (`x` vers la droite, `y` vers le bas) avant l’implémentation.
-- Fixer la taille maximale acceptable de l’instantané ; si la toile grandit, prévoir pagination ou transfert compact dans un contrat ultérieur.
+- Le format de couleur `#RRGGBB` est celui du pixel transmis. La palette autorisée reste à fixer dans le contrat de pose de pixel (#21).
 - Le front et le back retiennent une lecture publique limitée à la résolution et à l’état visible courant des pixels, sans historique ni identité du joueur. L’historique et l’identité ne sont pas nécessaires à l’affichage de la toile et restent dans les contrats des fonctionnalités qui en ont besoin.
-- Confirmer que le payload `canvas:error` reste limité à `code` et `message`, indépendamment des détails et stacks de diagnostic HTTP en développement.
-- Faire relire ce contrat par une personne du front et une personne du back ; noter leurs éventuels changements avant de considérer #33 terminée.
+- Si la résolution augmente, prévoir pagination ou transfert compact dans un contrat ultérieur.
+- Les choix de résolution, d’axe, de taille d’instantané et de forme de `canvas:error` ci-dessus reprennent la proposition pour livrer l’issue #35 ; ils restent modifiables par l’équipe.

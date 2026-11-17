@@ -49,10 +49,64 @@
           }
         }
       }
+    },
+    "/api/pixels": {
+      "get": {
+        "summary": "Lire l'état courant de la toile",
+        "description": "Lecture publique sans authentification. La toile est représentée par les pixels présents uniquement ; les coordonnées sont centrées sur (0, 0).",
+        "responses": {
+          "200": {
+            "description": "Instantané courant de la toile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasSnapshot"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Toile momentanément indisponible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "CanvasSnapshot": {
+        "type": "object",
+        "required": ["width", "height", "revision", "snapshotAt", "pixels"],
+        "properties": {
+          "width": { "type": "integer", "example": 101 },
+          "height": { "type": "integer", "example": 101 },
+          "revision": { "type": "integer", "minimum": 0 },
+          "snapshotAt": { "type": "string", "format": "date-time" },
+          "pixels": {
+            "type": "array",
+            "maxItems": 10201,
+            "items": { "$ref": "#/components/schemas/Pixel" }
+          }
+        }
+      },
+      "Pixel": {
+        "type": "object",
+        "required": ["x", "y", "color", "updatedAt", "revision"],
+        "properties": {
+          "x": { "type": "integer", "minimum": -50, "maximum": 50 },
+          "y": { "type": "integer", "minimum": -50, "maximum": 50 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "revision": { "type": "integer", "minimum": 1 }
+        }
+      },
       "HealthResponse": {
         "type": "object",
         "required": [
