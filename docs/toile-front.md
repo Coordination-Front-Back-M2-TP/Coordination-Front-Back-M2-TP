@@ -30,7 +30,7 @@ Un ACK absent pendant dix secondes, des données incompatibles ou `canvas:error`
 
 Socket.IO client est une dépendance du front, fixée dans `package-lock.json`. Le navigateur contacte `/socket.io/` sur la même origine que la page ; Vite en développement et Nginx dans l’image du front transmettent cette route au back, avec prise en charge du passage à WebSocket. Aucune nouvelle variable d’environnement n’est nécessaire.
 
-Le back doit fournir le contrat de lecture et de souscription dans [#35](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/35). Tant que cette tâche n’est pas livrée, la page montre l’indisponibilité du service ; les données de test ne sont pas utilisées par l’application.
+Le back fournit le contrat de lecture et de souscription depuis [#35](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/35). Sans back démarré, la page montre l’indisponibilité du service ; les données de test ne sont pas utilisées par l’application.
 
 ## Vérifications
 
@@ -43,4 +43,4 @@ Le back doit fournir le contrat de lecture et de souscription dans [#35](https:/
 
 Le serveur Socket.IO installé en dépendance de développement sert uniquement aux tests d’intégration. Il simule le contrat validé et n’implémente pas la persistance du back.
 
-Après livraison de #35, vérifier le parcours intégré avec deux navigateurs : tous deux chargent les pixels existants sans compte, reçoivent un changement serveur sans recharger, puis retrouvent le nouvel état complet après une coupure et une reconnexion. La validation de la latence en conditions réelles fait partie de cette vérification intégrée.
+Depuis la livraison de #35, le parcours intégré se vérifie avec deux navigateurs : tous deux chargent les pixels existants sans compte, reçoivent un changement serveur sans recharger, puis retrouvent le nouvel état complet après une coupure et une reconnexion. La validation de la latence en conditions réelles fait partie de cette vérification intégrée.

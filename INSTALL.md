@@ -71,7 +71,7 @@ Vite affiche l'adresse du front : `http://localhost:5173/`.
 - La documentation de l'API (Swagger UI) est accessible sur `http://localhost:3000/api/docs` (détails dans [docs/api.md](docs/api.md)).
 - Le front s'ouvre sur `http://localhost:5173` : la page affiche « P1X3L » et « Back : ok ».
 
-La page affiche aussi la toile en direct, dès que le back implémente le contrat de lecture et d’abonnement Socket.IO (tâche #35). Le proxy Vite transmet `/socket.io/` au port 3000, avec le passage à WebSocket. Le comportement, les états d’erreur et les tests sont décrits dans [docs/toile-front.md](docs/toile-front.md).
+La page affiche aussi la toile en direct : le back sert le contrat de lecture et d’abonnement Socket.IO (tâche #35). Le proxy Vite transmet `/socket.io/` au port 3000, avec le passage à WebSocket. Le comportement, les états d’erreur et les tests sont décrits dans [docs/toile-front.md](docs/toile-front.md).
 
 ## 7. Tests et lint
 
