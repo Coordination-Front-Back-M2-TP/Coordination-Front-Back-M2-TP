@@ -191,6 +191,7 @@ La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) traite chaque dossi
 
 - elle exige le `package-lock.json` du dossier, puis installe avec `npm ci` ;
 - elle lance `npm run lint`, `npm test` et `npm run build`, chacun seulement si le script existe dans le `package.json` ;
+- le dossier `e2e/` est traité à part, dans le job « Tests E2E (Playwright) » : ses tests ont besoin du navigateur Chromium, installé par `npx playwright install --with-deps chromium` ;
 - le contrôle « CI terminée » résume tous les dossiers : c'est lui qu'il faut regarder.
 
 Le script `test` créé par `npm init` échoue exprès (« no test specified ») : le remplacer par la vraie commande de test.
@@ -221,7 +222,7 @@ Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les cré
 | Une issue est créée ou modifiée | Le label de zone est posé ou mis à jour | [.github/workflows/issues.yml](.github/workflows/issues.yml) |
 | Une PR est ouverte ou modifiée | Le titre, l'issue liée et le gabarit rempli sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
 | Une PR est ouverte, modifiée ou relue | Le job « Relecture approuvée » lit les avis et réussit seulement après une approbation valide | [.github/workflows/relecture.yml](.github/workflows/relecture.yml) |
-| Du code est poussé dans une PR ou sur `main` | Lint, tests et build de chaque projet Node | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
+| Du code est poussé dans une PR ou sur `main` | Lint, tests et build de chaque projet Node, et tests E2E (Playwright) | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
 | Un fichier Markdown change | Le format et les liens sont vérifiés | [.github/workflows/docs-ci.yml](.github/workflows/docs-ci.yml) |
 | Une PR est mergée sur `main` | Le commit est déployé en staging | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
 | Un tag `vX.Y.Z` est poussé | Le commit est vérifié, déployé en production, et la release GitHub est créée | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
