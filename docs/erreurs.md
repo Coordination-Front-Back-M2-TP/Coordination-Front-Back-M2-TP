@@ -67,3 +67,29 @@ Conformément à la règle d'or 2 et à [GUIDELINES.md](../GUIDELINES.md) (secti
   - Les en-têtes d'authentification (`authorization`, `cookie`, `set-cookie`, `x-api-key`) sont automatiquement remplacés par `[MASQUÉ]`.
   - Les champs sensibles de corps de requête (`password`, `token`, `secret`, `key` et leurs variantes avec préfixes ou séparateurs) sont masqués récursivement avant écriture dans les logs.
   - Les URL complètes et messages bruts d'erreur ne sont pas écrits dans les logs ; les 404 n'incluent pas non plus leur URL dans la réponse. Cela évite de journaliser des secrets transmis dans une query string ou un message d'exception.
+
+---
+
+## 5. Couverture des tests et scénarios non testés
+
+`npm test --prefix back` (lancé par la CI) vérifie le gestionnaire d'erreurs dans `back/test/errors.test.js` et `back/test/errors-environnements.test.js`. Le front est couvert par les tests Vitest décrits dans [erreurs-front.md](erreurs-front.md).
+
+| Scénario | Test |
+| --- | --- |
+| Erreur attendue (4xx) en développement : code, message, `details` et `stack` | `errors-environnements.test.js` |
+| Erreur attendue (4xx) en production : code et message conservés, ni `details` ni `stack` | `errors-environnements.test.js` |
+| Erreur inattendue (5xx) en développement : message et `stack` exposés | `errors-environnements.test.js` |
+| Erreur inattendue (5xx), `AppError` 500 et erreur Prisma inconnue en production : réponse générique, aucun secret ni code ORM, ni dans la réponse ni dans les journaux | `errors-environnements.test.js` |
+| Prisma `P2002` / `P2025`, contrainte d'unicité SQLite | `errors.test.js`, `errors-environnements.test.js` |
+| Route inconnue et JSON invalide sur l'application réelle | `errors-environnements.test.js` |
+| Cooldown (429), masquage des données sensibles des journaux | `errors.test.js` |
+
+Scénarios identifiés mais **non testés**, faute de route ou de code concerné :
+
+- `UNAUTHORIZED` (401) et `FORBIDDEN` (403) : aucune authentification n'existe encore, seules les usines `unauthorized` et `forbidden` sont définies.
+- `COOLDOWN_ACTIVE` sur une vraie route de pose de pixel : la route n'existe pas, seule l'usine `tooManyRequests` est testée.
+- Corps de requête trop volumineux (413) et encodage invalide : non normalisés par le gestionnaire, qui renvoie le statut d'`express.json()`.
+- Erreurs Prisma autres que `P2002` et `P2025` (ex. `P2024`, délai de connexion) : traitées comme des erreurs inattendues, sans cas dédié.
+- Erreurs d'une vraie base de données (panne, SQLite verrouillée) : les tests simulent les erreurs, aucune base n'est lancée.
+- Erreurs Socket.IO côté serveur : hors du gestionnaire HTTP, non couvertes.
+- Tests de bout en bout navigateur (erreur API affichée dans une vraie page) : seuls des tests de composants jsdom existent.
