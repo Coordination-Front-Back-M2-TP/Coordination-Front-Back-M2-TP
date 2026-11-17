@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model CanvasState {
+  id       Int @id @default(1)
+  revision Int @default(0)
+}
+
+model Pixel {
+  x         Int
+  y         Int
+  color     String
+  updatedAt DateTime
+  revision  Int      @unique
+
+  @@id([x, y])
+  @@index([y, x])
+}

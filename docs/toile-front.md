@@ -30,7 +30,7 @@ Un ACK absent pendant dix secondes, des données incompatibles ou `canvas:error`
 
 Socket.IO client est une dépendance du front, fixée dans `package-lock.json`. Le navigateur contacte `/socket.io/` sur la même origine que la page ; Vite en développement et Nginx dans l’image du front transmettent cette route au back, avec prise en charge du passage à WebSocket. Aucune nouvelle variable d’environnement n’est nécessaire.
 
-Le back doit fournir le contrat de lecture et de souscription dans [#35](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/35). Tant que cette tâche n’est pas livrée, la page montre l’indisponibilité du service ; les données de test ne sont pas utilisées par l’application.
+Le back fournit le contrat de lecture et de souscription dans [#35](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/35). Il persiste l’état courant dans SQLite et renvoie un instantané public ; la méthode interne qui diffuse une pose après persistance sera appelée par le futur parcours de pose de l’issue #21.
 
 ## Vérifications
 

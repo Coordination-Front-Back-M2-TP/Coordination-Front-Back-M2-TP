@@ -8,6 +8,10 @@ node_modules/
 dist/
 build/
 coverage/
+back/prisma/*.db
+back/prisma/*.db-journal
+back/prisma/*.db-shm
+back/prisma/*.db-wal
 
 # Rapports des tests E2E (Playwright)
 e2e/test-results/

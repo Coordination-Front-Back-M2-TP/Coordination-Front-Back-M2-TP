@@ -5,14 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js",
+    "start": "node scripts/prisma.js migrate deploy && node src/server.js",
+    "postinstall": "node scripts/prisma.js generate",
+    "db:generate": "node scripts/prisma.js generate",
+    "db:migrate:dev": "node scripts/prisma.js migrate dev",
+    "db:migrate:deploy": "node scripts/prisma.js migrate deploy",
     "test": "node --test"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "7.10.1",
+    "@prisma/client": "7.10.1",
     "express": "^5.3.0",
+    "prisma": "7.10.1",
+    "socket.io": "4.8.4",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "4.8.4"
   }
 }

@@ -20,9 +20,15 @@ services:
     restart: unless-stopped
     security_opt: [no-new-privileges:true]
     networks: [interne]
+    environment:
+      DATABASE_URL: file:/data/p1x3l.db
+    volumes: [canvas-data:/data]
     deploy:
       resources:
         limits: { cpus: '0.5', memory: 256M }
+
+volumes:
+  canvas-data:
 
 networks:
   # Seuls le reverse proxy du NAS et le front y sont branchés.
