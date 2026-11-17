@@ -58,6 +58,10 @@ Le composant [`PixelCanvas`](../front/src/components/PixelCanvas.jsx) affiche la
 
 `LiveCanvas` gère l’abonnement, les états de connexion et le bouton de reprise sur la page d’accueil. Le protocole et ses tests sont décrits dans [toile-front.md](toile-front.md).
 
+### `ColorPalette` et `PixelPlacer`
+
+[`ColorPalette`](../front/src/components/ColorPalette/ColorPalette.jsx) affiche les couleurs sous forme de boutons radio nommés : le choix se fait au clavier, et la couleur choisie est encadrée. [`PixelPlacer`](../front/src/components/PixelPlacer/PixelPlacer.jsx) réunit la palette, le clic de pose sur `PixelCanvas`, une saisie des coordonnées au clavier et l'annonce du résultat. Chacun a son dossier, avec ses styles, ses tests et ses stories. Le parcours est décrit dans [pose-front.md](pose-front.md).
+
 ## 4. Conventions pour ajouter un nouveau composant
 
 - Créer le composant dans `front/src/components/NomDuComposant.jsx` (nom en PascalCase conformément à [GUIDELINES.md](../GUIDELINES.md)).
