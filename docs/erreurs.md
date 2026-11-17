@@ -1,6 +1,6 @@
-# Gestion centralisée des erreurs et journalisation du back-end
+# Implémentation actuelle des erreurs et des logs du back-end
 
-Ce document décrit le fonctionnement du gestionnaire d'erreurs centralisé du back-end P1X3L, la structure des réponses transmises au front-end, ainsi que la politique de journalisation et de sécurité des logs.
+Ce document décrit l'implémentation actuelle du gestionnaire d'erreurs et du logger du back-end P1X3L. Il ne définit pas le contrat partagé : les formats, codes et statuts restent à valider par les responsables front et back dans le [contrat partagé](contrat-erreurs.md).
 
 ---
 
@@ -67,3 +67,33 @@ Conformément à la règle d'or 2 et à [GUIDELINES.md](../GUIDELINES.md) (secti
   - Les en-têtes d'authentification (`authorization`, `cookie`, `set-cookie`, `x-api-key`) sont automatiquement remplacés par `[MASQUÉ]`.
   - Les champs sensibles de corps de requête (`password`, `token`, `secret`, `key` et leurs variantes avec préfixes ou séparateurs) sont masqués récursivement avant écriture dans les logs.
   - Les URL complètes et messages bruts d'erreur ne sont pas écrits dans les logs ; les 404 n'incluent pas non plus leur URL dans la réponse. Cela évite de journaliser des secrets transmis dans une query string ou un message d'exception.
+
+---
+
+## 5. Couverture des tests et scénarios non testés
+
+Les scénarios ci-dessous sont vérifiés par les tests automatisés, relancés par la CI (`npm test --prefix back` et `npm test --prefix front`).
+
+### Scénarios testés côté back (`back/test/errors.test.js`)
+
+- **Erreurs attendues** : route inexistante (404 `NOT_FOUND`), paramètre invalide (400), cooldown actif (429 `COOLDOWN_ACTIVE`), corps JSON invalide (400 `INVALID_JSON`), contrainte d'unicité Prisma P2002 (409 `CONFLICT`), enregistrement Prisma introuvable P2025 (404 `RECORD_NOT_FOUND`), statut HTTP invalide ramené à 500.
+- **Erreur inattendue (500)** : en développement, le message original et la stack sont exposés pour le diagnostic ; en production, la réponse est strictement `{ "error": { "code": "INTERNAL_SERVER_ERROR", "message": "Une erreur inattendue est survenue." } }`, sans stack ni détail interne.
+- **Erreur attendue en production** : le code et le message métier sont conservés, mais `details` et `stack` ne sont jamais renvoyés.
+- **Journalisation** : le filtrage des champs sensibles (`sanitize`) est vérifié, et le journal d'une erreur inattendue contient les frames de stack sans recopier le message brut de l'exception.
+
+### Scénarios testés côté front
+
+Voir aussi [erreurs-front.md](erreurs-front.md), section « Vérification » (`front/src/App.test.jsx`, `front/src/components/ErrorBoundary.test.jsx`, `front/src/components/LiveCanvas.test.jsx`, `front/src/api/canvas.test.js` et `front/src/api/canvas.integration.test.js`).
+
+- **Erreurs API/HTTP et réseau** sur `GET /api/health` : réponse en erreur (y compris au format contractuel), échec réseau, JSON illisible, état absent ou invalide ; le message affiché reste fixe et ne reprend aucun détail interne.
+- **Erreur d'exécution React** : `ErrorBoundary` remplace un rendu ou un effet en échec par un message de repli sans détail interne.
+- **Erreurs de synchronisation de la toile** : erreur signalée par le serveur, échec de connexion, ACK absent ou invalide, données incompatibles, coupure et reconnexion (testées contre un vrai serveur Socket.IO en mémoire) ; la dernière toile reçue reste affichée avec un avertissement et un bouton « Réessayer ».
+
+### Scénarios non testés
+
+- **Erreurs réelles de la base de données** : les erreurs Prisma et SQLite sont simulées dans les tests ; aucune base réelle n'est lancée, la persistance n'étant pas encore implémentée.
+- **Temps réel côté serveur** : le back ne sert pas encore Socket.IO ; seul le client front est testé, contre un serveur Socket.IO de test.
+- **Gestionnaires d'événements et traitements asynchrones du front** : React ne les confie pas à `ErrorBoundary` ; chaque futur gestionnaire devra traiter ses propres erreurs, comme le rappelle [erreurs-front.md](erreurs-front.md).
+- **Pannes d'infrastructure** : coupure réseau longue, indisponibilité du proxy nginx ou du conteneur, arrêt du processus Node ; ces scénarios relèvent de tests d'intégration sur l'architecture Docker, non mis en place à ce stade.
+- **Montée en charge** : comportement sous forte charge, saturation mémoire ou épuisement des ressources système.
+- **Tests de bout en bout dans un navigateur réel** : les tests front s'exécutent sous jsdom ; aucun test E2E (Playwright, Cypress) n'existe encore.

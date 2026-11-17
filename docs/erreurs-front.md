@@ -20,7 +20,7 @@ Une requête est annulée au démontage du composant. Ses résultats tardifs son
 
 Une frontière d’erreur React couvre le rendu et les effets de son arbre. Les rejets de requêtes sont traités dans l’effet qui les lance ; les futurs gestionnaires d’événements et traitements asynchrones devront aussi prendre en charge leurs erreurs.
 
-Le contrat global d’erreurs (codes métier, choix HTTP des futures routes et journalisation du back) reste suivi dans [la tâche #88](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/88), à valider avec l’équipe front et back.
+Le [contrat partagé des erreurs front/back](contrat-erreurs.md) rassemble l'état actuel et les décisions qui restent à valider ensemble dans [la tâche #88](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/88).
 
 ## Vérification
 

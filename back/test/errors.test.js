@@ -167,6 +167,97 @@ test('En production, les erreurs 500 ne fuient aucun secret ni stack', async (t)
   assert.doesNotMatch(JSON.stringify(body), /secret de base de données/i)
 })
 
+test('En développement, une erreur inattendue expose le message et la stack de diagnostic', async (t) => {
+  const oldEnv = process.env.NODE_ENV
+  process.env.NODE_ENV = 'development'
+  t.after(() => {
+    process.env.NODE_ENV = oldEnv
+  })
+
+  const testApp = createTestApp()
+  const server = testApp.listen(0)
+  t.after(() => server.close())
+  await once(server, 'listening')
+
+  const originalError = console.error
+  console.error = () => {}
+  try {
+    const res = await fetch(`http://localhost:${server.address().port}/test/unexpected`)
+    assert.equal(res.status, 500)
+    const body = await res.json()
+    assert.equal(body.error.code, 'INTERNAL_SERVER_ERROR')
+    assert.equal(body.error.message, 'Crash inattendu ou secret de base de données')
+    assert.match(body.error.stack, /Crash inattendu/)
+  } finally {
+    console.error = originalError
+  }
+})
+
+test('En production, une erreur attendue conserve code et message sans details ni stack', async (t) => {
+  const oldEnv = process.env.NODE_ENV
+  process.env.NODE_ENV = 'production'
+  t.after(() => {
+    process.env.NODE_ENV = oldEnv
+  })
+
+  const testApp = createTestApp()
+  const server = testApp.listen(0)
+  t.after(() => server.close())
+  await once(server, 'listening')
+
+  const res = await fetch(`http://localhost:${server.address().port}/test/operational`)
+  assert.equal(res.status, 400)
+  const body = await res.json()
+  assert.deepEqual(body, { error: { code: 'INVALID_PARAM', message: 'Paramètre invalide.' } })
+})
+
+test('En production, une route inexistante renvoie le format contractuel sans stack', async (t) => {
+  const oldEnv = process.env.NODE_ENV
+  process.env.NODE_ENV = 'production'
+  t.after(() => {
+    process.env.NODE_ENV = oldEnv
+  })
+
+  const testApp = createTestApp()
+  const server = testApp.listen(0)
+  t.after(() => server.close())
+  await once(server, 'listening')
+
+  const originalWarn = console.warn
+  console.warn = () => {}
+  try {
+    const res = await fetch(`http://localhost:${server.address().port}/api/route-inexistante`)
+    assert.equal(res.status, 404)
+    const body = await res.json()
+    assert.deepEqual(body, { error: { code: 'NOT_FOUND', message: 'Route introuvable.' } })
+  } finally {
+    console.warn = originalWarn
+  }
+})
+
+test('Le journal d’une erreur inattendue contient les frames sans le message brut de l’exception', async (t) => {
+  const testApp = createTestApp()
+  const server = testApp.listen(0)
+  t.after(() => server.close())
+  await once(server, 'listening')
+
+  const originalError = console.error
+  let logOutput = ''
+  console.error = (message) => {
+    logOutput = message
+  }
+
+  try {
+    const res = await fetch(`http://localhost:${server.address().port}/test/unexpected`)
+    assert.equal(res.status, 500)
+    assert.match(logOutput, /Erreur serveur inattendue/)
+    assert.match(logOutput, /errors\.test\.js/)
+    assert.doesNotMatch(logOutput, /secret de base de données/)
+  } finally {
+    console.error = originalError
+  }
+})
+
 test('La fonction sanitize filtre les données sensibles dans les objets et métadonnées', () => {
   const input = {
     method: 'POST',
