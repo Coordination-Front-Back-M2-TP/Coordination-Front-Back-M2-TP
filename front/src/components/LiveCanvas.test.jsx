@@ -45,6 +45,16 @@ it('conserve l’image en avertissant qu’elle peut être ancienne pendant la r
   expect(screen.getByRole('img')).toBeTruthy()
 })
 
+it('conserve la toile affichée avec un avertissement quand la synchronisation échoue', () => {
+  render(<LiveCanvas />)
+  const board = canvas()
+  act(() => subscriptions[0]({ canvas: board, status: 'live' }))
+  act(() => subscriptions[0]({ canvas: board, status: 'error' }))
+  expect(screen.getByRole('alert').textContent).toContain('Impossible de synchroniser')
+  expect(screen.getByText(/Dernier état reçu/)).toBeTruthy()
+  expect(screen.getByRole('img')).toBeTruthy()
+})
+
 it('permet de réessayer et ferme le précédent abonnement', () => {
   const { unmount } = render(<LiveCanvas />)
   act(() => subscriptions[0]({ canvas: null, status: 'error' }))
