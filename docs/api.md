@@ -43,7 +43,7 @@ Lorsque le back est démarré (`npm run dev --prefix back`) :
 
 ## 3. Routes actuellement disponibles
 
-Conformément à la règle de ne pas inventer d'API future non implémentée, seule la route réellement en service est documentée.
+Conformément à la règle de ne pas inventer d'API future non implémentée, seules les routes réellement en service sont documentées.
 
 ### `GET /api/health`
 
@@ -64,6 +64,61 @@ Vérifie que l'API fonctionne et renvoie la version du commit déployé.
 
 - `status` (chaîne) : vaut toujours `"ok"` lorsque le service est fonctionnel.
 - `version` (chaîne) : identifiant du commit Git (fourni par `APP_VERSION` lors du déploiement Docker) ou `"dev"` en environnement de développement local.
+
+### `GET /api/pixels`
+
+Renvoie l'instantané courant de la toile (101 × 101, représentation creuse). Lecture publique, sans authentification. Le format exact est celui du [contrat API](contrat-api.md).
+
+### `POST /api/pixels`
+
+Pose un pixel sur la toile, selon le [contrat de pose](contrat-api.md). En service depuis l'issue #44.
+
+- **URL** : `/api/pixels`
+- **Méthode** : `POST`
+- **Authentification** : session requise — voir le paragraphe « Session de démonstration » ci-dessous
+
+#### Requête
+
+```json
+{
+  "x": 12,
+  "y": 8,
+  "color": "#D93A3A"
+}
+```
+
+`x` et `y` sont des entiers de `-50` à `50` (bornes incluses) et `color` est au format `#RRGGBB`. La palette autorisée n'est pas encore fixée par le contrat : seul le format est vérifié, et la restriction à la palette arrivera avec sa décision.
+
+#### Réponse de succès (200 OK)
+
+```json
+{
+  "pixel": {
+    "x": 12,
+    "y": 8,
+    "color": "#D93A3A",
+    "updatedAt": "2026-11-17T14:30:00.000Z",
+    "revision": 185
+  },
+  "cooldownEndsAt": "2026-11-17T14:30:10.000Z"
+}
+```
+
+Chaque pose acceptée crée aussi une entrée d'historique (compte, équipe, coordonnées, couleur, heure serveur), jamais renvoyée ni diffusée, et le serveur émet `pixel:updated` aux abonnés après la persistance.
+
+`cooldownEndsAt` est calculé avec la durée de démonstration de 10 secondes (constante `PIXEL_COOLDOWN_MS` réglable côté serveur) mais n'est **pas encore contraignant** : le rejet `429 COOLDOWN_ACTIVE` pendant le délai est l'issue #46.
+
+#### Erreurs
+
+- `400 INVALID_INPUT` : coordonnées invalides ou couleur absente ou mal formée.
+- `401 UNAUTHORIZED` : aucune session valide.
+- `429 COOLDOWN_ACTIVE` : prévu par le contrat, pas encore appliqué (issue #46).
+
+Une pose refusée ne modifie ni la toile, ni l'historique, ni le délai.
+
+#### Session de démonstration (temporaire)
+
+Le vrai mécanisme d'authentification (contrat #18, back #39) n'existe pas encore. En attendant, un placeholder clairement marqué TEMPORAIRE (`back/src/auth/session-placeholder.js`) propose de transmettre la session par l'en-tête HTTP `X-Session-Id` : toute valeur non vide donne accès à un compte et une équipe de démonstration, et son absence renvoie `401 UNAUTHORIZED`. Cette proposition de transport est à faire valider en revue et sera remplacée par le mécanisme du contrat #18.
 
 ---
 

@@ -76,6 +76,105 @@
             }
           }
         }
+      },
+      "post": {
+        "summary": "Poser un pixel",
+        "description": "Pose un pixel sur la toile au nom du compte connecté. Requiert une session authentifiée : en attendant le contrat d'authentification de l'issue #18, un placeholder transmet la session par l'en-tête `X-Session-Id` (proposition à valider). Chaque pose acceptée est enregistrée dans l'historique avec le compte, l'équipe et l'heure serveur ; l'historique n'est jamais renvoyé. Le délai (`cooldownEndsAt`, durée démo de 10 secondes réglable côté serveur) est calculé mais pas encore contraignant : le rejet 429 est l'issue #46.",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": true,
+            "description": "TEMPORAIRE : identifiant de session de démonstration, en attendant le mécanisme du contrat #18. Toute valeur non vide est acceptée ; sans en-tête, la réponse est 401.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlacePixelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pixel posé et enregistré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacePixelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Coordonnées invalides ou couleur absente ou mal formée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Coordonnées ou couleur invalides."
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Aucune session valide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Un compte connecté est nécessaire pour poser un pixel."
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Délai entre deux poses non écoulé. Prévu par le contrat mais pas encore appliqué : le rejet est l'issue #46.",
+            "headers": {
+              "Retry-After": {
+                "description": "Secondes restantes avant la prochaine pose autorisée",
+                "schema": { "type": "integer" }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "COOLDOWN_ACTIVE",
+                    "message": "Délai actif, veuillez patienter."
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne du serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -105,6 +204,27 @@
           "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
           "updatedAt": { "type": "string", "format": "date-time" },
           "revision": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "PlacePixelRequest": {
+        "type": "object",
+        "required": ["x", "y", "color"],
+        "properties": {
+          "x": { "type": "integer", "minimum": -50, "maximum": 50 },
+          "y": { "type": "integer", "minimum": -50, "maximum": 50 },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+        }
+      },
+      "PlacePixelResponse": {
+        "type": "object",
+        "required": ["pixel", "cooldownEndsAt"],
+        "properties": {
+          "pixel": { "$ref": "#/components/schemas/Pixel" },
+          "cooldownEndsAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Heure serveur à laquelle le compte pourra poser à nouveau (durée démo de 10 secondes, réglable côté serveur)"
+          }
         }
       },
       "HealthResponse": {
