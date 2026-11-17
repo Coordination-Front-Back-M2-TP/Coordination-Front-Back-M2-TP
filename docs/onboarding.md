@@ -23,12 +23,21 @@ Avant le premier jour ou dès l'arrivée, s'assurer d'avoir :
 
 | Élément | Rôle | Action |
 | --- | --- | --- |
-| Dépôt GitHub | Lire le dépôt privé et proposer une contribution depuis un fork | Recevoir un accès en lecture au dépôt amont, puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
-| Board GitHub | Consulter les tickets du stage | Vérifier séparément avec le tuteur si l'accès au projet privé peut être accordé ; l'accès au dépôt ne donne pas automatiquement accès au board. |
+| Dépôt GitHub | Lire le dépôt privé et proposer une contribution depuis un fork | Accepter l'invitation en lecture au dépôt amont, puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
+| Board GitHub | Lire tout le board : tickets, statuts, dépendances, vues | Accepter l'accès en lecture (rôle Read) au board. L'accès au dépôt ne donne pas automatiquement accès au board : le tuteur l'ajoute à part. |
 | Discord de l'équipe | Communication quotidienne, questions, alertes | Rejoindre le serveur Discord de l'équipe 3L1K0PT3R |
 | Outils locaux | Git, Node.js (>= 22.12), GitHub CLI (`gh` >= 2.94) | Vérifier avec `git --version`, `node --version`, `gh --version` |
 
 Le fork privé dépend également des réglages de l'organisation GitHub. Si GitHub refuse sa création, demander au tuteur de vérifier que le fork des dépôts privés est autorisé ; ne pas demander de droit d'écriture sur le dépôt amont pour contourner ce réglage.
+
+### Ce que fait le tuteur à l'arrivée
+
+Le stagiaire est en lecture seule sur le dépôt et sur le board : il lit tout, il ne peut rien modifier, et il contribue par des PR depuis son fork. Le prof lui demande d'essayer de casser le projet s'il en a les droits : ces réglages sont la limite de son périmètre.
+
+1. **Dépôt** : dans le dépôt, Settings, Collaborators and teams, Add people, rôle **Read**. Il devient collaborateur extérieur de ce seul dépôt. Ne pas l'inviter dans l'organisation : un membre hérite du rôle de base des membres sur le board et peut créer des dépôts et des équipes. Ne pas lui donner Triage non plus : ce rôle permet déjà de fermer n'importe quelle issue.
+2. **Board**, une fois l'invitation au dépôt acceptée : dans le board, menu `…`, Settings, Manage access, ajouter son compte avec le rôle **Read**. GitHub n'accepte un collaborateur extérieur sur le board que s'il a déjà accès à un dépôt de l'organisation.
+3. **Tickets** : lui assigner ses tickets (au Sprint 2 : #43, #44 et #95). En lecture seule, il ne peut pas se les assigner.
+4. **Vérifier** : `gh api repos/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/collaborators/<compte>/permission --jq .role_name` doit répondre `read`, et Manage access doit afficher le rôle Read pour son compte sur le board.
 
 ### Installation locale
 
@@ -95,7 +104,7 @@ Le tuteur confirme le ticket et son périmètre à l'arrivée du stagiaire. La s
 
 ### S'assigner le ticket
 
-Le stagiaire n'ayant qu'un accès en lecture au dépôt amont, il ne peut pas nécessairement s'assigner lui-même l'issue ni modifier le board. Il prévient le tuteur du ticket choisi ; un membre autorisé met à jour l'assignation et le statut du board.
+En lecture seule, le stagiaire ne peut ni s'assigner une issue ni déplacer une carte du board. Le tuteur lui assigne ses tickets à son arrivée (section 2). Ensuite, le board avance seul : quand il ouvre sa PR avec `Closes #numéro`, le ticket passe en « En revue », puis en « Terminé » au merge. Ses tickets passent donc de « Prêt » à « En revue » sans passer par « En cours ».
 
 ---
 
@@ -162,6 +171,7 @@ Tous ces contrôles doivent être au vert.
 - Assigner un relecteur : Théo pour le front, Swan pour le back, ou Lucas.
 - Prendre en compte les remarques, corriger sur la branche et repousser.
 - Une fois la PR approuvée et la CI verte, le relecteur réalise le squash and merge.
+- Une PR de fork est relue avec la checklist « Relire une PR de fork » de [CONTRIBUTING.md](../CONTRIBUTING.md), section 9.
 
 ---
 
