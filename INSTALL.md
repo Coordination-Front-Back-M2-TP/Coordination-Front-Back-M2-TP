@@ -47,6 +47,18 @@ npm ci --prefix front
 
 Chaque commande se termine par `added … packages`. `npm ci` installe exactement les versions du `package-lock.json`.
 
+Tests E2E, seulement pour les lancer (section 7) :
+
+```bash
+npm ci --prefix e2e
+```
+
+```bash
+npm exec --prefix e2e -- playwright install chromium
+```
+
+La seconde commande télécharge le navigateur Chromium utilisé par Playwright, une seule fois par poste.
+
 ## 5. Lancer
 
 Back :
@@ -81,9 +93,12 @@ La page affiche aussi la toile en direct, dès que le back implémente le contra
 | Tests du front | `npm test --prefix front` |
 | Lint du front | `npm run lint --prefix front` |
 | Build du front | `npm run build --prefix front` |
+| Tests E2E (Playwright) | `npm test --prefix e2e` |
 | Atelier composants (Ladle) | `npm run ladle --prefix front` |
 
 La documentation des composants front avec Ladle est décrite dans [docs/composants.md](docs/composants.md). Les tests front utilisent Vitest et Testing Library, avec jsdom pour le rendu React. Le back n'a pas encore de lint. La CI lance les mêmes commandes sur chaque PR ([CONTRIBUTING.md](CONTRIBUTING.md), section 11).
+
+Les tests E2E lancent eux-mêmes un serveur de test sur le port 3000 et le front : arrêter un back local avant de les lancer, et fermer les programmes qui occuperaient le port 5173. Leur fonctionnement (outil choisi, serveur « contrat », scénarios) est décrit dans [docs/tests-e2e.md](docs/tests-e2e.md).
 
 Les états affichés lorsqu'une connexion ou un rendu échoue sont décrits dans [docs/erreurs-front.md](docs/erreurs-front.md).
 

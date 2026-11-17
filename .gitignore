@@ -9,6 +9,11 @@ dist/
 build/
 coverage/
 
+# Rapports des tests E2E (Playwright)
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+
 # Éditeurs et système
 .vscode/
 .idea/
