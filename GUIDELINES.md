@@ -14,6 +14,7 @@ Ces règles valent pour tout le code du dépôt. Les relecteurs s'en servent pen
 front/        application React (Vite)
 back/         API Node.js (Express)
 docs/         documentation (stratégie de branches, gestion de projet)
+e2e/          tests de bout en bout (Playwright)
 ```
 
 Un composant React va dans `front/src/components/`, un appel à l'API dans `front/src/api/`. Une route du back va dans `back/src/routes/`, la logique du jeu dans `back/src/services/`. Les tests du back vont dans `back/test/`, ceux du front à côté du fichier testé.
@@ -61,7 +62,7 @@ Format d'une erreur :
 
 ## 7. Tests
 
-- Outils : Vitest pour le front, à installer avec le premier composant testé, et `node:test` (intégré à Node.js) pour le back.
+- Outils : Vitest pour le front, à installer avec le premier composant testé, et `node:test` (intégré à Node.js) pour le back. Les tests de bout en bout utilisent Playwright, dans `e2e/` à la racine (voir [docs/tests-e2e.md](docs/tests-e2e.md)).
 - Une nouvelle fonctionnalité a au moins un test. Un bug corrigé reçoit un test qui l'aurait détecté.
 - Les tests passent en local avant d'ouvrir la PR. La CI les relance.
 

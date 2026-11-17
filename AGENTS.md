@@ -26,6 +26,7 @@ Depuis la racine du dépôt, dépendances installées ([INSTALL.md](INSTALL.md),
 | Tests du back | `npm test --prefix back` |
 | Lint du front | `npm run lint --prefix front` |
 | Build du front | `npm run build --prefix front` |
+| Tests E2E | `npm test --prefix e2e` (après `npm exec --prefix e2e -- playwright install chromium`) |
 | Lint Markdown | `npx --yes markdownlint-cli2@0.23.3 "**/*.md" "!**/node_modules" "!.github/pull_request_template.md"` |
 
 Ce sont les vérifications de la CI : les lancer avant d'ouvrir une PR. Le lint Markdown exclut `**/node_modules`, sinon il lit aussi la doc des dépendances de `front/` et `back/`. Les liens se vérifient dans la CI (`lychee`). Les adresses du dépôt et du board, privés, sont exclues dans `.lycheeignore`. Une adresse `localhost` s'écrit en code (`` `http://localhost:3000` ``) : lychee ne peut pas la joindre.
