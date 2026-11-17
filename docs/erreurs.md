@@ -1,6 +1,6 @@
-# Gestion centralisée des erreurs et journalisation du back-end
+# Implémentation actuelle des erreurs et des logs du back-end
 
-Ce document décrit le fonctionnement du gestionnaire d'erreurs centralisé du back-end P1X3L, la structure des réponses transmises au front-end, ainsi que la politique de journalisation et de sécurité des logs.
+Ce document décrit l'implémentation actuelle du gestionnaire d'erreurs et du logger du back-end P1X3L. Il ne définit pas le contrat partagé : les formats, codes et statuts restent à valider par les responsables front et back dans le [contrat partagé](contrat-erreurs.md).
 
 ---
 
