@@ -21,3 +21,16 @@ model Pixel {
   @@id([x, y])
   @@index([y, x])
 }
+
+model PixelPlacement {
+  id        Int      @id @default(autoincrement())
+  accountId String
+  teamId    String
+  x         Int
+  y         Int
+  color     String
+  placedAt  DateTime
+  revision  Int      @unique
+
+  @@index([placedAt])
+}
