@@ -49,6 +49,55 @@
           }
         }
       }
+    },
+    "/api/pixels": {
+      "get": {
+        "summary": "Lire l'état courant de la toile",
+        "description": "Renvoie un instantané de la toile : dimensions, révision globale et pixels actuellement posés (représentation creuse : les cases absentes de `pixels` sont vides). Route publique, sans authentification. Le client temps réel obtient le même instantané dans l'ACK de l'événement Socket.IO `canvas:subscribe`.",
+        "responses": {
+          "200": {
+            "description": "Instantané courant de la toile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasSnapshot"
+                },
+                "example": {
+                  "width": 101,
+                  "height": 101,
+                  "revision": 184,
+                  "snapshotAt": "2026-10-27T14:30:00.000Z",
+                  "pixels": [
+                    {
+                      "x": 12,
+                      "y": 8,
+                      "color": "#D93A3A",
+                      "updatedAt": "2026-10-27T14:29:58.000Z",
+                      "revision": 181
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur interne du serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_SERVER_ERROR",
+                    "message": "Une erreur inattendue est survenue."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -69,6 +118,91 @@
             "type": "string",
             "description": "Commit ou identifiant de version déployé ('dev' hors Docker)",
             "example": "dev"
+          }
+        }
+      },
+      "Pixel": {
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "color",
+          "updatedAt",
+          "revision"
+        ],
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50,
+            "description": "Colonne du pixel, origine au centre de la toile, vers la droite",
+            "example": 12
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50,
+            "description": "Ligne du pixel, origine au centre de la toile, vers le bas",
+            "example": 8
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "description": "Couleur actuellement visible, au format #RRGGBB",
+            "example": "#D93A3A"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Heure UTC d'enregistrement de cet état côté serveur (ISO 8601)",
+            "example": "2026-10-27T14:29:58.000Z"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Révision globale à laquelle cet état a été enregistré (strictement croissante)",
+            "example": 181
+          }
+        }
+      },
+      "CanvasSnapshot": {
+        "type": "object",
+        "required": [
+          "width",
+          "height",
+          "revision",
+          "snapshotAt",
+          "pixels"
+        ],
+        "properties": {
+          "width": {
+            "type": "integer",
+            "description": "Largeur de la toile en pixels",
+            "example": 101
+          },
+          "height": {
+            "type": "integer",
+            "description": "Hauteur de la toile en pixels",
+            "example": 101
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Dernière révision incluse dans l'instantané (0 tant que la toile est vide)",
+            "example": 184
+          },
+          "snapshotAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Heure serveur de lecture de l'instantané (UTC, ISO 8601)",
+            "example": "2026-10-27T14:30:00.000Z"
+          },
+          "pixels": {
+            "type": "array",
+            "description": "États courants des pixels posés ; au plus un par coordonnée, [] sur une toile vide",
+            "items": {
+              "$ref": "#/components/schemas/Pixel"
+            }
           }
         }
       },
