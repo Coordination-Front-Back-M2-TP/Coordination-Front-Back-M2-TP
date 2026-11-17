@@ -43,10 +43,12 @@ Les statuts sont les options du champ `Status` du board.
 | Statut | Le ticket est ici quand | Il passe au suivant quand |
 | --- | --- | --- |
 | Backlog | Il est créé, mais pas encore prêt | La Definition of Ready est remplie (section 6) |
-| Prêt | Il attend un sprint | Quelqu'un se l'assigne |
+| Prêt | Il attend un sprint, ou que la personne assignée commence | La personne assignée commence et crée sa branche |
 | En cours | Quelqu'un travaille dessus, sur sa branche | Une PR est ouverte |
 | En revue | La PR attend une relecture | La PR est approuvée et mergée |
 | Terminé | Le merge a fermé l'issue | Fin du cycle |
+
+Une tâche passe en Prêt avec sa user story. Une user story ou un EPIC passe en En cours dès que le premier de ses enfants commence. Le détail est dans [docs/gestion-de-projet.md](docs/gestion-de-projet.md), section 2.
 
 ## 5. Issues
 
@@ -208,7 +210,7 @@ Un EPIC est terminé quand toutes ses user stories le sont.
 
 - `type:` : `epic`, `user-story`, `tâche`, `bug`.
 - `zone:` : `front`, `back`, `transverse`. Le workflow les pose à partir du champ « Zone » du gabarit.
-- `statut: bloqué` : quand une issue ne peut pas avancer. Expliquer le blocage dans un commentaire.
+- `statut: bloqué` : quand un ticket du sprint ne peut pas avancer et attend une action (une décision, un prérequis qui n'est dans aucun sprint). Expliquer le blocage dans un commentaire. Une simple dépendance se note avec la relation « Blocked by », sans label.
 
 Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les créer à la main : le workflow de synchronisation les applique depuis ce fichier.
 
@@ -224,7 +226,7 @@ Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les cré
 | Une PR est mergée sur `main` | Le commit est déployé en staging | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
 | Un tag `vX.Y.Z` est poussé | Le commit est vérifié, déployé en production, et la release GitHub est créée | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
 | `labels.yml` change sur `main` | Les labels du dépôt sont synchronisés | [.github/workflows/labels-sync.yml](.github/workflows/labels-sync.yml) |
-| Une issue ou une PR est créée | Elle arrive sur le board, en Backlog | Workflows intégrés du board |
+| Une issue est créée | Elle arrive sur le board, en Backlog. Une PR n'y arrive pas : elle se lit sur son issue | Workflows intégrés du board |
 | Une sous-issue est créée sous un ticket du board | Elle arrive aussi sur le board | Workflows intégrés du board |
 | Une PR est liée à une issue | L'issue passe en « En revue » | Workflows intégrés du board |
 | Une PR est mergée ou une issue fermée | Le ticket passe en « Terminé » | Workflows intégrés du board |
