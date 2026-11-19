@@ -16,6 +16,7 @@ test('GET /api/openapi.json renvoie la spécification OpenAPI valide', async (t)
   assert.equal(spec.info.title, 'API P1X3L')
   assert.ok(spec.paths['/api/health'])
   assert.ok(spec.paths['/api/pixels'])
+  assert.ok(spec.paths['/api/placements'])
 })
 
 test('GET /api/docs/ répond avec l’interface Swagger UI', async (t) => {
