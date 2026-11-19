@@ -4,11 +4,15 @@ import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
 import swaggerUi from 'swagger-ui-express'
+import { rankingRepository } from './rankings/ranking-repository.js'
+import { createRankingRouter } from './rankings/ranking-routes.js'
+import { createRankingService } from './rankings/ranking-service.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasRouter } from './canvas/canvas-routes.js'
 import { createCanvasService } from './canvas/canvas-service.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const defaultRankingService = createRankingService({ repository: rankingRepository })
 const openapiSpec = JSON.parse(readFileSync(join(__dirname, 'openapi.json'), 'utf8'))
 
 const defaultCanvasService = createCanvasService({ repository: canvasRepository })
@@ -19,7 +23,11 @@ const defaultCanvasService = createCanvasService({ repository: canvasRepository 
 const noSession = async () => null
 
 // L'application est séparée du serveur : les tests la lancent sur un port libre, sans toucher au port 3000.
-export function createApp({ canvasService = defaultCanvasService, resolvePlayer = noSession } = {}) {
+export function createApp({
+  canvasService = defaultCanvasService,
+  rankingService = defaultRankingService,
+  resolvePlayer = noSession,
+} = {}) {
   const app = express()
 
   // Analyse les corps de requête JSON
@@ -33,6 +41,8 @@ export function createApp({ canvasService = defaultCanvasService, resolvePlayer 
 
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
+
+  app.use('/api', createRankingRouter({ rankingService }))
 
   // Exposition de la spécification OpenAPI brute et de la documentation interactive Swagger UI.
   app.get('/api/openapi.json', (req, res) => {
