@@ -10,6 +10,9 @@ import { moderationRepository } from './moderation/moderation-repository.js'
 import { createModerationRouter } from './moderation/moderation-routes.js'
 import { createModerationService } from './moderation/moderation-service.js'
 import swaggerUi from 'swagger-ui-express'
+import { rankingRepository } from './rankings/ranking-repository.js'
+import { createRankingRouter } from './rankings/ranking-routes.js'
+import { createRankingService } from './rankings/ranking-service.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasRouter } from './canvas/canvas-routes.js'
 import { createCanvasService } from './canvas/canvas-service.js'
@@ -21,6 +24,7 @@ import { createTeamRouter } from './teams/team-routes.js'
 import { createTeamService } from './teams/team-service.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const defaultRankingService = createRankingService({ repository: rankingRepository })
 const openapiSpec = JSON.parse(readFileSync(join(__dirname, 'openapi.json'), 'utf8'))
 
 const defaultCanvasService = createCanvasService({ repository: canvasRepository })
@@ -39,6 +43,7 @@ export function createApp({
   accountService = defaultAccountService,
   teamService = defaultTeamService,
   moderationService = defaultModerationService,
+  rankingService = defaultRankingService,
   resolvePlayer = createSessionPlayerResolver(accountService),
 } = {}) {
   const app = express()
@@ -58,6 +63,8 @@ export function createApp({
   app.use('/api', createModerationRouter({ moderationService, accountService }))
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
   app.use('/api', createPlacementRouter({ placementService }))
+
+  app.use('/api', createRankingRouter({ rankingService }))
 
   // Exposition de la spécification OpenAPI brute et de la documentation interactive Swagger UI.
   app.get('/api/openapi.json', (req, res) => {
