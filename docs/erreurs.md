@@ -46,13 +46,17 @@ Le tableau ci-dessous synthétise les codes d'erreur et statuts HTTP gérés :
 
 ## 3. Architecture et composants
 
-Le système repose sur trois briques modulaires situées dans `back/src/` :
+Le système repose sur quatre briques modulaires situées dans `back/src/` :
 
 1. **`errors/app-error.js`** : classe `AppError` héritant de `Error`. Permet de typer les erreurs opérationnelles avec un statut HTTP, un code machine, un message et des détails. Fournit des fonctions usines (`badRequest`, `unauthorized`, `forbidden`, `notFound`, `conflict`, `tooManyRequests`, `internalError`).
 2. **`middleware/error-handler.js`** :
    - `notFoundHandler` : capture les requêtes vers des routes inconnues et déclenche une 404.
    - `errorHandler` : middleware Express à 4 arguments capturant toutes les exceptions. Il normalise les erreurs (syntaxe JSON, Prisma/SQLite), adapte la réponse selon l'environnement et appelle le logger.
 3. **`utils/logger.js`** : module de journalisation structuré assurant le filtrage préalable des données sensibles.
+4. **`process-handlers.js`** : couvre ce qui se passe hors des routes.
+   - Plantage (`uncaughtException`, promesse rejetée sans `catch`) : journalisé en `ERROR` avec sa pile, puis le back s'arrête avec le code 1. Docker le relance (`restart: unless-stopped`) : un processus dans un état inconnu ne continue pas à servir.
+   - `SIGTERM` (`docker stop`, mise à jour) et `SIGINT` (Ctrl+C) : arrêt propre. Les requêtes déjà reçues se terminent, Socket.IO et Prisma se ferment, puis le back sort avec le code 0. Au-delà de 9 s, l'arrêt est forcé, avant le `SIGKILL` de Docker à 10 s.
+   - Testé dans `back/test/process-handlers.test.js` avec un faux processus.
 
 ---
 
