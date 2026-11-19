@@ -84,3 +84,12 @@ model ModerationAction {
   createdAt      DateTime
   details        String
 }
+
+// Agent de dessin d'un compte : une ligne tant qu'il travaille, supprimée à l'arrêt.
+// La clé est le compte : un seul modèle actif par compte. pixels est le modèle, un tableau JSON
+// de { x, y, color } déjà placés sur la toile.
+model DrawingAgent {
+  accountId Int      @id
+  pixels    String
+  startedAt DateTime
+}

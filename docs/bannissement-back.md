@@ -56,7 +56,7 @@ La migration `add_account_ban` ajoute la colonne `bannedAt` au compte et un inde
 ## Points en attente
 
 - **Contrat** : la tâche contrat de l'EPIC (#59) n'est pas faite. Les routes, l'événement `canvas:reverted` et les codes d'erreur sont une proposition : à relire par le front (#62) et le back.
-- **Agent** : la user story demande qu'un joueur banni ne puisse plus lancer d'agent. L'agent (#51) n'existe pas encore : il devra refuser un compte banni.
+- **Agent** : un joueur banni ne peut plus lancer d'agent, et son agent s'arrête. C'est fait par la tâche #51 : voir [agent-back.md](agent-back.md).
 - **Lever un bannissement** : aucune route ne le fait, la user story ne le demande pas. Un bannissement fait par erreur se corrige dans la base, et les pixels annulés ne reviennent pas.
 - **Pixels sans historique** : un pixel posé avant l'arrivée de l'historique n'a pas de ligne dans `PixelPlacement`. Si le joueur banni a posé dessus, la case redevient vide.
 - **Timelapse** (#58) : `GET /api/placements` rend encore les poses du joueur banni.

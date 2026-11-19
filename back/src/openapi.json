@@ -901,7 +901,7 @@
       },
       "post": {
         "summary": "Poser un pixel",
-        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session. Une équipe est obligatoire : sans équipe, la réponse est 403 TEAM_REQUIRED. Un compte banni ne peut plus poser : la réponse est 403 ACCOUNT_BANNED.",
+        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session. Une équipe est obligatoire : sans équipe, la réponse est 403 TEAM_REQUIRED. Un compte banni ne peut plus poser : la réponse est 403 ACCOUNT_BANNED. Pendant que l'agent de dessin du compte travaille, la réponse est 409 AGENT_ACTIVE.",
         "requestBody": {
           "required": true,
           "content": {
@@ -988,6 +988,16 @@
               }
             }
           },
+          "409": {
+            "description": "L'agent de dessin du compte travaille (AGENT_ACTIVE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Le délai du compte n'est pas écoulé (COOLDOWN_ACTIVE). Rien n'est écrit.",
             "headers": {
@@ -1023,6 +1033,203 @@
             "sessionCookie": []
           }
         ]
+      }
+    },
+    "/api/agent": {
+      "get": {
+        "summary": "Suivre la progression de l'agent de dessin",
+        "description": "Compte connecté requis. agent vaut null quand aucun agent ne travaille pour ce compte.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "L'agent du compte, ou null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "agent"
+                  ],
+                  "properties": {
+                    "agent": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Agent"
+                        }
+                      ],
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Lancer l'agent de dessin sur un modèle",
+        "description": "Compte connecté requis. L'agent pose un pixel du modèle à chaque fin de délai du compte, même quand le joueur est déconnecté, et repose un pixel écrasé. Le modèle est déjà placé sur la toile : de 1 à 1 024 pixels, dans un carré de 32 × 32 cases, sans case en double. Un seul modèle est actif par compte. Tant que l'agent existe, POST /api/pixels répond 409 AGENT_ACTIVE.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pixels"
+                ],
+                "properties": {
+                  "pixels": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1024,
+                    "items": {
+                      "$ref": "#/components/schemas/ModelPixel"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Agent lancé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "agent"
+                  ],
+                  "properties": {
+                    "agent": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Agent"
+                        }
+                      ],
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Modèle hors contrat (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le joueur n'a pas d'équipe (TEAM_REQUIRED), ou son compte est banni (ACCOUNT_BANNED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Un agent travaille déjà pour ce compte (AGENT_ALREADY_ACTIVE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Arrêter l'agent de dessin",
+        "description": "Compte connecté requis. Arrêter un agent déjà arrêté n'est pas une erreur. Les pixels déjà posés restent.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Agent arrêté"
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/placements": {
@@ -1380,6 +1587,75 @@
           "revision": {
             "type": "integer",
             "minimum": 1
+          }
+        }
+      },
+      "ModelPixel": {
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "color"
+        ],
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "required": [
+          "status",
+          "startedAt",
+          "total",
+          "done",
+          "nextPlacementAt",
+          "pixels"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "running"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1024
+          },
+          "done": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Pixels du modèle que la toile montre déjà"
+          },
+          "nextPlacementAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Heure serveur prévue de la prochaine pose ; null quand le modèle est fini"
+          },
+          "pixels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelPixel"
+            }
           }
         }
       },
