@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PALETTE } from '../../api/palette.js'
 import { placePixel } from '../../api/pixels.js'
 import { ColorPalette } from '../ColorPalette/ColorPalette.jsx'
-import { PixelCanvas } from '../PixelCanvas.jsx'
+import { PixelCanvas } from '../PixelCanvas/PixelCanvas.jsx'
 import styles from './PixelPlacer.module.css'
 
 const SIGN_IN_MESSAGE = 'Connectez-vous pour poser un pixel.'

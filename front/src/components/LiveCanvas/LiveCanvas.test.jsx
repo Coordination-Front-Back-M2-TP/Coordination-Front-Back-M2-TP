@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { subscribeCanvas } from '../api/canvas.js'
-import { parseCanvasSnapshot } from '../api/canvas-state.js'
+import { subscribeCanvas } from '../../api/canvas.js'
+import { parseCanvasSnapshot } from '../../api/canvas-state.js'
 import { LiveCanvas } from './LiveCanvas.jsx'
 
-vi.mock('../api/canvas.js', () => ({ subscribeCanvas: vi.fn() }))
+vi.mock('../../api/canvas.js', () => ({ subscribeCanvas: vi.fn() }))
 let subscriptions
 let stops
 const canvas = () => parseCanvasSnapshot({ width: 3, height: 3, revision: 0, snapshotAt: '2026-10-27T14:30:00.000Z', pixels: [] })

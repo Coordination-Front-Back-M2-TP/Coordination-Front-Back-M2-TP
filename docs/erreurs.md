@@ -83,7 +83,7 @@ Les scénarios ci-dessous sont vérifiés par les tests automatisés, relancés 
 
 ### Scénarios testés côté front
 
-Voir aussi [erreurs-front.md](erreurs-front.md), section « Vérification » (`front/src/App.test.jsx`, `front/src/components/ErrorBoundary.test.jsx`, `front/src/components/LiveCanvas.test.jsx`, `front/src/api/canvas.test.js` et `front/src/api/canvas.integration.test.js`).
+Voir aussi [erreurs-front.md](erreurs-front.md), section « Vérification » (`front/src/App.test.jsx`, `front/src/components/ErrorBoundary/ErrorBoundary.test.jsx`, `front/src/components/LiveCanvas/LiveCanvas.test.jsx`, `front/src/api/canvas.test.js` et `front/src/api/canvas.integration.test.js`).
 
 - **Erreurs API/HTTP et réseau** sur `GET /api/health` : réponse en erreur (y compris au format contractuel), échec réseau, JSON illisible, état absent ou invalide ; le message affiché reste fixe et ne reprend aucun détail interne.
 - **Erreur d'exécution React** : `ErrorBoundary` remplace un rendu ou un effet en échec par un message de repli sans détail interne.

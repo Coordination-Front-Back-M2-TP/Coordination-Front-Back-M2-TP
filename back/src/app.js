@@ -3,9 +3,9 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
-import { unauthorized } from './errors/app-error.js'
 import swaggerUi from 'swagger-ui-express'
 import { canvasRepository } from './canvas/canvas-repository.js'
+import { createCanvasRouter } from './canvas/canvas-routes.js'
 import { createCanvasService } from './canvas/canvas-service.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -31,29 +31,8 @@ export function createApp({ canvasService = defaultCanvasService, resolvePlayer 
     res.json({ status: 'ok', version: process.env.APP_VERSION || 'dev' })
   })
 
-  app.get('/api/pixels', async (req, res, next) => {
-    try {
-      res.json(await canvasService.getSnapshot())
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  // Pose d'un pixel : compte requis. Le compte et l'équipe viennent de la session, jamais du corps.
-  app.post('/api/pixels', async (req, res, next) => {
-    try {
-      const player = await resolvePlayer(req)
-      if (!player) throw unauthorized('Connectez-vous pour poser un pixel.')
-
-      // Le délai est vérifié par le serveur : une pose trop tôt reçoit 429 COOLDOWN_ACTIVE et Retry-After.
-      res.json(await canvasService.placePixel(req.body, {
-        accountId: String(player.accountId),
-        teamId: String(player.teamId),
-      }))
-    } catch (error) {
-      next(error)
-    }
-  })
+  // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
+  app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
 
   // Exposition de la spécification OpenAPI brute et de la documentation interactive Swagger UI.
   app.get('/api/openapi.json', (req, res) => {
