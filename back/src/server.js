@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Server } from 'socket.io'
+import { createAccountService } from './accounts/account-service.js'
 import { createApp } from './app.js'
 import { rankingRepository as defaultRankingRepository } from './rankings/ranking-repository.js'
 import { createRankingService } from './rankings/ranking-service.js'
@@ -38,11 +39,13 @@ function createRankingBroadcaster({ rankingService, emit }) {
 
 // cooldownMs : délai entre deux poses d'un compte ; par défaut, celui de PIXEL_COOLDOWN_SECONDS.
 // placementRepository : accès à l'historique des poses ; les tests y passent leur propre base.
+// accountRepository : accès aux comptes et aux sessions ; par défaut, celui de la base de l'application.
 // rankingRepository : accès aux données du classement. Par défaut, celui de la base de l'application,
 // seulement avec le dépôt de toile par défaut : un test qui passe sa propre toile ne doit pas lire une autre base.
 export function createCanvasServer({
   repository = canvasRepository,
   placementRepository = defaultPlacementRepository,
+  accountRepository,
   rankingRepository = repository === canvasRepository ? defaultRankingRepository : null,
   resolvePlayer,
   cooldownMs,
@@ -64,7 +67,8 @@ export function createCanvasServer({
     },
   })
   const placementService = createPlacementService({ repository: placementRepository })
-  const app = createApp({ canvasService, placementService, rankingService, resolvePlayer })
+  const accountService = accountRepository ? createAccountService({ repository: accountRepository }) : undefined
+  const app = createApp({ canvasService, placementService, accountService, rankingService, resolvePlayer })
   const httpServer = createServer(app)
   io = new Server(httpServer)
 

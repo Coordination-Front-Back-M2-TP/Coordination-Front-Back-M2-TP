@@ -2,6 +2,9 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
+import { accountRepository } from './accounts/account-repository.js'
+import { createAccountRouter, createSessionPlayerResolver } from './accounts/account-routes.js'
+import { createAccountService } from './accounts/account-service.js'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
 import swaggerUi from 'swagger-ui-express'
 import { rankingRepository } from './rankings/ranking-repository.js'
@@ -21,17 +24,17 @@ const openapiSpec = JSON.parse(readFileSync(join(__dirname, 'openapi.json'), 'ut
 const defaultCanvasService = createCanvasService({ repository: canvasRepository })
 const defaultPlacementService = createPlacementService({ repository: placementRepository })
 
-// Tant que l'authentification (#18) n'est pas livrée, aucune session n'est reconnue : la pose renvoie 401.
-// L'authentification remplacera cette fonction par une lecture de la session, qui renvoie
-// { accountId, teamId } pour un joueur connecté, ou null.
-const noSession = async () => null
+const defaultAccountService = createAccountService({ repository: accountRepository })
 
 // L'application est séparée du serveur : les tests la lancent sur un port libre, sans toucher au port 3000.
+// resolvePlayer : lit le joueur de la requête, { accountId, teamId } ou null. Par défaut, il vient
+// du cookie de session ; les tests peuvent passer une session factice.
 export function createApp({
   canvasService = defaultCanvasService,
   placementService = defaultPlacementService,
+  accountService = defaultAccountService,
   rankingService = defaultRankingService,
-  resolvePlayer = noSession,
+  resolvePlayer = createSessionPlayerResolver(accountService),
 } = {}) {
   const app = express()
 
@@ -45,6 +48,7 @@ export function createApp({
   })
 
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
+  app.use('/api', createAccountRouter({ accountService }))
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
   app.use('/api', createPlacementRouter({ placementService }))
 
