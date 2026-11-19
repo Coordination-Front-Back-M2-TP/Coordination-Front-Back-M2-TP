@@ -23,7 +23,8 @@ export function createCanvasRouter({ canvasService, resolvePlayer }) {
       // Le délai est vérifié par le serveur : une pose trop tôt reçoit 429 COOLDOWN_ACTIVE et Retry-After.
       res.json(await canvasService.placePixel(req.body, {
         accountId: String(player.accountId),
-        teamId: String(player.teamId),
+        // Un joueur sans équipe pose quand même : sa pose est inscrite sans équipe.
+        teamId: player.teamId == null ? null : String(player.teamId),
       }))
     } catch (error) {
       next(error)

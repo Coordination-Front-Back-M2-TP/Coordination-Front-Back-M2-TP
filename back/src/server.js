@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Server } from 'socket.io'
+import { createAccountService } from './accounts/account-service.js'
 import { createApp } from './app.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasService } from './canvas/canvas-service.js'
@@ -9,14 +10,16 @@ import { createCanvasService } from './canvas/canvas-service.js'
 const CANVAS_ROOM = 'canvas'
 
 // cooldownMs : délai entre deux poses d'un compte ; par défaut, celui de PIXEL_COOLDOWN_SECONDS.
-export function createCanvasServer({ repository = canvasRepository, resolvePlayer, cooldownMs } = {}) {
+// accountRepository : accès aux comptes et aux sessions ; par défaut, celui de la base de l'application.
+export function createCanvasServer({ repository = canvasRepository, accountRepository, resolvePlayer, cooldownMs } = {}) {
   let io
   const canvasService = createCanvasService({
     repository,
     cooldownMs,
     publish: (pixel) => io.to(CANVAS_ROOM).emit('pixel:updated', pixel),
   })
-  const app = createApp({ canvasService, resolvePlayer })
+  const accountService = accountRepository ? createAccountService({ repository: accountRepository }) : undefined
+  const app = createApp({ canvasService, accountService, resolvePlayer })
   const httpServer = createServer(app)
   io = new Server(httpServer)
 

@@ -27,7 +27,7 @@ Une valeur absente, vide, négative ou illisible donne la valeur par défaut. Le
 
 ## Points en attente
 
-- **Session** : comme pour la pose, le délai ne s'applique à de vraies requêtes qu'une fois l'authentification (#18) branchée.
+- **Session** : le délai s'applique au compte de la session, livrée par la tâche #39 ([comptes-back.md](comptes-back.md)).
 - **Délai après rechargement de la page** : le contrat ne prévoit pas de route pour relire son délai. Le front ne connaît `cooldownEndsAt` qu'après une pose acceptée, ou `Retry-After` après un refus. À décider avec le front (#45).
 
 ## Vérifications

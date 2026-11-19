@@ -12,6 +12,202 @@
     }
   ],
   "paths": {
+    "/api/auth/register": {
+      "post": {
+        "summary": "Créer un compte",
+        "description": "Crée le compte et connecte le joueur. Le pseudo est unique sans tenir compte de la casse. Le mot de passe est stocké haché (scrypt), jamais en clair.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Compte créé, session ouverte",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Cookie de session p1x3l_session : HttpOnly, SameSite=Lax, Path=/, Secure en production.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pseudo ou mot de passe hors des règles de saisie (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Pseudo déjà pris (PSEUDO_TAKEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Se connecter",
+        "description": "Ouvre une session. Un pseudo inconnu et un mot de passe incorrect reçoivent la même réponse.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session ouverte",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Cookie de session p1x3l_session : HttpOnly, SameSite=Lax, Path=/, Secure en production.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pseudo ou mot de passe absent (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Pseudo inconnu ou mot de passe incorrect (INVALID_CREDENTIALS)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Se déconnecter",
+        "description": "Supprime la session côté serveur et efface le cookie. Sans session, la réponse est la même.",
+        "responses": {
+          "204": {
+            "description": "Session fermée"
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Retrouver le joueur connecté",
+        "description": "Lit la session dans le cookie p1x3l_session. Le front l'appelle au chargement de la page.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Joueur connecté",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Aucune session valide (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Vérifier l'état et la version du back-end",
@@ -79,7 +275,7 @@
       },
       "post": {
         "summary": "Poser un pixel",
-        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Tant que l'authentification (#18) n'est pas branchée, la route renvoie 401.",
+        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session ; tant qu'il n'a pas d'équipe (#41), sa pose est inscrite sans équipe.",
         "requestBody": {
           "required": true,
           "content": {
@@ -185,12 +381,66 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
+      "Credentials": {
+        "type": "object",
+        "required": [
+          "pseudo",
+          "password"
+        ],
+        "properties": {
+          "pseudo": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{3,20}$",
+            "example": "Alex"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "format": "password"
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "pseudo",
+          "team"
+        ],
+        "properties": {
+          "pseudo": {
+            "type": "string",
+            "example": "Alex"
+          },
+          "team": {
+            "type": "object",
+            "nullable": true,
+            "description": "Équipe du joueur. Toujours null tant que les équipes (#41) ne sont pas livrées."
+          }
+        }
+      },
       "CanvasSnapshot": {
         "type": "object",
         "required": [
@@ -305,6 +555,13 @@
             }
           }
         }
+      }
+    },
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "p1x3l_session"
       }
     }
   }

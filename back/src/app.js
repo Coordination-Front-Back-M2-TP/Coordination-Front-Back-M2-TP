@@ -2,6 +2,9 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
+import { accountRepository } from './accounts/account-repository.js'
+import { createAccountRouter, createSessionPlayerResolver } from './accounts/account-routes.js'
+import { createAccountService } from './accounts/account-service.js'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
 import swaggerUi from 'swagger-ui-express'
 import { canvasRepository } from './canvas/canvas-repository.js'
@@ -13,13 +16,16 @@ const openapiSpec = JSON.parse(readFileSync(join(__dirname, 'openapi.json'), 'ut
 
 const defaultCanvasService = createCanvasService({ repository: canvasRepository })
 
-// Tant que l'authentification (#18) n'est pas livrée, aucune session n'est reconnue : la pose renvoie 401.
-// L'authentification remplacera cette fonction par une lecture de la session, qui renvoie
-// { accountId, teamId } pour un joueur connecté, ou null.
-const noSession = async () => null
+const defaultAccountService = createAccountService({ repository: accountRepository })
 
 // L'application est séparée du serveur : les tests la lancent sur un port libre, sans toucher au port 3000.
-export function createApp({ canvasService = defaultCanvasService, resolvePlayer = noSession } = {}) {
+// resolvePlayer : lit le joueur de la requête, { accountId, teamId } ou null. Par défaut, il vient
+// du cookie de session ; les tests peuvent passer une session factice.
+export function createApp({
+  canvasService = defaultCanvasService,
+  accountService = defaultAccountService,
+  resolvePlayer = createSessionPlayerResolver(accountService),
+} = {}) {
   const app = express()
 
   // Analyse les corps de requête JSON
@@ -32,6 +38,7 @@ export function createApp({ canvasService = defaultCanvasService, resolvePlayer 
   })
 
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
+  app.use('/api', createAccountRouter({ accountService }))
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
 
   // Exposition de la spécification OpenAPI brute et de la documentation interactive Swagger UI.

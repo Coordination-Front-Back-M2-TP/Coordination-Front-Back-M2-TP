@@ -15,7 +15,7 @@ La table `PixelPlacement` garde chaque pose acceptée, même quand elle remplace
 
 ## Points en attente
 
-- **Session** : l'authentification (#18) n'est pas livrée. Par défaut, `resolvePlayer` renvoie toujours `null` : en l'état, toute pose réelle reçoit `401`. L'authentification passera sa propre fonction à `createApp` / `createCanvasServer`. Le transport (cookie ou en-tête) reste à aligner avec le front, voir [pose-front.md](pose-front.md).
+- **Session** : livrée par la tâche #39, voir [comptes-back.md](comptes-back.md). Par défaut, `resolvePlayer` lit le cookie de session. Le joueur n'a pas encore d'équipe : sa pose est inscrite avec `teamId` vide, jusqu'à la tâche #41.
 - **Palette** : le contrat la laisse « à valider ». Le back ne contrôle que le format `#RRGGBB` ; le contrôle « hors palette » s'ajoutera dans `canvas-service.js` quand l'équipe l'aura fixée.
 - **Délai** : livré par la tâche #46, voir [delai-back.md](delai-back.md). Une pose avant la fin du délai reçoit `429 COOLDOWN_ACTIVE`.
 

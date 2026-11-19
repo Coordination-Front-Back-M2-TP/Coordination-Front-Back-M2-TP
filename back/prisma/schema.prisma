@@ -23,16 +23,41 @@ model Pixel {
 }
 
 // Historique des poses : une ligne par pose acceptée, même quand elle remplace un pixel visible.
-// accountId et teamId viennent de la session ; ils deviendront des clés étrangères avec les comptes (#18).
+// accountId et teamId viennent de la session. accountId est l'identifiant du compte, écrit en texte.
+// teamId est vide tant que le joueur n'a pas d'équipe : les équipes arrivent avec la tâche #41.
 model PixelPlacement {
   id        Int      @id @default(autoincrement())
   x         Int
   y         Int
   color     String
   accountId String
-  teamId    String
+  teamId    String?
   placedAt  DateTime
   revision  Int      @unique
 
   @@index([accountId, placedAt])
+}
+
+// Compte d'un joueur. pseudoKey est le pseudo en minuscules : il porte l'unicité sans tenir compte de la casse.
+// passwordHash contient l'empreinte scrypt du mot de passe et son sel, jamais le mot de passe.
+model Account {
+  id           Int       @id @default(autoincrement())
+  pseudo       String
+  pseudoKey    String    @unique
+  passwordHash String
+  createdAt    DateTime
+  sessions     Session[]
+}
+
+// Session d'un compte. tokenHash est l'empreinte SHA-256 du jeton du cookie :
+// une copie de la base ne suffit pas pour se faire passer pour un joueur.
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  accountId Int
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt DateTime
+  expiresAt DateTime
+
+  @@index([accountId])
 }
