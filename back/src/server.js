@@ -3,7 +3,8 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Server } from 'socket.io'
 import { createApp } from './app.js'
-import { canvasRepository } from './canvas/canvas-repository.js'
+import { canvasRepository, prisma } from './canvas/canvas-repository.js'
+import { installProcessHandlers } from './process-handlers.js'
 import { createCanvasService } from './canvas/canvas-service.js'
 
 const CANVAS_ROOM = 'canvas'
@@ -48,7 +49,9 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
   const port = Number(process.env.PORT) || 3000
 
   // Express 5 passe l'erreur d'écoute au callback : sans ce test, le back se dirait prêt.
-  const { httpServer } = createCanvasServer()
+  const { httpServer, io } = createCanvasServer()
+  // Arrêt propre sur SIGTERM (docker stop) et arrêt journalisé en cas de plantage : voir process-handlers.js.
+  installProcessHandlers({ httpServer, io, disconnect: () => prisma.$disconnect() })
   httpServer.listen(port, (error) => {
     if (error) throw error
     console.log(`Back P1X3L prêt : http://localhost:${port}/api/health`)
