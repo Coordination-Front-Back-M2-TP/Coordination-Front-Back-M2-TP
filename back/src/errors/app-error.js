@@ -1,12 +1,14 @@
 // Erreur opérationnelle personnalisée pour l'application P1X3L.
 // Permet de spécifier le code HTTP, le code d'erreur machine et le message utilisateur.
 export class AppError extends Error {
-  constructor(message, { statusCode = 500, code = 'INTERNAL_SERVER_ERROR', details = null, isOperational = true } = {}) {
+  constructor(message, { statusCode = 500, code = 'INTERNAL_SERVER_ERROR', details = null, isOperational = true, headers = null } = {}) {
     super(message)
     this.name = this.constructor.name
     this.statusCode = statusCode
     this.code = code
     this.details = details
+    // En-têtes HTTP à joindre à la réponse d'erreur, par exemple Retry-After.
+    this.headers = headers
     this.isOperational = isOperational
     Error.captureStackTrace?.(this, this.constructor)
   }
@@ -32,8 +34,10 @@ export function conflict(message = 'La ressource est en conflit avec l’état a
   return new AppError(message, { statusCode: 409, code })
 }
 
-export function tooManyRequests(message = 'Délai actif, veuillez patienter.', code = 'COOLDOWN_ACTIVE') {
-  return new AppError(message, { statusCode: 429, code })
+// retryAfterSeconds : temps restant, renvoyé dans l'en-tête Retry-After quand il est connu.
+export function tooManyRequests(message = 'Délai actif, veuillez patienter.', code = 'COOLDOWN_ACTIVE', retryAfterSeconds = null) {
+  const headers = Number.isInteger(retryAfterSeconds) ? { 'Retry-After': String(retryAfterSeconds) } : null
+  return new AppError(message, { statusCode: 429, code, headers })
 }
 
 export function internalError(message = 'Une erreur inattendue est survenue.', code = 'INTERNAL_SERVER_ERROR', details = null) {

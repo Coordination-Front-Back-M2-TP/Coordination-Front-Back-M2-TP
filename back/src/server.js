@@ -8,10 +8,12 @@ import { createCanvasService } from './canvas/canvas-service.js'
 
 const CANVAS_ROOM = 'canvas'
 
-export function createCanvasServer({ repository = canvasRepository, resolvePlayer } = {}) {
+// cooldownMs : délai entre deux poses d'un compte ; par défaut, celui de PIXEL_COOLDOWN_SECONDS.
+export function createCanvasServer({ repository = canvasRepository, resolvePlayer, cooldownMs } = {}) {
   let io
   const canvasService = createCanvasService({
     repository,
+    cooldownMs,
     publish: (pixel) => io.to(CANVAS_ROOM).emit('pixel:updated', pixel),
   })
   const app = createApp({ canvasService, resolvePlayer })

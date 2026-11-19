@@ -45,12 +45,11 @@ export function createApp({ canvasService = defaultCanvasService, resolvePlayer 
       const player = await resolvePlayer(req)
       if (!player) throw unauthorized('Connectez-vous pour poser un pixel.')
 
-      const pixel = await canvasService.savePixel(req.body, {
+      // Le délai est vérifié par le serveur : une pose trop tôt reçoit 429 COOLDOWN_ACTIVE et Retry-After.
+      res.json(await canvasService.placePixel(req.body, {
         accountId: String(player.accountId),
         teamId: String(player.teamId),
-      })
-      // Le délai (#22) n'est pas encore appliqué : le joueur peut reposer tout de suite.
-      res.json({ pixel, cooldownEndsAt: pixel.updatedAt })
+      }))
     } catch (error) {
       next(error)
     }

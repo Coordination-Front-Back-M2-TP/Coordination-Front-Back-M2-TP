@@ -94,5 +94,10 @@ export function errorHandler(err, req, res, next) {
     }
   }
 
+  // En-têtes choisis par le back (AppError), par exemple Retry-After pour un délai actif
+  if (error instanceof AppError && error.headers) {
+    res.set(error.headers)
+  }
+
   res.status(statusCode).json(responseBody)
 }

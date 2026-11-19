@@ -34,7 +34,8 @@ before(async () => {
     stdio: 'pipe',
   })
   prisma = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: databaseUrl }) })
-  server = createCanvasServer({ repository: createCanvasRepository(prisma), resolvePlayer: testPlayer })
+  // Délai désactivé : ces tests enchaînent les poses d'un même compte. Le délai est couvert par cooldown.test.js.
+  server = createCanvasServer({ repository: createCanvasRepository(prisma), resolvePlayer: testPlayer, cooldownMs: 0 })
   server.httpServer.listen(0)
   await once(server.httpServer, 'listening')
   baseUrl = `http://localhost:${server.httpServer.address().port}`
