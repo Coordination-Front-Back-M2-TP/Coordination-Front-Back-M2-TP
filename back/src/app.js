@@ -10,11 +10,15 @@ import swaggerUi from 'swagger-ui-express'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasRouter } from './canvas/canvas-routes.js'
 import { createCanvasService } from './canvas/canvas-service.js'
+import { placementRepository } from './placements/placement-repository.js'
+import { createPlacementRouter } from './placements/placement-routes.js'
+import { createPlacementService } from './placements/placement-service.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const openapiSpec = JSON.parse(readFileSync(join(__dirname, 'openapi.json'), 'utf8'))
 
 const defaultCanvasService = createCanvasService({ repository: canvasRepository })
+const defaultPlacementService = createPlacementService({ repository: placementRepository })
 
 const defaultAccountService = createAccountService({ repository: accountRepository })
 
@@ -23,6 +27,7 @@ const defaultAccountService = createAccountService({ repository: accountReposito
 // du cookie de session ; les tests peuvent passer une session factice.
 export function createApp({
   canvasService = defaultCanvasService,
+  placementService = defaultPlacementService,
   accountService = defaultAccountService,
   resolvePlayer = createSessionPlayerResolver(accountService),
 } = {}) {
@@ -40,6 +45,7 @@ export function createApp({
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
   app.use('/api', createAccountRouter({ accountService }))
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
+  app.use('/api', createPlacementRouter({ placementService }))
 
   // Exposition de la spécification OpenAPI brute et de la documentation interactive Swagger UI.
   app.get('/api/openapi.json', (req, res) => {

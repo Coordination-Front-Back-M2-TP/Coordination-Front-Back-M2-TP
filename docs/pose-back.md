@@ -11,7 +11,7 @@ Tâche #44, user story [#21 — Poser un pixel](https://github.com/Coordination-
 
 ## Historique
 
-La table `PixelPlacement` garde chaque pose acceptée, même quand elle remplace un pixel : coordonnées, couleur, `accountId`, `teamId`, `placedAt` (heure serveur, égale au `updatedAt` du pixel) et `revision`. Elle n'est exposée par aucune route. `accountId` et `teamId` sont des chaînes sans clé étrangère, en attendant les tables des comptes et des équipes.
+La table `PixelPlacement` garde chaque pose acceptée, même quand elle remplace un pixel : coordonnées, couleur, `accountId`, `teamId`, `placedAt` (heure serveur, égale au `updatedAt` du pixel) et `revision`. La route `GET /api/placements` la donne par période, sans le compte ni l'équipe : voir [historique-back.md](historique-back.md). `accountId` et `teamId` sont des chaînes sans clé étrangère, en attendant les tables des comptes et des équipes.
 
 ## Points en attente
 
