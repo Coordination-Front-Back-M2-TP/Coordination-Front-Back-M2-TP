@@ -8,6 +8,7 @@ Ce guide part d'un poste vide et va jusqu'au projet lancé en local : le back (A
 | --- | --- | --- |
 | Git | Une version récente | `git --version` |
 | Node.js, avec npm | 22.12 ou plus (testé avec la 24.14) | `node --version` |
+| Docker, avec Compose (facultatif, pour tout lancer d'une commande) | Compose 2.22 ou plus (testé avec Docker 28.1 et Compose 2.35) | `docker compose version` |
 
 Accès nécessaires : le dépôt GitHub et le board ([TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1)). Les deux sont privés : il faut y être invité.
 
@@ -85,6 +86,20 @@ npm run dev --prefix front
 
 Vite affiche l'adresse du front : `http://localhost:5173/`.
 
+### Variante : tout lancer d'une commande avec Docker
+
+Avec Docker, le back et le front démarrent ensemble, sans installer leurs dépendances sur le poste (la section 4 reste utile pour lancer les tests) :
+
+```bash
+docker compose up --watch
+```
+
+Le premier lancement construit les images, en quelques minutes. Le front attend que le back réponde, puis les adresses sont les mêmes qu'en local : `http://localhost:3000` et `http://localhost:5173`. Avec `--watch`, chaque fichier modifié dans `back/src` ou `front/src` est recopié dans son conteneur : le back redémarre et la page du front se recharge. Une nouvelle dépendance ou une nouvelle migration reconstruit l'image toute seule.
+
+- Arrêter : `Ctrl+C`, puis `docker compose down`.
+- La base SQLite est gardée dans un volume Docker d'un lancement à l'autre ; `docker compose down -v` la remet à zéro.
+- La configuration est dans [compose.yml](compose.yml) ; les Dockerfiles du back et du front ont une cible `dev` pour ce lancement, et leur dernière étape reste l'image de production ([docs/deploiement.md](docs/deploiement.md)).
+
 ## 6. Vérifier que ça marche
 
 - Le back répond sur `http://localhost:3000/api/health` : `{"status":"ok"}`.
@@ -117,5 +132,7 @@ Les états affichés lorsqu'une connexion ou un rendu échoue sont décrits dans
 | Sous Windows, `npm run` affiche « … n'est pas reconnu en tant que commande interne ou externe », puis `Cannot find module` | Le chemin du dossier contient « & » : `cmd.exe`, qu'utilise npm, coupe la commande à ce caractère | Cloner le dépôt dans un dossier sans « & » |
 | Le back s'arrête avec `EADDRINUSE` | Un autre programme occupe le port 3000, peut-être un back déjà lancé | Fermer ce programme, puis relancer le back |
 | Le front affiche « Back : injoignable » | Le back n'est pas lancé | Lancer le back (section 5) |
+| `docker compose up` s'arrête avec « port is already allocated » | Un back ou un front lancé à la main occupe déjà le port 3000 ou 5173 | Arrêter le lancement manuel : on utilise l'un ou l'autre, pas les deux |
+| Avec Docker, une modification n'est pas prise en compte | Le lancement s'est fait sans `--watch` | Relancer avec `docker compose up --watch` |
 
 Un problème absent de ce tableau : ouvrir une issue avec le gabarit Bug, puis l'ajouter ici une fois résolu.
