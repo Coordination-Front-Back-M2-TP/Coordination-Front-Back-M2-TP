@@ -136,7 +136,7 @@ Types autorisés : `feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `test`, `st
 ### Communiquer en cas de question ou de blocage
 
 - Une question technique ou fonctionnelle se pose directement dans le ticket GitHub concerné ou sur le salon Discord de l'équipe.
-- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : ajouter immédiatement le label `statut: bloqué` sur l'issue et expliquer le blocage en commentaire.
+- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : expliquer le blocage en commentaire sur l'issue et prévenir son tuteur. En lecture seule, le stagiaire ne peut pas poser de label : c'est le tuteur qui ajoute `statut: bloqué`.
 
 ---
 
@@ -177,7 +177,7 @@ Tous ces contrôles doivent être au vert.
 
 ## 7. Retours et évaluation de stage
 
-Pour valoriser le travail réalisé et préparer la fin de stage, deux documents sont à formaliser.
+Pour valoriser le travail réalisé et préparer la fin de stage, deux documents sont à formaliser. Les retours du stage du TD « Road to MVP » et les actions qui en découlent sont dans [retour-de-stage.md](retour-de-stage.md).
 
 ### Rapport d'activité du stagiaire
 

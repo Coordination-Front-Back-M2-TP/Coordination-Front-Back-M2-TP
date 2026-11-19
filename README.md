@@ -29,7 +29,7 @@ Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réu
 
 ## Installation
 
-Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md). La documentation de l'API (Swagger UI) est dans [docs/api.md](docs/api.md).
+Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md), et les retours de stage dans [docs/retour-de-stage.md](docs/retour-de-stage.md). La documentation de l'API (Swagger UI) est dans [docs/api.md](docs/api.md).
 
 ## Structure du dépôt
 
