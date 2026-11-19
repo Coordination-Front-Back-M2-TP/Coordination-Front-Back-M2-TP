@@ -37,6 +37,8 @@ model PixelPlacement {
   revision  Int      @unique
 
   @@index([accountId, placedAt])
+  // Sert au bannissement : retrouver la pose d'avant sur une case.
+  @@index([x, y, revision])
 }
 
 // Compte d'un joueur. pseudoKey est le pseudo en minuscules : il porte l'unicité sans tenir compte de la casse.
@@ -50,6 +52,10 @@ model Account {
   // Identifiant d'une équipe de team-catalog.js ; vide tant que le joueur n'en a pas choisi.
   teamId        String?
   teamChangedAt DateTime?
+  // « player » ou « admin ». Aucune route ne change le rôle : voir scripts/set-role.js.
+  role          String    @default("player")
+  // Heure du bannissement ; vide tant que le compte n'est pas banni.
+  bannedAt      DateTime?
   sessions      Session[]
 }
 
@@ -64,4 +70,26 @@ model Session {
   expiresAt DateTime
 
   @@index([accountId])
+}
+
+// Journal des actions de modération : une ligne par action, jamais modifiée ni supprimée.
+// adminPseudo garde le pseudo de l'admin au moment de l'action. details est un objet JSON
+// qui dépend du type (pour un nettoyage : la zone, le nombre de pixels retirés, la révision ;
+// pour un bannissement : le pseudo du joueur, les pixels remis ou retirés, la révision).
+model ModerationAction {
+  id             Int      @id @default(autoincrement())
+  type           String
+  adminAccountId Int
+  adminPseudo    String
+  createdAt      DateTime
+  details        String
+}
+
+// Agent de dessin d'un compte : une ligne tant qu'il travaille, supprimée à l'arrêt.
+// La clé est le compte : un seul modèle actif par compte. pixels est le modèle, un tableau JSON
+// de { x, y, color } déjà placés sur la toile.
+model DrawingAgent {
+  accountId Int      @id
+  pixels    String
+  startedAt DateTime
 }

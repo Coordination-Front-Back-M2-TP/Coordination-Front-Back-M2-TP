@@ -3,9 +3,15 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { accountRepository } from './accounts/account-repository.js'
+import { agentRepository } from './agents/agent-repository.js'
+import { createAgentRouter } from './agents/agent-routes.js'
+import { createAgentService } from './agents/agent-service.js'
 import { createAccountRouter, createSessionPlayerResolver } from './accounts/account-routes.js'
 import { createAccountService } from './accounts/account-service.js'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
+import { moderationRepository } from './moderation/moderation-repository.js'
+import { createModerationRouter } from './moderation/moderation-routes.js'
+import { createModerationService } from './moderation/moderation-service.js'
 import swaggerUi from 'swagger-ui-express'
 import { rankingRepository } from './rankings/ranking-repository.js'
 import { createRankingRouter } from './rankings/ranking-routes.js'
@@ -29,16 +35,22 @@ const defaultPlacementService = createPlacementService({ repository: placementRe
 
 const defaultAccountService = createAccountService({ repository: accountRepository })
 const defaultTeamService = createTeamService({ repository: teamRepository })
+const defaultModerationService = createModerationService({ repository: moderationRepository })
+const defaultAgentService = createAgentService({ repository: agentRepository, canvasService: defaultCanvasService })
 
 // L'application est séparée du serveur : les tests la lancent sur un port libre, sans toucher au port 3000.
 // resolvePlayer : lit le joueur de la requête, { accountId, teamId } ou null. Par défaut, il vient
 // du cookie de session ; les tests peuvent passer une session factice.
+// agentService : l'agent de dessin. Par défaut, celui de la base de l'application, seulement avec
+// la toile par défaut ; null le retire : un test qui passe sa propre toile ne doit pas lire une autre base.
 export function createApp({
   canvasService = defaultCanvasService,
   placementService = defaultPlacementService,
   accountService = defaultAccountService,
   teamService = defaultTeamService,
+  moderationService = defaultModerationService,
   rankingService = defaultRankingService,
+  agentService = canvasService === defaultCanvasService ? defaultAgentService : null,
   resolvePlayer = createSessionPlayerResolver(accountService),
 } = {}) {
   const app = express()
@@ -55,7 +67,13 @@ export function createApp({
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
   app.use('/api', createAccountRouter({ accountService }))
   app.use('/api', createTeamRouter({ teamService, accountService }))
-  app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
+  app.use('/api', createModerationRouter({ moderationService, accountService }))
+  if (agentService) app.use('/api', createAgentRouter({ agentService, accountService }))
+  app.use('/api', createCanvasRouter({
+    canvasService,
+    resolvePlayer,
+    isAgentActive: agentService ? (accountId) => agentService.isActive(accountId) : null,
+  }))
   app.use('/api', createPlacementRouter({ placementService }))
 
   app.use('/api', createRankingRouter({ rankingService }))

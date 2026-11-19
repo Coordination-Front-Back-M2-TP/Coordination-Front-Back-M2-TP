@@ -493,6 +493,260 @@ Une équipe est obligatoire pour poser un pixel. `POST /api/pixels` répond `403
 - L’objectif produit est qu’un changement enregistré apparaisse chez les autres joueurs en moins d’une seconde.
 - Les erreurs HTTP utilisent le statut approprié et le format `error` standard. Les erreurs Socket.IO utilisent `canvas:error`.
 
+## Modérer la toile
+
+> **Proposition pour l’issue #59, écrite pour livrer les tâches #61 et #63.** Elle reste à relire par le front et le back. Elle couvre les user stories [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31) et [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32).
+
+### Rôle
+
+Le joueur connecté renvoyé par `GET /api/auth/me` porte un champ `role` : `"player"` ou `"admin"`. Le front s’en sert pour montrer l’outil de modération aux seuls admins. Le serveur revérifie le rôle à chaque requête de modération : sans session, la réponse est `401 UNAUTHORIZED` ; avec un compte joueur, `403 FORBIDDEN`. Aucune route ne donne ni ne retire le rôle.
+
+### `POST /api/moderation/cleanups` — nettoyer une zone
+
+Compte admin requis.
+
+**Requête — `application/json`**
+
+```json
+{
+  "fromX": 10,
+  "fromY": 10,
+  "toX": 12,
+  "toY": 12
+}
+```
+
+La zone est un rectangle donné par deux coins inclus : `(fromX, fromY)` en haut à gauche, `(toX, toY)` en bas à droite. Les quatre valeurs sont des entiers de `-50` à `50`, avec `fromX ≤ toX` et `fromY ≤ toY`.
+
+**Succès — `200 OK`**
+
+```json
+{
+  "action": {
+    "id": 7,
+    "type": "zone_cleanup",
+    "admin": "Lea",
+    "createdAt": "2026-10-27T14:30:00.000Z",
+    "details": {
+      "fromX": 10,
+      "fromY": 10,
+      "toX": 12,
+      "toY": 12,
+      "removedCount": 4,
+      "revision": 186
+    }
+  }
+}
+```
+
+Les pixels visibles de la zone sont supprimés : leurs cases redeviennent vides. `removedCount` est le nombre de pixels retirés, `revision` la révision de la toile prise par le nettoyage. `action` est la ligne ajoutée au journal. Une zone vide répond aussi `200`, avec `removedCount` à `0`.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | Coin absent, hors de `-50..50`, non entier, ou coins inversés |
+| `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
+| `403 Forbidden` | `FORBIDDEN` | Le compte n’est pas admin |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+### Serveur → client : `canvas:cleared`
+
+Après l’enregistrement d’un nettoyage, le serveur émet `canvas:cleared` aux clients abonnés à la toile par `canvas:subscribe` :
+
+```json
+{
+  "fromX": 10,
+  "fromY": 10,
+  "toX": 12,
+  "toY": 12,
+  "revision": 186,
+  "clearedAt": "2026-10-27T14:30:00.000Z"
+}
+```
+
+Le client retire de son état chaque pixel de la zone dont la révision est inférieure à `revision`. Un pixel de la zone avec une révision supérieure vient d’une pose faite après le nettoyage : il reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient pas le pseudo de l’admin.
+
+### `GET /api/moderation/players` — lister les joueurs
+
+Compte admin requis.
+
+| Paramètre | Type | Signification |
+| --- | --- | --- |
+| `limit` | entier de `1` à `200` | Nombre maximal de joueurs dans la page. `50` par défaut |
+| `after` | pseudo | Pseudo du dernier joueur déjà reçu : la page commence juste après |
+
+**Succès — `200 OK`**
+
+```json
+{
+  "players": [
+    {
+      "pseudo": "Troll",
+      "team": { "id": "rouge", "name": "Rouge", "color": "#D93A3A" },
+      "role": "player",
+      "banned": true,
+      "bannedAt": "2026-10-27T14:35:00.000Z"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+Les joueurs sont rangés par pseudo, sans tenir compte de la casse. `team` vaut `null` sans équipe, `bannedAt` vaut `null` tant que le joueur n’est pas banni. `nextCursor` se passe dans `after` pour la page suivante ; il vaut `null` à la fin de la liste. Les erreurs sont celles du journal.
+
+### `POST /api/moderation/bans` — bannir un joueur
+
+Compte admin requis.
+
+**Requête — `application/json`**
+
+```json
+{
+  "pseudo": "Troll"
+}
+```
+
+Le pseudo se lit sans tenir compte de la casse.
+
+**Succès — `200 OK`**
+
+```json
+{
+  "action": {
+    "id": 8,
+    "type": "player_ban",
+    "admin": "Lea",
+    "createdAt": "2026-10-27T14:35:00.000Z",
+    "details": {
+      "pseudo": "Troll",
+      "restoredCount": 12,
+      "clearedCount": 3,
+      "revision": 187
+    }
+  }
+}
+```
+
+Le joueur est banni et ses pixels encore visibles sont annulés. Chaque case reprend le pixel d’avant lui, d’après l’historique des poses (`restoredCount`) ; sans pixel d’avant, elle redevient vide (`clearedCount`). Le pixel d’avant ne vient jamais d’un autre joueur banni, ni d’avant un nettoyage de la case. `action` est la ligne ajoutée au journal.
+
+Un joueur banni garde son compte et sa session, mais il ne peut plus poser : `POST /api/pixels` répond `403 ACCOUNT_BANNED`.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | `pseudo` absent, vide ou qui n’est pas un texte |
+| `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
+| `403 Forbidden` | `FORBIDDEN` | Le compte n’est pas admin |
+| `404 Not Found` | `PLAYER_NOT_FOUND` | Aucun compte n’a ce pseudo |
+| `409 Conflict` | `ALREADY_BANNED` | Le joueur est déjà banni |
+| `409 Conflict` | `ADMIN_NOT_BANNABLE` | Le compte visé est admin |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+### Serveur → client : `canvas:reverted`
+
+Après un bannissement qui change la toile, le serveur émet `canvas:reverted` aux clients abonnés à la toile par `canvas:subscribe` :
+
+```json
+{
+  "revision": 187,
+  "revertedAt": "2026-10-27T14:35:00.000Z",
+  "restored": [
+    { "x": 10, "y": 10, "color": "#2F6FDE", "updatedAt": "2026-10-27T14:20:00.000Z", "revision": 120 }
+  ],
+  "cleared": [
+    { "x": 11, "y": 10 }
+  ]
+}
+```
+
+`restored` liste les pixels remis, au format `Pixel` : ils gardent l’heure et la révision de leur pose d’origine. `cleared` liste les cases vidées. Le client applique chaque case dont le pixel qu’il affiche a une révision inférieure à `revision` : il le remplace par le pixel de `restored`, ou le retire pour `cleared`. Une case dont le pixel a une révision supérieure vient d’une pose faite après le bannissement : elle reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient ni le pseudo du joueur banni ni celui de l’admin.
+
+### `GET /api/moderation/actions` — lire le journal
+
+Compte admin requis.
+
+| Paramètre | Type | Signification |
+| --- | --- | --- |
+| `limit` | entier de `1` à `200` | Nombre maximal d’actions dans la page. `50` par défaut |
+| `before` | entier ≥ 1 | Identifiant de la dernière action déjà reçue : la page commence juste avant |
+
+**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Les actions ont le format de `action` ci-dessus, la plus récente d’abord. `type` vaut `zone_cleanup` ou `player_ban`, et `details` dépend du type. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
+
+Les erreurs sont celles du nettoyage ; `400 INVALID_INPUT` correspond ici à `limit` ou `before` hors bornes.
+
+## Dessiner avec l’IA — agent de dessin
+
+> **Proposition pour l’issue #47, écrite pour livrer la tâche #51.** Elle reste à relire par le front et le back. Elle couvre la user story [#25 — Confier le modèle à mon agent](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/25). La demande d’un modèle à l’IA (#24) n’y est pas encore.
+
+L’agent de dessin est un programme du serveur, sans IA. Il pose le modèle du joueur au rythme du délai de son compte, même quand le joueur est déconnecté. Les trois routes demandent un compte connecté : l’agent est toujours celui du compte de la session.
+
+### Modèle `Agent`
+
+```json
+{
+  "status": "running",
+  "startedAt": "2026-10-27T14:30:00.000Z",
+  "total": 3,
+  "done": 1,
+  "nextPlacementAt": "2026-10-27T14:30:10.000Z",
+  "pixels": [
+    { "x": 10, "y": 10, "color": "#D93A3A" },
+    { "x": 11, "y": 10, "color": "#D93A3A" },
+    { "x": 10, "y": 11, "color": "#2F6FDE" }
+  ]
+}
+```
+
+| Champ | Signification |
+| --- | --- |
+| `status` | Toujours `"running"` : un agent arrêté n’existe plus |
+| `startedAt` | Heure serveur du lancement |
+| `total` | Nombre de pixels du modèle |
+| `done` | Nombre de pixels du modèle que la toile montre déjà, quelle que soit la personne qui les a posés |
+| `nextPlacementAt` | Heure serveur prévue de la prochaine pose ; `null` quand le modèle est fini, ou avant la première pose |
+| `pixels` | Le modèle, tel qu’il a été envoyé au lancement |
+
+### `POST /api/agent` — lancer l’agent
+
+**Requête — `application/json`**
+
+```json
+{
+  "pixels": [
+    { "x": 10, "y": 10, "color": "#D93A3A" },
+    { "x": 11, "y": 10, "color": "#D93A3A" },
+    { "x": 10, "y": 11, "color": "#2F6FDE" }
+  ]
+}
+```
+
+Le modèle est déjà placé : `x` et `y` sont des coordonnées de la toile, de `-50` à `50`. Il contient de 1 à 1 024 pixels, tient dans un carré de 32 × 32 cases, et ne nomme pas deux fois la même case. Une case transparente du modèle ne s’envoie pas.
+
+**Succès — `201 Created`** : `{ "agent": Agent }`.
+
+L’agent pose un pixel à chaque fin de délai du compte, dans l’ordre du modèle. À chaque passage, il compare le modèle et la toile et pose le premier pixel qui ne correspond pas : un pixel écrasé par une autre équipe est donc reposé. Une fois le modèle fini, l’agent reste actif et continue de le réparer, jusqu’à ce que le joueur l’arrête. Chaque pose de l’agent est une pose du compte : elle passe par l’historique, le délai et `pixel:updated`, comme une pose à la main.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | Modèle absent, vide, trop grand, hors de la toile, couleur invalide ou case en double |
+| `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
+| `403 Forbidden` | `TEAM_REQUIRED` | Le joueur n’a pas encore choisi d’équipe |
+| `403 Forbidden` | `ACCOUNT_BANNED` | Le compte est banni |
+| `409 Conflict` | `AGENT_ALREADY_ACTIVE` | Un agent travaille déjà pour ce compte : un seul modèle est actif par compte |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+### `GET /api/agent` — suivre la progression
+
+**Succès — `200 OK`** : `{ "agent": Agent }`, ou `{ "agent": null }` quand aucun agent ne travaille pour ce compte. Aucun événement temps réel ne porte la progression : le front relit cette route, ou compte lui-même les pixels du modèle à partir de `pixel:updated`.
+
+### `DELETE /api/agent` — arrêter l’agent
+
+**Succès — `204 No Content`**, même si aucun agent ne travaillait. Les pixels déjà posés restent sur la toile.
+
+### Pose à la main pendant que l’agent travaille
+
+Un compte, un délai : tant que l’agent du compte existe, `POST /api/pixels` répond `409 AGENT_ACTIVE`. Le joueur arrête son agent pour reposer à la main.
+
+L’agent d’un joueur banni s’arrête de lui-même.
+
 ## Points restant à valider avant implémentation
 
 - Le format de couleur `#RRGGBB` est celui du pixel transmis. La palette autorisée reste à fixer dans le contrat de pose de pixel (#21).

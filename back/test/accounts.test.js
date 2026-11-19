@@ -77,7 +77,7 @@ async function register(pseudo, password = PASSWORD) {
 
 test('l’inscription crée le compte, connecte le joueur et ne renvoie que son pseudo et son équipe', async () => {
   const { body, cookie } = await register('Alex')
-  assert.deepEqual(body, { user: { pseudo: 'Alex', team: null } })
+  assert.deepEqual(body, { user: { pseudo: 'Alex', team: null, role: 'player' } })
 
   assert.match(cookie.raw, /; HttpOnly/i)
   assert.match(cookie.raw, /; SameSite=Lax/i)
@@ -87,7 +87,7 @@ test('l’inscription crée le compte, connecte le joueur et ne renvoie que son 
 
   const me = await request('/api/auth/me', { cookie: cookie.pair })
   assert.equal(me.status, 200)
-  assert.deepEqual(await me.json(), { user: { pseudo: 'Alex', team: null } })
+  assert.deepEqual(await me.json(), { user: { pseudo: 'Alex', team: null, role: 'player' } })
 })
 
 test('le mot de passe est stocké haché avec son sel, jamais en clair', async () => {
@@ -166,7 +166,7 @@ test('la connexion ouvre une session avec le bon mot de passe, quelle que soit l
   for (const pseudo of ['Marin', 'marin']) {
     const response = await request('/api/auth/login', { method: 'POST', body: { pseudo, password: PASSWORD } })
     assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), { user: { pseudo: 'Marin', team: null } })
+    assert.deepEqual(await response.json(), { user: { pseudo: 'Marin', team: null, role: 'player' } })
     const me = await request('/api/auth/me', { cookie: sessionCookie(response).pair })
     assert.equal(me.status, 200)
   }
@@ -225,7 +225,7 @@ test('la session survit au rechargement de la page et au redémarrage du serveur
   for (let reload = 0; reload < 2; reload += 1) {
     const me = await request('/api/auth/me', { cookie: cookie.pair, url })
     assert.equal(me.status, 200)
-    assert.deepEqual(await me.json(), { user: { pseudo: 'Fidele', team: null } })
+    assert.deepEqual(await me.json(), { user: { pseudo: 'Fidele', team: null, role: 'player' } })
   }
 })
 
@@ -321,7 +321,7 @@ test('les réponses ne contiennent ni empreinte ni identifiant de compte, et un 
   })
   assert.equal(response.status, 201)
   const text = await response.text()
-  assert.deepEqual(JSON.parse(text), { user: { pseudo: 'Curieux', team: null } })
+  assert.deepEqual(JSON.parse(text), { user: { pseudo: 'Curieux', team: null, role: 'player' } })
   assert.equal(text.includes('scrypt'), false)
 
   const account = await prisma.account.findUnique({ where: { pseudoKey: 'curieux' } })

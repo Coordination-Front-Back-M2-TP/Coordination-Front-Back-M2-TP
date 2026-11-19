@@ -3,12 +3,16 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Server } from 'socket.io'
 import { createAccountService } from './accounts/account-service.js'
+import { agentRepository as defaultAgentRepository } from './agents/agent-repository.js'
+import { createAgentService } from './agents/agent-service.js'
 import { createApp } from './app.js'
 import { rankingRepository as defaultRankingRepository } from './rankings/ranking-repository.js'
 import { createRankingService } from './rankings/ranking-service.js'
 import { logger } from './utils/logger.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasService } from './canvas/canvas-service.js'
+import { moderationRepository as defaultModerationRepository } from './moderation/moderation-repository.js'
+import { createModerationService } from './moderation/moderation-service.js'
 import { placementRepository as defaultPlacementRepository } from './placements/placement-repository.js'
 import { createPlacementService } from './placements/placement-service.js'
 import { createTeamService } from './teams/team-service.js'
@@ -42,15 +46,20 @@ function createRankingBroadcaster({ rankingService, emit }) {
 // placementRepository : accès à l'historique des poses ; les tests y passent leur propre base.
 // accountRepository : accès aux comptes et aux sessions ; par défaut, celui de la base de l'application.
 // teamRepository : accès à l'équipe des comptes ; teamChangeCooldownMs : délai entre deux changements d'équipe.
-// rankingRepository : accès aux données du classement. Par défaut, celui de la base de l'application,
-// seulement avec le dépôt de toile par défaut : un test qui passe sa propre toile ne doit pas lire une autre base.
+// moderationRepository : nettoyage de zone, bannissement et journal ; rankingRepository : données du classement.
+// agentRepository : agents de dessin ; agentIdleCheckMs : rythme de veille d'un agent qui a fini son modèle.
+// Par défaut, ceux de la base de l'application, seulement avec le dépôt de toile par défaut :
+// un test qui passe sa propre toile ne doit ni lire ni écrire dans une autre base.
 export function createCanvasServer({
   repository = canvasRepository,
   placementRepository = defaultPlacementRepository,
   accountRepository,
   teamRepository,
   teamChangeCooldownMs,
+  moderationRepository = repository === canvasRepository ? defaultModerationRepository : null,
   rankingRepository = repository === canvasRepository ? defaultRankingRepository : null,
+  agentRepository = repository === canvasRepository ? defaultAgentRepository : null,
+  agentIdleCheckMs,
   resolvePlayer,
   cooldownMs,
 } = {}) {
@@ -75,12 +84,27 @@ export function createCanvasServer({
   const teamService = teamRepository
     ? createTeamService({ repository: teamRepository, cooldownMs: teamChangeCooldownMs })
     : undefined
+  // Le nettoyage d'une zone et l'annulation des poses d'un joueur banni sont diffusés
+  // aux abonnés de la toile, comme un changement de pixel.
+  const moderationService = moderationRepository
+    ? createModerationService({
+        repository: moderationRepository,
+        publishCleanup: (cleanup) => io.to(CANVAS_ROOM).emit('canvas:cleared', cleanup),
+        publishRevert: (revert) => io.to(CANVAS_ROOM).emit('canvas:reverted', revert),
+      })
+    : undefined
+  // L'agent pose par le service de toile : ses pixels sont diffusés comme ceux d'un joueur.
+  const agentService = agentRepository
+    ? createAgentService({ repository: agentRepository, canvasService, cooldownMs, idleCheckMs: agentIdleCheckMs })
+    : null
   const app = createApp({
     canvasService,
     placementService,
     accountService,
     teamService,
+    moderationService,
     rankingService,
+    agentService,
     resolvePlayer,
   })
   const httpServer = createServer(app)
@@ -108,7 +132,7 @@ export function createCanvasServer({
     })
   })
 
-  return { app, httpServer, io, canvasService, rankingService }
+  return { app, httpServer, io, canvasService, rankingService, agentService }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
@@ -116,9 +140,13 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
   const port = Number(process.env.PORT) || 3000
 
   // Express 5 passe l'erreur d'écoute au callback : sans ce test, le back se dirait prêt.
-  const { httpServer } = createCanvasServer()
+  const { httpServer, agentService } = createCanvasServer()
   httpServer.listen(port, (error) => {
     if (error) throw error
+    // Les agents de dessin lancés avant l'arrêt du serveur reprennent leur modèle.
+    agentService.resume().catch((resumeError) => {
+      logger.error('Reprise des agents de dessin impossible', { errorName: resumeError?.name })
+    })
     console.log(`Back P1X3L prêt : http://localhost:${port}/api/health`)
   })
 }

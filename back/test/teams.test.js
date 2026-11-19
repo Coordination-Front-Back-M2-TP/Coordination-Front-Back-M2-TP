@@ -98,21 +98,21 @@ test('GET /api/teams liste les 4 équipes, sans compte', async () => {
 test('un nouveau joueur n’a pas d’équipe, puis son premier choix passe sans attendre', async () => {
   const cookie = await register('Nouveau')
   const me = await request('/api/auth/me', { cookie })
-  assert.deepEqual(await me.json(), { user: { pseudo: 'Nouveau', team: null } })
+  assert.deepEqual(await me.json(), { user: { pseudo: 'Nouveau', team: null, role: 'player' } })
 
   const startedAt = Date.now()
   const response = await joinTeam(cookie, 'rouge')
   assert.equal(response.status, 200)
   const body = await response.json()
   assert.deepEqual(Object.keys(body).sort(), ['teamChangeAvailableAt', 'user'])
-  assert.deepEqual(body.user, { pseudo: 'Nouveau', team: ROUGE })
+  assert.deepEqual(body.user, { pseudo: 'Nouveau', team: ROUGE, role: 'player' })
   const availableAt = Date.parse(body.teamChangeAvailableAt)
   assert.equal(availableAt >= startedAt + TEAM_CHANGE_COOLDOWN_MS - 1000, true)
   assert.equal(availableAt <= Date.now() + TEAM_CHANGE_COOLDOWN_MS, true)
 
   // L'équipe s'affiche à côté du pseudo : elle revient avec le joueur connecté, après rechargement.
   const reloaded = await request('/api/auth/me', { cookie })
-  assert.deepEqual(await reloaded.json(), { user: { pseudo: 'Nouveau', team: ROUGE } })
+  assert.deepEqual(await reloaded.json(), { user: { pseudo: 'Nouveau', team: ROUGE, role: 'player' } })
 })
 
 test('changer d’équipe avant 5 minutes est refusé en 429, avec Retry-After', async () => {

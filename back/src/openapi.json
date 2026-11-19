@@ -364,6 +364,433 @@
         }
       }
     },
+    "/api/moderation/cleanups": {
+      "post": {
+        "summary": "Nettoyer une zone de la toile",
+        "description": "Compte admin requis. Supprime les pixels visibles du rectangle, note l'action dans le journal et diffuse canvas:cleared aux abonnés de la toile. L'historique des poses n'est pas modifié.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fromX",
+                  "fromY",
+                  "toX",
+                  "toY"
+                ],
+                "properties": {
+                  "fromX": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "fromY": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "toX": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "toY": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zone nettoyée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "action"
+                  ],
+                  "properties": {
+                    "action": {
+                      "$ref": "#/components/schemas/ModerationAction"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Zone invalide (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/moderation/players": {
+      "get": {
+        "summary": "Lister les joueurs",
+        "description": "Compte admin requis. Les joueurs sont rangés par pseudo, sans tenir compte de la casse.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Pseudo du dernier joueur déjà reçu (nextCursor de la page précédente).",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Une page de la liste",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "players",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "players": {
+                      "type": "array",
+                      "maxItems": 200,
+                      "items": {
+                        "$ref": "#/components/schemas/ModerationPlayer"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "limit ou after hors contrat (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/moderation/bans": {
+      "post": {
+        "summary": "Bannir un joueur et annuler ses pixels",
+        "description": "Compte admin requis. Bannit le joueur, remplace ses pixels visibles par ceux d'avant lui d'après l'historique des poses (ou vide la case), note l'action dans le journal et diffuse canvas:reverted aux abonnés de la toile. L'historique des poses n'est pas modifié. Un joueur banni reçoit 403 ACCOUNT_BANNED quand il pose.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pseudo"
+                ],
+                "properties": {
+                  "pseudo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Joueur banni",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "action"
+                  ],
+                  "properties": {
+                    "action": {
+                      "$ref": "#/components/schemas/ModerationAction"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pseudo absent, vide ou qui n'est pas un texte (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Aucun compte n'a ce pseudo (PLAYER_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Joueur déjà banni (ALREADY_BANNED) ou compte admin (ADMIN_NOT_BANNABLE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/moderation/actions": {
+      "get": {
+        "summary": "Lire le journal de modération",
+        "description": "Compte admin requis. Les actions les plus récentes d'abord.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "description": "Identifiant de la dernière action déjà reçue (nextCursor de la page précédente).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Une page du journal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "actions",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "actions": {
+                      "type": "array",
+                      "maxItems": 200,
+                      "items": {
+                        "$ref": "#/components/schemas/ModerationAction"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "integer",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "limit ou before hors bornes (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Vérifier l'état et la version du back-end",
@@ -474,7 +901,7 @@
       },
       "post": {
         "summary": "Poser un pixel",
-        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session. Une équipe est obligatoire : sans équipe, la réponse est 403 TEAM_REQUIRED.",
+        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session. Une équipe est obligatoire : sans équipe, la réponse est 403 TEAM_REQUIRED. Un compte banni ne peut plus poser : la réponse est 403 ACCOUNT_BANNED. Pendant que l'agent de dessin du compte travaille, la réponse est 409 AGENT_ACTIVE.",
         "requestBody": {
           "required": true,
           "content": {
@@ -552,7 +979,17 @@
             }
           },
           "403": {
-            "description": "Le joueur n'a pas encore choisi d'équipe (TEAM_REQUIRED)",
+            "description": "Le joueur n'a pas encore choisi d'équipe (TEAM_REQUIRED), ou son compte est banni (ACCOUNT_BANNED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "L'agent de dessin du compte travaille (AGENT_ACTIVE)",
             "content": {
               "application/json": {
                 "schema": {
@@ -596,6 +1033,203 @@
             "sessionCookie": []
           }
         ]
+      }
+    },
+    "/api/agent": {
+      "get": {
+        "summary": "Suivre la progression de l'agent de dessin",
+        "description": "Compte connecté requis. agent vaut null quand aucun agent ne travaille pour ce compte.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "L'agent du compte, ou null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "agent"
+                  ],
+                  "properties": {
+                    "agent": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Agent"
+                        }
+                      ],
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Lancer l'agent de dessin sur un modèle",
+        "description": "Compte connecté requis. L'agent pose un pixel du modèle à chaque fin de délai du compte, même quand le joueur est déconnecté, et repose un pixel écrasé. Le modèle est déjà placé sur la toile : de 1 à 1 024 pixels, dans un carré de 32 × 32 cases, sans case en double. Un seul modèle est actif par compte. Tant que l'agent existe, POST /api/pixels répond 409 AGENT_ACTIVE.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pixels"
+                ],
+                "properties": {
+                  "pixels": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1024,
+                    "items": {
+                      "$ref": "#/components/schemas/ModelPixel"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Agent lancé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "agent"
+                  ],
+                  "properties": {
+                    "agent": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Agent"
+                        }
+                      ],
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Modèle hors contrat (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le joueur n'a pas d'équipe (TEAM_REQUIRED), ou son compte est banni (ACCOUNT_BANNED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Un agent travaille déjà pour ce compte (AGENT_ALREADY_ACTIVE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Arrêter l'agent de dessin",
+        "description": "Compte connecté requis. Arrêter un agent déjà arrêté n'est pas une erreur. Les pixels déjà posés restent.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Agent arrêté"
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/placements": {
@@ -720,7 +1354,8 @@
         "type": "object",
         "required": [
           "pseudo",
-          "team"
+          "team",
+          "role"
         ],
         "properties": {
           "pseudo": {
@@ -735,6 +1370,13 @@
             ],
             "nullable": true,
             "description": "Équipe du joueur ; null tant qu'il n'en a pas choisi."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "player",
+              "admin"
+            ]
           }
         }
       },
@@ -758,6 +1400,124 @@
             "type": "string",
             "pattern": "^#[0-9A-Fa-f]{6}$",
             "example": "#D93A3A"
+          }
+        }
+      },
+      "ModerationAction": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "admin",
+          "createdAt",
+          "details"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "zone_cleanup",
+              "player_ban"
+            ]
+          },
+          "admin": {
+            "type": "string",
+            "description": "Pseudo de l'admin au moment de l'action"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "details": {
+            "type": "object",
+            "description": "Pour zone_cleanup : fromX, fromY, toX, toY, removedCount et revision. Pour player_ban : pseudo, restoredCount, clearedCount et revision.",
+            "required": [
+              "revision"
+            ],
+            "properties": {
+              "fromX": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "fromY": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "toX": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "toY": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "removedCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pseudo": {
+                "type": "string",
+                "description": "Pseudo du joueur banni"
+              },
+              "restoredCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "clearedCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      },
+      "ModerationPlayer": {
+        "type": "object",
+        "required": [
+          "pseudo",
+          "team",
+          "role",
+          "banned",
+          "bannedAt"
+        ],
+        "properties": {
+          "pseudo": {
+            "type": "string"
+          },
+          "team": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Team"
+              }
+            ],
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "player",
+              "admin"
+            ]
+          },
+          "banned": {
+            "type": "boolean"
+          },
+          "bannedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         }
       },
@@ -827,6 +1587,75 @@
           "revision": {
             "type": "integer",
             "minimum": 1
+          }
+        }
+      },
+      "ModelPixel": {
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "color"
+        ],
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          }
+        }
+      },
+      "Agent": {
+        "type": "object",
+        "required": [
+          "status",
+          "startedAt",
+          "total",
+          "done",
+          "nextPlacementAt",
+          "pixels"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "running"
+            ]
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1024
+          },
+          "done": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Pixels du modèle que la toile montre déjà"
+          },
+          "nextPlacementAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Heure serveur prévue de la prochaine pose ; null quand le modèle est fini"
+          },
+          "pixels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelPixel"
+            }
           }
         }
       },
