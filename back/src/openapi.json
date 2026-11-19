@@ -402,6 +402,49 @@
         }
       }
     },
+    "/api/rankings": {
+      "get": {
+        "summary": "Lire le classement des équipes",
+        "description": "Lecture publique sans authentification. Un pixel compte pour l'équipe qui l'a posé en dernier. Les équipes sont triées par nombre de pixels ; à égalité, elles ont le même rang. Une équipe sans pixel n'apparaît pas. Le même contenu est diffusé par ranking:updated aux abonnés de la toile quand le classement change.",
+        "responses": {
+          "200": {
+            "description": "Classement courant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ranking"
+                },
+                "example": {
+                  "revision": 185,
+                  "teams": [
+                    {
+                      "teamId": "rouge",
+                      "pixelCount": 42,
+                      "rank": 1
+                    },
+                    {
+                      "teamId": "bleue",
+                      "pixelCount": 17,
+                      "rank": 2
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pixels": {
       "get": {
         "summary": "Lire l'état courant de la toile",
@@ -839,6 +882,44 @@
           "revision": {
             "type": "integer",
             "minimum": 1
+          }
+        }
+      },
+      "Ranking": {
+        "type": "object",
+        "required": [
+          "revision",
+          "teams"
+        ],
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Révision de la toile au moment du calcul"
+          },
+          "teams": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "teamId",
+                "pixelCount",
+                "rank"
+              ],
+              "properties": {
+                "teamId": {
+                  "type": "string"
+                },
+                "pixelCount": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "rank": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
           }
         }
       },
