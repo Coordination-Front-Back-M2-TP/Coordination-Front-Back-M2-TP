@@ -15,7 +15,7 @@ Ce document couvre la lecture de la toile et sa mise à jour en direct pour la u
 - `x` augmente vers la droite et `y` augmente vers le bas, pour correspondre aux coordonnées écran. Les deux bornes sont inclusives ; toute coordonnée hors de `-50..50` est invalide.
 - `color` est une couleur hexadécimale `#RRGGBB` appartenant à la palette du jeu. La palette exacte reste à valider.
 - Les dates sont en UTC au format ISO 8601, par exemple `2026-10-27T14:30:00.000Z`.
-- Les données publiques représentent uniquement l’état visuel courant de la toile. Elles ne contiennent ni historique des poses, ni pseudo, ni identifiant de compte, ni autre identité de joueur. L’historique relève d’un contrat distinct.
+- Les données publiques représentent uniquement l’état visuel courant de la toile. Elles ne contiennent ni historique des poses, ni pseudo, ni identifiant de compte, ni autre identité de joueur. L’historique se lit par une route à part, `GET /api/placements`, elle aussi sans identité de joueur.
 - `revision` est un entier strictement croissant pour chaque changement de la toile. Le serveur l’attribue au moment où il persiste l’état ; il permet au client de distinguer les mises à jour nouvelles des événements déjà inclus dans un instantané.
 - Un instantané contient au plus 10 201 pixels (un par case). Il n’y a pas de limite d’octets distincte : la taille est bornée par la résolution de la toile.
 
@@ -133,6 +133,58 @@ Chaque pose acceptée crée aussi une entrée d’historique contenant le compte
 | `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
 
 Une réponse `429` conserve le format d’erreur commun. Elle inclut l’en-tête HTTP `Retry-After`, exprimé en secondes, pour indiquer le temps restant sans faire analyser un message destiné à l’utilisateur.
+
+### `GET /api/placements` — historique des poses par période
+
+**Proposition pour l’issue #54, écrite pour livrer la tâche #58.** Elle reste à relire par le front et le back. Cette route sert le timelapse de la user story [#29 — Revoir la toile en accéléré](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/29). Elle est publique, comme la lecture de la toile.
+
+**Paramètres de requête**, tous facultatifs :
+
+| Paramètre | Type | Signification |
+| --- | --- | --- |
+| `from` | date ISO 8601 avec fuseau | Début de la période, inclus. Absent : depuis la première pose de la toile |
+| `to` | date ISO 8601 avec fuseau | Fin de la période, exclue. Absent : jusqu’à la dernière pose |
+| `after` | entier ≥ 0 | Révision de la dernière pose déjà reçue : la page commence juste après |
+| `limit` | entier de `1` à `1000` | Nombre maximal de poses dans la page. `500` par défaut |
+
+Exemple : `GET /api/placements?from=2026-10-27T14:00:00.000Z&to=2026-10-27T15:00:00.000Z&limit=2`.
+
+**Succès — `200 OK`**
+
+```json
+{
+  "placements": [
+    {
+      "x": 12,
+      "y": 8,
+      "color": "#D93A3A",
+      "placedAt": "2026-10-27T14:30:00.000Z",
+      "revision": 185
+    },
+    {
+      "x": 12,
+      "y": 8,
+      "color": "#2F6FDE",
+      "placedAt": "2026-10-27T14:30:12.000Z",
+      "revision": 186
+    }
+  ],
+  "nextCursor": 186
+}
+```
+
+- `placements` contient les poses acceptées de la période, dans l’ordre croissant des révisions : c’est l’ordre dans lequel elles ont changé la toile. Chaque pose y figure, y compris celle qu’une pose suivante a remplacée.
+- `placedAt` est l’heure serveur de la pose ; `revision` est celle du `Pixel` enregistré par cette pose.
+- `nextCursor` est la valeur à passer dans `after` pour lire la page suivante, avec les mêmes autres paramètres. Il vaut `null` quand la période est entièrement lue.
+- Une période sans pose renvoie `{ "placements": [], "nextCursor": null }`.
+- Une pose de l’historique ne contient ni pseudo, ni identifiant de compte, ni équipe.
+
+#### Erreurs de l’historique
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | Date mal formée ou sans fuseau, `from` égal ou postérieur à `to`, `limit` ou `after` hors bornes, paramètre répété |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
 
 ### Flux temps réel d’une pose
 
@@ -277,3 +329,4 @@ Le gestionnaire Express de la PR #110 ne traite pas les erreurs Socket.IO. Le se
 - Faire relire `GET /api/rankings` et `ranking:updated` par une personne du front et une personne du back, avec le contrat de l’EPIC « Suivre la bataille » (#54) : nom des champs, règle des égalités, équipes sans pixel, diffusion aux abonnés de la toile.
 - Fixer la palette autorisée et la durée du délai côté serveur ; 10 secondes est une proposition issue du besoin produit.
 - Faire relire le contrat de pose par une personne du front et une personne du back avant de considérer #42 terminée.
+- Faire relire la route `GET /api/placements` par une personne du front et une personne du back, avec le contrat de l’EPIC « Suivre la bataille » (#54) : accès public, taille des pages, nom des champs.

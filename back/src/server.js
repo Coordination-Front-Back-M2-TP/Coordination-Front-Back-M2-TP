@@ -8,6 +8,8 @@ import { createRankingService } from './rankings/ranking-service.js'
 import { logger } from './utils/logger.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasService } from './canvas/canvas-service.js'
+import { placementRepository as defaultPlacementRepository } from './placements/placement-repository.js'
+import { createPlacementService } from './placements/placement-service.js'
 
 const CANVAS_ROOM = 'canvas'
 
@@ -35,10 +37,12 @@ function createRankingBroadcaster({ rankingService, emit }) {
 }
 
 // cooldownMs : délai entre deux poses d'un compte ; par défaut, celui de PIXEL_COOLDOWN_SECONDS.
+// placementRepository : accès à l'historique des poses ; les tests y passent leur propre base.
 // rankingRepository : accès aux données du classement. Par défaut, celui de la base de l'application,
 // seulement avec le dépôt de toile par défaut : un test qui passe sa propre toile ne doit pas lire une autre base.
 export function createCanvasServer({
   repository = canvasRepository,
+  placementRepository = defaultPlacementRepository,
   rankingRepository = repository === canvasRepository ? defaultRankingRepository : null,
   resolvePlayer,
   cooldownMs,
@@ -59,7 +63,8 @@ export function createCanvasServer({
       broadcastRanking()
     },
   })
-  const app = createApp({ canvasService, rankingService, resolvePlayer })
+  const placementService = createPlacementService({ repository: placementRepository })
+  const app = createApp({ canvasService, placementService, rankingService, resolvePlayer })
   const httpServer = createServer(app)
   io = new Server(httpServer)
 

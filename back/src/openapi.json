@@ -230,6 +230,90 @@
           }
         }
       }
+    },
+    "/api/placements": {
+      "get": {
+        "summary": "Lire l'historique des poses par période",
+        "description": "Lecture publique sans authentification, pour le timelapse. Les poses sont rendues dans l'ordre des révisions, y compris celles qu'une pose suivante a remplacées. Aucune pose ne contient de compte ni d'équipe. Sans from, l'historique part de la première pose de la toile.",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "Début de la période, inclus. Date ISO 8601 avec fuseau.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "2026-10-27T14:00:00.000Z"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Fin de la période, exclue. Date ISO 8601 avec fuseau.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "2026-10-27T15:00:00.000Z"
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Révision de la dernière pose déjà reçue (nextCursor de la page précédente).",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Nombre maximal de poses dans la page.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 500
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Une page de l'historique",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacementPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Période ou page invalide (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -294,6 +378,61 @@
             "pattern": "^#[0-9A-Fa-f]{6}$"
           },
           "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "PlacementPage": {
+        "type": "object",
+        "required": [
+          "placements",
+          "nextCursor"
+        ],
+        "properties": {
+          "placements": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/Placement"
+            }
+          },
+          "nextCursor": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Valeur à passer dans after pour la page suivante ; null à la fin de la période."
+          }
+        }
+      },
+      "Placement": {
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "color",
+          "placedAt",
+          "revision"
+        ],
+        "properties": {
+          "x": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -50,
+            "maximum": 50
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "placedAt": {
             "type": "string",
             "format": "date-time"
           },
