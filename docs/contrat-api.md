@@ -307,6 +307,181 @@ Signale une erreur d’abonnement ou de lecture. Le payload proposé suit la for
 
 Le gestionnaire Express de la PR #110 ne traite pas les erreurs Socket.IO. Le serveur devra donc appliquer explicitement cette forme pour `canvas:error` ; les champs de diagnostic de développement décrits pour les réponses HTTP ne sont pas inclus dans cet événement par défaut.
 
+## Rejoindre le jeu — comptes et équipes
+
+> **Proposition pour l’issue #37**, à relire par une personne du front et une personne du back avant implémentation. Elle couvre les user stories [#18 — Créer un compte et se connecter](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/18) et [#19 — Rejoindre une équipe](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/19). Les chemins des comptes reprennent ceux que le front suppose déjà dans la tâche #38.
+
+### Session
+
+- La session est portée par un cookie posé par le serveur, `p1x3l_session`. Le front ne lit et ne stocke aucun jeton : le navigateur renvoie le cookie tout seul, le front et l’API partageant la même origine.
+- Le cookie est `HttpOnly`, `SameSite=Lax`, `Path=/`, et `Secure` en production. Sa valeur est un jeton opaque tiré au hasard ; elle ne contient ni pseudo ni identifiant de compte.
+- Une session dure 30 jours, durée réglable côté serveur. Elle survit au rechargement de la page et au redémarrage du serveur. La déconnexion la supprime côté serveur.
+- Une route qui demande un compte répond `401 UNAUTHORIZED` sans session valide. C’est ainsi que `POST /api/pixels` reconnaît le joueur.
+- Il n’y a aucun message temps réel pour les comptes ni pour les équipes : Socket.IO reste public et ne transporte aucune identité.
+
+### Modèle `User`
+
+```json
+{
+  "pseudo": "Alex",
+  "team": {
+    "id": "rouge",
+    "name": "Rouge",
+    "color": "#D93A3A"
+  }
+}
+```
+
+| Champ | Type | Signification |
+| --- | --- | --- |
+| `pseudo` | chaîne | Pseudo du joueur, tel qu’il l’a saisi à l’inscription |
+| `team` | `Team` ou `null` | Équipe du joueur ; `null` tant qu’il n’en a pas choisi |
+
+Le modèle ne contient ni identifiant de compte, ni mot de passe, ni empreinte du mot de passe.
+
+Règles de saisie :
+
+- `pseudo` : de 3 à 20 caractères parmi les lettres sans accent, les chiffres, `_` et `-`. Il est unique sans tenir compte de la casse : `Alex` et `alex` sont le même pseudo.
+- `password` : de 8 à 128 caractères. Il est stocké haché, jamais en clair, et n’est jamais renvoyé ni journalisé.
+
+### `POST /api/auth/register` — créer un compte
+
+**Requête — `application/json`**
+
+```json
+{
+  "pseudo": "Alex",
+  "password": "un mot de passe"
+}
+```
+
+**Succès — `201 Created`**, avec le cookie de session : le joueur est connecté dès l’inscription.
+
+```json
+{
+  "user": {
+    "pseudo": "Alex",
+    "team": null
+  }
+}
+```
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | Pseudo ou mot de passe absent ou hors des règles de saisie |
+| `409 Conflict` | `PSEUDO_TAKEN` | Le pseudo est déjà pris |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+### `POST /api/auth/login` — se connecter
+
+Même corps de requête que l’inscription.
+
+**Succès — `200 OK`**, avec le cookie de session et `{ "user": … }` au format du modèle `User`.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | Pseudo ou mot de passe absent, ou qui n’est pas une chaîne |
+| `401 Unauthorized` | `INVALID_CREDENTIALS` | Pseudo inconnu ou mot de passe incorrect |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+La réponse est la même pour un pseudo inconnu et pour un mot de passe incorrect : elle ne dit pas si un pseudo existe.
+
+### `POST /api/auth/logout` — se déconnecter
+
+Aucun corps. **Succès — `204 No Content`** : la session est supprimée côté serveur et le cookie est effacé. Sans session, la réponse est aussi `204`.
+
+### `GET /api/auth/me` — retrouver le joueur connecté
+
+Le front l’appelle au chargement de la page.
+
+**Succès — `200 OK`** : `{ "user": … }` au format du modèle `User`.
+
+**Sans session valide — `401 Unauthorized`**, code `UNAUTHORIZED` : le visiteur n’est pas connecté.
+
+### Modèle `Team`
+
+```json
+{
+  "id": "rouge",
+  "name": "Rouge",
+  "color": "#D93A3A"
+}
+```
+
+| Champ | Type | Signification |
+| --- | --- | --- |
+| `id` | chaîne | Identifiant stable de l’équipe ; c’est le `teamId` du classement |
+| `name` | chaîne | Nom affiché |
+| `color` | chaîne `#RRGGBB` | Couleur de l’équipe |
+
+Il y a 4 équipes de couleur. Proposition retenue pour livrer la tâche #41, à valider par l’équipe :
+
+| `id` | `name` | `color` |
+| --- | --- | --- |
+| `rouge` | Rouge | `#D93A3A` |
+| `bleue` | Bleue | `#2F6FDE` |
+| `verte` | Verte | `#2E9E4F` |
+| `jaune` | Jaune | `#E5B700` |
+
+### `GET /api/teams` — lister les équipes
+
+Publique. **Succès — `200 OK`** : `{ "teams": [ … ] }`, les 4 équipes au format du modèle `Team`.
+
+### `PUT /api/auth/me/team` — rejoindre ou changer d’équipe
+
+Compte connecté requis.
+
+**Requête — `application/json`**
+
+```json
+{
+  "teamId": "rouge"
+}
+```
+
+**Succès — `200 OK`**
+
+```json
+{
+  "user": {
+    "pseudo": "Alex",
+    "team": {
+      "id": "rouge",
+      "name": "Rouge",
+      "color": "#D93A3A"
+    }
+  },
+  "teamChangeAvailableAt": "2026-10-27T14:35:00.000Z"
+}
+```
+
+`teamChangeAvailableAt` est l’heure serveur à partir de laquelle le joueur pourra changer d’équipe. Un joueur change d’équipe au plus toutes les 5 minutes, durée réglable côté serveur. Le premier choix d’équipe n’attend pas. Demander l’équipe que l’on a déjà répond `200` sans relancer le délai.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | `teamId` absent ou qui n’est pas une chaîne |
+| `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
+| `404 Not Found` | `TEAM_NOT_FOUND` | Aucune équipe n’a cet identifiant |
+| `429 Too Many Requests` | `TEAM_CHANGE_COOLDOWN` | Le délai de changement d’équipe n’est pas écoulé |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+Une réponse `429` inclut l’en-tête `Retry-After`, en secondes, comme pour la pose.
+
+Les pixels déjà posés restent à l’équipe du joueur au moment de la pose : changer d’équipe ne les déplace pas.
+
+### Pose d’un pixel et équipe
+
+Une équipe est obligatoire pour poser un pixel. `POST /api/pixels` répond `403 Forbidden`, code `TEAM_REQUIRED`, à un joueur connecté qui n’a pas encore choisi d’équipe ; rien n’est écrit. Ce cas s’ajoute aux erreurs de la pose décrites plus haut.
+
+### Points à valider pour « Rejoindre le jeu »
+
+- Code des entrées invalides : `INVALID_INPUT`, comme pour la pose. La tâche front #38 suppose `VALIDATION_ERROR` : à aligner d’un côté ou de l’autre.
+- Chemins sous `/api/auth` : ils reprennent ceux de la tâche #38, alors que [GUIDELINES.md](../GUIDELINES.md) (section 3) demande des noms au pluriel. À confirmer.
+- Règles du pseudo et du mot de passe, durée de la session (30 jours).
+- Noms et couleurs des 4 équipes : la proposition ci-dessus reste à valider.
+- Équipe obligatoire pour poser (`403 TEAM_REQUIRED`) : à confirmer avec le front, qui doit proposer le choix d’équipe avant la première pose.
+- Limiter les essais de connexion répétés (protection contre la recherche de mot de passe) : non prévu dans cette proposition.
+
 ## Règles de cohérence et de performance
 
 - Le serveur persiste le changement avant d’émettre `pixel:updated` ; un événement ne doit jamais annoncer une écriture qui a échoué.
