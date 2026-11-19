@@ -11,7 +11,7 @@ Tâche #39, user story [#18 — Créer un compte et se connecter](https://github
 | `POST /api/auth/logout` | `204`, cookie effacé | Aucune : sans session, `204` aussi |
 | `GET /api/auth/me` | `200 { user }` | `401 UNAUTHORIZED` |
 
-`user` vaut `{ pseudo, team }`. `team` reste `null` : les équipes arrivent avec la tâche #41. Aucune réponse ne contient d'identifiant de compte, de mot de passe ou d'empreinte.
+`user` vaut `{ pseudo, team }`. `team` est l'équipe du joueur, ou `null` tant qu'il n'en a pas choisi : voir [equipes-back.md](equipes-back.md). Aucune réponse ne contient d'identifiant de compte, de mot de passe ou d'empreinte.
 
 ## Ce que fait le serveur
 
@@ -28,7 +28,7 @@ Tâche #39, user story [#18 — Créer un compte et se connecter](https://github
 
 `POST /api/pixels` lit maintenant le joueur dans la session : sans cookie valide, la réponse reste `401 UNAUTHORIZED`. L'historique reçoit l'identifiant du compte. Le délai entre deux poses s'applique à ce compte.
 
-Un joueur n'a pas encore d'équipe : sa pose est inscrite avec `teamId` vide. La colonne `PixelPlacement.teamId` devient facultative pour cela. La tâche #41 dira si une équipe est obligatoire pour poser.
+Une équipe est obligatoire pour poser : sans équipe, la réponse est `403 TEAM_REQUIRED` ([equipes-back.md](equipes-back.md)). La colonne `PixelPlacement.teamId` reste facultative dans la base, pour les poses enregistrées avant l'arrivée des équipes.
 
 ## Comment c'est fait
 
@@ -49,7 +49,6 @@ Une valeur absente, vide, nulle, négative ou illisible donne la valeur par déf
 - **Contrat** : la tâche #37 est en relecture. Si le contrat change (chemins, codes, règles de saisie), le back suit.
 - **Code des entrées invalides** : le back renvoie `INVALID_INPUT`, comme pour la pose. Le front de la tâche #38 attend `VALIDATION_ERROR` : à aligner.
 - **Essais de connexion répétés** : rien ne limite le nombre d'essais. À ajouter avant une ouverture au public.
-- **Équipes** : `team` est toujours `null` et les poses sont inscrites sans équipe, jusqu'à la tâche #41.
 - **Historique** : `PixelPlacement.accountId` reste un texte sans clé étrangère vers `Account`.
 
 ## Vérifications

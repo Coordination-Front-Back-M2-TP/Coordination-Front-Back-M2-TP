@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { badRequest, conflict, unauthorized } from '../errors/app-error.js'
+import { findTeam } from '../teams/team-catalog.js'
 import { hashPassword, UNKNOWN_ACCOUNT_HASH, verifyPassword } from './password.js'
 
 const PSEUDO_PATTERN = /^[A-Za-z0-9_-]{3,20}$/
@@ -38,9 +39,9 @@ function readCredentials(body) {
   return { pseudo: body.pseudo.trim(), password: body.password }
 }
 
-// Ce que l'API montre d'un compte. team reste null jusqu'à l'arrivée des équipes (#41).
+// Ce que l'API montre d'un compte. team vaut null tant que le joueur n'a pas choisi d'équipe.
 export function toUser(account) {
-  return { pseudo: account.pseudo, team: null }
+  return { pseudo: account.pseudo, team: findTeam(account.teamId) }
 }
 
 export function createAccountService({ repository, now = () => new Date(), sessionTtlMs = readSessionTtlMs() }) {

@@ -4,11 +4,11 @@ import { toUser } from './account-service.js'
 import { clearSessionCookie, readSessionToken, setSessionCookie } from './session-cookie.js'
 
 // Lit la session de la requête pour la pose d'un pixel : { accountId, teamId }, ou null sans session valide.
-// teamId est null tant que le joueur n'a pas d'équipe (#41).
+// teamId est null tant que le joueur n'a pas choisi d'équipe.
 export function createSessionPlayerResolver(accountService) {
   return async function resolvePlayer(req) {
     const account = await accountService.getAccount(readSessionToken(req))
-    return account ? { accountId: account.id, teamId: null } : null
+    return account ? { accountId: account.id, teamId: account.teamId } : null
   }
 }
 
