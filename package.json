@@ -1,0 +1,16 @@
+{
+  "name": "p1x3l",
+  "private": true,
+  "description": "Outils communs du dépôt : hook Git qui vérifie les messages de commit (CONTRIBUTING.md, section 8).",
+  "type": "module",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.4",
+    "husky": "9.1.7"
+  }
+}

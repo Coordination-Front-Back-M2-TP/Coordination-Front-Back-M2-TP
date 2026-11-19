@@ -1,0 +1,2 @@
+# Les hooks Git sont des scripts shell : une fin de ligne CRLF (Windows) les casserait.
+/.husky/** text eol=lf
