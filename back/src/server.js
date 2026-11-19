@@ -9,7 +9,8 @@ import { createApp } from './app.js'
 import { rankingRepository as defaultRankingRepository } from './rankings/ranking-repository.js'
 import { createRankingService } from './rankings/ranking-service.js'
 import { logger } from './utils/logger.js'
-import { canvasRepository } from './canvas/canvas-repository.js'
+import { canvasRepository, prisma } from './canvas/canvas-repository.js'
+import { installProcessHandlers } from './process-handlers.js'
 import { createCanvasService } from './canvas/canvas-service.js'
 import { moderationRepository as defaultModerationRepository } from './moderation/moderation-repository.js'
 import { createModerationService } from './moderation/moderation-service.js'
@@ -140,7 +141,17 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
   const port = Number(process.env.PORT) || 3000
 
   // Express 5 passe l'erreur d'écoute au callback : sans ce test, le back se dirait prêt.
-  const { httpServer, agentService } = createCanvasServer()
+  const { httpServer, io, agentService } = createCanvasServer()
+  // Arrêt propre sur SIGTERM (docker stop) et arrêt journalisé en cas de plantage : voir process-handlers.js.
+  // Les agents de dessin s'arrêtent avant la base : ils reprendront au prochain démarrage.
+  installProcessHandlers({
+    httpServer,
+    io,
+    disconnect: () => {
+      agentService.shutdown()
+      return prisma.$disconnect()
+    },
+  })
   httpServer.listen(port, (error) => {
     if (error) throw error
     // Les agents de dessin lancés avant l'arrêt du serveur reprennent leur modèle.

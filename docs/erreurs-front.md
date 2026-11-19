@@ -20,6 +20,10 @@ Une requête est annulée au démontage du composant. Ses résultats tardifs son
 
 Une frontière d’erreur React couvre le rendu et les effets de son arbre. Les rejets de requêtes sont traités dans l’effet qui les lance ; les futurs gestionnaires d’événements et traitements asynchrones devront aussi prendre en charge leurs erreurs.
 
+## Page introuvable (404)
+
+Nginx renvoie `index.html` pour toute adresse inconnue (`front/nginx.conf`) : c'est donc au front de dire qu'une page n'existe pas. `front/src/Root.jsx` affiche la toile pour `/` et `/index.html`, et la page « Page introuvable » pour toute autre adresse, avec un lien « Revenir à la toile ». Les routes inconnues de l'API (`/api/...`) restent traitées par le back, qui répond 404 `NOT_FOUND` en JSON.
+
 Le [contrat partagé des erreurs front/back](contrat-erreurs.md) rassemble l'état actuel et les décisions qui restent à valider ensemble dans [la tâche #88](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/88).
 
 ## Vérification
