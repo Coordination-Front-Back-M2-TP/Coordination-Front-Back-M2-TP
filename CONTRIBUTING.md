@@ -192,7 +192,11 @@ La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) traite chaque dossi
 - elle exige le `package-lock.json` du dossier, puis installe avec `npm ci` ;
 - elle lance `npm run lint`, `npm test` et `npm run build`, chacun seulement si le script existe dans le `package.json` ;
 - le dossier `e2e/` est traité à part, dans le job « Tests E2E (Playwright) » : ses tests ont besoin du navigateur Chromium, installé par `npx playwright install --with-deps chromium` ;
-- le contrôle « CI terminée » résume tous les dossiers : c'est lui qu'il faut regarder.
+- le contrôle « CI terminée » résume tous les dossiers : c'est lui qu'il faut regarder ;
+- un nouveau push sur une PR annule le run précédent de cette PR (`concurrency`) : c'est normal de voir un run « Cancelled » remplacé par un plus récent. Un run sur `main` n'est jamais annulé ;
+- chaque job a une durée maximale (`timeout-minutes`) : 5 minutes pour les petits jobs, 10 pour lint, tests et build, 15 pour les tests E2E. Un job qui dépasse s'arrête en échec : chercher ce qui bloque (installation, serveur de test qui ne démarre pas) plutôt que d'augmenter la limite.
+
+La CI n'a volontairement pas de filtre `paths:` : le contrôle « CI terminée » doit exister sur chaque PR, même une PR qui ne touche que la documentation.
 
 Le script `test` créé par `npm init` échoue exprès (« no test specified ») : le remplacer par la vraie commande de test.
 
