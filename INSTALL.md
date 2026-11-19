@@ -34,6 +34,12 @@ Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de 
 
 ## 4. Installer les dépendances
 
+Racine du dépôt, pour le hook Git qui vérifie les messages de commit ([CONTRIBUTING.md](CONTRIBUTING.md), section 8) :
+
+```bash
+npm ci
+```
+
 Back :
 
 ```bash

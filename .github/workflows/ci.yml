@@ -2,7 +2,8 @@ name: Intégration continue
 
 # Lance le lint, les tests et le build de chaque projet Node du dépôt (front, back), puis les tests E2E.
 # Un projet est un dossier qui contient un package.json commité, sauf e2e/ : ses tests Playwright ont
-# besoin d'un navigateur et tournent dans le job dédié « e2e ». Mode d'emploi : CONTRIBUTING.md, section 11.
+# besoin d'un navigateur et tournent dans le job dédié « e2e ». Le package.json de la racine ne sert qu'au
+# hook Git des messages de commit : rien à tester ni à construire. Mode d'emploi : CONTRIBUTING.md, section 11.
 
 on:
   push:
@@ -32,7 +33,7 @@ jobs:
       - name: Lister les dossiers qui ont un package.json
         id: liste
         run: |
-          dossiers=$(git ls-files ':(glob)**/package.json' | grep -vx 'e2e/package.json' | xargs -r -n1 dirname | jq -R . | jq -sc .)
+          dossiers=$(git ls-files ':(glob)**/package.json' | grep -vxE 'package.json|e2e/package.json' | xargs -r -n1 dirname | jq -R . | jq -sc .)
           echo "Projets trouvés : $dossiers"
           echo "dossiers=$dossiers" >> "$GITHUB_OUTPUT"
 

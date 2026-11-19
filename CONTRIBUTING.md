@@ -136,6 +136,8 @@ La description est en français, à l'impératif, sans point final. Exemples :
 
 Le titre de la PR devient le message du commit final (squash). Il suit donc le même format.
 
+Un hook Git vérifie chaque message de commit en local, avant même le push : un commit hors format est refusé, avec le lien vers cette section. Il s'installe tout seul avec `npm ci` à la racine du dépôt ([INSTALL.md](INSTALL.md), section 4). Ses règles, dans [commitlint.config.mjs](commitlint.config.mjs), sont celles du contrôle « Titre au format Conventional Commits » des PR : les 11 types ci-dessus, une description non vide, sans point final. En cas d'urgence, `git commit --no-verify` saute le hook ; le titre de la PR reste vérifié par la CI.
+
 ## 9. Pull requests
 
 - Une PR par issue. Une PR courte se relit mieux : si elle grossit, la découper.
@@ -214,6 +216,7 @@ Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les cré
 
 | Quand | Ce qui se passe | Où |
 | --- | --- | --- |
+| Un commit est créé en local | Son message est vérifié ; il est refusé s'il ne suit pas le format de la section 8 | [.husky/commit-msg](.husky/commit-msg) et [commitlint.config.mjs](commitlint.config.mjs) |
 | Une issue est créée ou modifiée | Le label de zone est posé ou mis à jour | [.github/workflows/issues.yml](.github/workflows/issues.yml) |
 | Une PR est ouverte ou modifiée | Le titre, l'issue liée et le gabarit rempli sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
 | Une PR est ouverte, modifiée ou relue | Le job « Relecture approuvée » lit les avis et réussit seulement après une approbation valide | [.github/workflows/relecture.yml](.github/workflows/relecture.yml) |

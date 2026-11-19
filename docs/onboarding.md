@@ -53,7 +53,7 @@ Suivre scrupuleusement le guide pas à pas dans [INSTALL.md](../INSTALL.md) :
    git fetch upstream
    ```
 
-3. Installer les dépendances du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
+3. Installer les dépendances de la racine (`npm ci`, qui installe le hook Git des messages de commit), du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
 4. Lancer le back dans un terminal (`npm run dev --prefix back`, écoute sur `http://localhost:3000`).
 5. Lancer le front dans un autre terminal (`npm run dev --prefix front`, ouvre `http://localhost:5173`).
 6. Vérifier que la page d'accueil affiche « P1X3L » et « Back : ok ».
