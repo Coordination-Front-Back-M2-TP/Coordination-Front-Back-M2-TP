@@ -78,9 +78,9 @@ Les workflows GitHub Actions appliquent la même logique de dépendances et de l
 | Mécanisme | Où | Effet |
 | --- | --- | --- |
 | `needs:` | [ci.yml](../.github/workflows/ci.yml) | Les jobs « Lint, tests et build » attendent la liste des projets ; « CI terminée » attend tous les jobs. |
-| `needs:` | [cd.yml](../.github/workflows/cd.yml) | La production attend la vérification du commit ; la release attend la production. |
+| `workflow_run` | [cd.yml](../.github/workflows/cd.yml) | Le déploiement en production attend que la CI de `main` soit verte. |
 | `concurrency` avec `cancel-in-progress` | [ci.yml](../.github/workflows/ci.yml) | Un nouveau push sur une PR annule le run précédent. Un run sur `main` n'est jamais annulé. |
-| `concurrency` sans annulation | [cd.yml](../.github/workflows/cd.yml) | Deux déploiements du même environnement (staging ou production) ne tournent jamais en même temps, et un déploiement commencé va jusqu'au bout. |
+| `concurrency` sans annulation | [cd.yml](../.github/workflows/cd.yml) | Deux déploiements de la même image ne tournent jamais en même temps, et un déploiement commencé va jusqu'au bout. |
 | `timeout-minutes` | [ci.yml](../.github/workflows/ci.yml) | Chaque job a une durée maximale (5, 10 ou 15 minutes) au lieu des 6 heures par défaut. |
 
 Pour le Sprint 2, les dépendances entre tâches retenues sont :
