@@ -27,3 +27,7 @@
   overflow: auto;
   font-variant-numeric: tabular-nums;
 }
+
+.selectable {
+  cursor: crosshair;
+}
