@@ -312,7 +312,14 @@ Le front l’appelle au chargement de la page.
 | `name` | chaîne | Nom affiché |
 | `color` | chaîne `#RRGGBB` | Couleur de l’équipe |
 
-Il y a 4 équipes de couleur. Leurs identifiants, noms et couleurs ne sont pas encore fixés : ceux des exemples sont fictifs.
+Il y a 4 équipes de couleur. Proposition retenue pour livrer la tâche #41, à valider par l’équipe :
+
+| `id` | `name` | `color` |
+| --- | --- | --- |
+| `rouge` | Rouge | `#D93A3A` |
+| `bleue` | Bleue | `#2F6FDE` |
+| `verte` | Verte | `#2E9E4F` |
+| `jaune` | Jaune | `#E5B700` |
 
 ### `GET /api/teams` — lister les équipes
 
@@ -360,13 +367,17 @@ Une réponse `429` inclut l’en-tête `Retry-After`, en secondes, comme pour la
 
 Les pixels déjà posés restent à l’équipe du joueur au moment de la pose : changer d’équipe ne les déplace pas.
 
+### Pose d’un pixel et équipe
+
+Une équipe est obligatoire pour poser un pixel. `POST /api/pixels` répond `403 Forbidden`, code `TEAM_REQUIRED`, à un joueur connecté qui n’a pas encore choisi d’équipe ; rien n’est écrit. Ce cas s’ajoute aux erreurs de la pose décrites plus haut.
+
 ### Points à valider pour « Rejoindre le jeu »
 
 - Code des entrées invalides : `INVALID_INPUT`, comme pour la pose. La tâche front #38 suppose `VALIDATION_ERROR` : à aligner d’un côté ou de l’autre.
 - Chemins sous `/api/auth` : ils reprennent ceux de la tâche #38, alors que [GUIDELINES.md](../GUIDELINES.md) (section 3) demande des noms au pluriel. À confirmer.
 - Règles du pseudo et du mot de passe, durée de la session (30 jours).
-- Identifiants, noms et couleurs des 4 équipes.
-- Pose sans équipe : dire si un joueur qui n’a pas encore choisi d’équipe peut poser un pixel, et pour qui ce pixel compte.
+- Noms et couleurs des 4 équipes : la proposition ci-dessus reste à valider.
+- Équipe obligatoire pour poser (`403 TEAM_REQUIRED`) : à confirmer avec le front, qui doit proposer le choix d’équipe avant la première pose.
 - Limiter les essais de connexion répétés (protection contre la recherche de mot de passe) : non prévu dans cette proposition.
 
 ## Règles de cohérence et de performance
