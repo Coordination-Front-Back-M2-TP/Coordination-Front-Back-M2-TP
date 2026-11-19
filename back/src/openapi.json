@@ -79,7 +79,7 @@
       },
       "post": {
         "summary": "Poser un pixel",
-        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Tant que l'authentification (#18) n'est pas branchée, la route renvoie 401.",
+        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Tant que l'authentification (#18) n'est pas branchée, la route renvoie 401.",
         "requestBody": {
           "required": true,
           "content": {
@@ -148,6 +148,25 @@
           },
           "401": {
             "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Le délai du compte n'est pas écoulé (COOLDOWN_ACTIVE). Rien n'est écrit.",
+            "headers": {
+              "Retry-After": {
+                "description": "Temps restant avant la prochaine pose, en secondes entières, arrondi au-dessus.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
