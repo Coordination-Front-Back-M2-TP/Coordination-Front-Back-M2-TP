@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
 import swaggerUi from 'swagger-ui-express'
+import { rankingRepository } from './rankings/ranking-repository.js'
+import { createRankingRouter } from './rankings/ranking-routes.js'
+import { createRankingService } from './rankings/ranking-service.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasRouter } from './canvas/canvas-routes.js'
 import { createCanvasService } from './canvas/canvas-service.js'
@@ -12,6 +15,7 @@ import { createPlacementRouter } from './placements/placement-routes.js'
 import { createPlacementService } from './placements/placement-service.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const defaultRankingService = createRankingService({ repository: rankingRepository })
 const openapiSpec = JSON.parse(readFileSync(join(__dirname, 'openapi.json'), 'utf8'))
 
 const defaultCanvasService = createCanvasService({ repository: canvasRepository })
@@ -26,6 +30,7 @@ const noSession = async () => null
 export function createApp({
   canvasService = defaultCanvasService,
   placementService = defaultPlacementService,
+  rankingService = defaultRankingService,
   resolvePlayer = noSession,
 } = {}) {
   const app = express()
@@ -42,6 +47,8 @@ export function createApp({
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
   app.use('/api', createPlacementRouter({ placementService }))
+
+  app.use('/api', createRankingRouter({ rankingService }))
 
   // Exposition de la spécification OpenAPI brute et de la documentation interactive Swagger UI.
   app.get('/api/openapi.json', (req, res) => {

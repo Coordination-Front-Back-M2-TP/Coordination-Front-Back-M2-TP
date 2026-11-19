@@ -190,6 +190,38 @@ Exemple : `GET /api/placements?from=2026-10-27T14:00:00.000Z&to=2026-10-27T15:00
 
 Le front envoie la pose par `POST /api/pixels`. Il n’émet pas de commande de pose Socket.IO. Après validation et enregistrement réussis, le serveur diffuse le `pixel:updated` décrit plus haut à tous les abonnés de la toile, y compris le joueur à l’origine de la pose. L’ACK HTTP fournit au joueur son `cooldownEndsAt` ; aucun événement temps réel de délai n’est nécessaire.
 
+### `GET /api/rankings` — classement des équipes
+
+**Proposition pour l’issue #54, écrite pour livrer la tâche #56.** Elle reste à relire par le front et le back. Cette route sert le podium de la user story [#28 — Voir le classement des équipes](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/28). Elle est publique, comme la lecture de la toile, et ne prend aucun paramètre.
+
+**Succès — `200 OK`**
+
+```json
+{
+  "revision": 185,
+  "teams": [
+    { "teamId": "rouge", "pixelCount": 42, "rank": 1 },
+    { "teamId": "bleue", "pixelCount": 17, "rank": 2 },
+    { "teamId": "verte", "pixelCount": 17, "rank": 2 },
+    { "teamId": "jaune", "pixelCount": 3, "rank": 4 }
+  ]
+}
+```
+
+| Champ | Type | Signification |
+| --- | --- | --- |
+| `revision` | entier | Révision de la toile au moment du calcul |
+| `teams[].teamId` | chaîne | Identifiant de l’équipe, celui du contrat des équipes (#37) |
+| `teams[].pixelCount` | entier ≥ 1 | Nombre de pixels visibles que l’équipe a posés en dernier |
+| `teams[].rank` | entier ≥ 1 | Rang de l’équipe, `1` pour la première |
+
+- Un pixel compte pour l’équipe qui l’a posé en dernier. Une pose remplacée ne compte plus.
+- `teams` est trié par `pixelCount` décroissant. Deux équipes à égalité ont le même `rank` et le rang suivant est sauté ; entre elles, l’ordre suit `teamId`.
+- Une équipe sans pixel n’apparaît pas dans `teams`. Une toile sans pose renvoie `{ "revision": 0, "teams": [] }`. Ce point sera revu avec la liste des équipes (#41).
+- Le classement ne contient ni pseudo ni identifiant de compte.
+
+En cas d’erreur inattendue, la route répond `500 INTERNAL_SERVER_ERROR` au format commun.
+
 ## Temps réel — Socket.IO
 
 Le client se connecte au namespace Socket.IO `/`. Il peut consulter la toile sans authentification.
@@ -238,6 +270,24 @@ Après l’enregistrement réussi d’un changement de pixel, le serveur émet `
 
 Le client remplace l’état local à la coordonnée `(x, y)` seulement si la révision reçue est plus récente que celle déjà affichée à cet emplacement. Le serveur, et non le navigateur, est l’autorité sur l’état diffusé. Cet événement ne constitue pas une commande de pose et ne doit pas être accepté du client.
 
+### Serveur → client : `ranking:updated`
+
+**Proposition pour l’issue #54.** Après un changement de pixel qui modifie le classement, le serveur émet `ranking:updated` aux clients abonnés à la toile par `canvas:subscribe` : il n’y a pas d’abonnement séparé. Le payload est le classement complet, au format de `GET /api/rankings` :
+
+```json
+{
+  "revision": 185,
+  "teams": [
+    { "teamId": "rouge", "pixelCount": 42, "rank": 1 },
+    { "teamId": "bleue", "pixelCount": 17, "rank": 2 },
+    { "teamId": "verte", "pixelCount": 17, "rank": 2 },
+    { "teamId": "jaune", "pixelCount": 3, "rank": 4 }
+  ]
+}
+```
+
+Le client lit d’abord `GET /api/rankings`, puis remplace son classement par chaque payload reçu dont la `revision` est supérieure à celle qu’il affiche. Un changement de pixel qui laisse le classement identique n’émet rien. Après une reconnexion, le client relit `GET /api/rankings`.
+
 ### Client → serveur : `canvas:unsubscribe`
 
 Demande l’arrêt de l’abonnement de ce socket. Aucun payload ni réponse ne sont requis. La déconnexion ferme également l’abonnement.
@@ -276,6 +326,7 @@ Le gestionnaire Express de la PR #110 ne traite pas les erreurs Socket.IO. Le se
 - Les choix de résolution, d’axe, de taille d’instantané et de forme de `canvas:error` ci-dessus reprennent la proposition pour livrer l’issue #35 ; ils restent modifiables par l’équipe.
 - Confirmer que le payload `canvas:error` reste limité à `code` et `message`, indépendamment des détails et stacks de diagnostic HTTP en développement.
 - Confirmer avec le contrat de l’issue #18 comment la session authentifiée est transmise à `POST /api/pixels`.
+- Faire relire `GET /api/rankings` et `ranking:updated` par une personne du front et une personne du back, avec le contrat de l’EPIC « Suivre la bataille » (#54) : nom des champs, règle des égalités, équipes sans pixel, diffusion aux abonnés de la toile.
 - Fixer la palette autorisée et la durée du délai côté serveur ; 10 secondes est une proposition issue du besoin produit.
 - Faire relire le contrat de pose par une personne du front et une personne du back avant de considérer #42 terminée.
 - Faire relire la route `GET /api/placements` par une personne du front et une personne du back, avec le contrat de l’EPIC « Suivre la bataille » (#54) : accès public, taille des pages, nom des champs.
