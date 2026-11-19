@@ -1,7 +1,19 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import styles from './PixelCanvas.module.css'
 
-export function PixelCanvas({ canvas }) {
+// Traduit un clic en coordonnées de case, origine au centre. La bordure est retirée pour viser la bonne case.
+function cellFromClick(event, { width, height }) {
+  const element = event.currentTarget
+  const rect = element.getBoundingClientRect()
+  if (!element.clientWidth || !element.clientHeight) return null
+  const column = Math.floor(((event.clientX - rect.left - element.clientLeft) / element.clientWidth) * width)
+  const row = Math.floor(((event.clientY - rect.top - element.clientTop) / element.clientHeight) * height)
+  if (column < 0 || column >= width || row < 0 || row >= height) return null
+  return { x: column - Math.floor(width / 2), y: row - Math.floor(height / 2) }
+}
+
+// Sans onSelectCell, la toile reste en lecture seule : c'est le cas d'un visiteur sans compte.
+export function PixelCanvas({ canvas, onSelectCell }) {
   const ref = useRef(null)
   const captionId = useId()
   const [showPixels, setShowPixels] = useState(false)
@@ -31,7 +43,11 @@ export function PixelCanvas({ canvas }) {
           ref={ref}
           width={canvas.width}
           height={canvas.height}
-          className={styles.canvas}
+          className={onSelectCell ? `${styles.canvas} ${styles.selectable}` : styles.canvas}
+          onClick={onSelectCell ? (event) => {
+            const cell = cellFromClick(event, canvas)
+            if (cell) onSelectCell(cell)
+          } : undefined}
           role="img"
           aria-label={`Toile partagée de ${canvas.width} par ${canvas.height} pixels`}
           aria-describedby={captionId}

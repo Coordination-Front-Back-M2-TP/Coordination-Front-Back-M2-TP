@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { subscribeCanvas } from '../api/canvas.js'
-import { PixelCanvas } from './PixelCanvas.jsx'
+import { PixelPlacer } from './PixelPlacer/PixelPlacer.jsx'
 
 const STATUS_MESSAGES = {
   loading: 'Chargement de la toile…',
@@ -9,7 +9,8 @@ const STATUS_MESSAGES = {
   error: 'Toile indisponible',
 }
 
-export function LiveCanvas() {
+// user est transmis au panneau de pose ; la consultation de la toile reste publique.
+export function LiveCanvas({ user }) {
   const [{ canvas, status }, setConnection] = useState({ canvas: null, status: 'loading' })
   const [attempt, setAttempt] = useState(0)
 
@@ -26,7 +27,7 @@ export function LiveCanvas() {
         </div>
       )}
       {canvas && status !== 'live' && <p>Dernier état reçu affiché ; les nouveaux pixels peuvent manquer.</p>}
-      {canvas && <PixelCanvas canvas={canvas} />}
+      {canvas && <PixelPlacer canvas={canvas} user={user} />}
     </section>
   )
 }
