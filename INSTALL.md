@@ -29,7 +29,7 @@ Le dépôt est privé : Git demande de se connecter avec un compte GitHub qui y 
 
 Le back utilise SQLite dans `back/prisma/dev.db` par défaut. Il n'y a pas de secret à configurer. Le back écoute sur le port 3000, et le front envoie ses appels `/api` vers ce port (`front/vite.config.js`). La variable `PORT` change le port du back, mais le front ne le suivrait pas : la laisser vide en local.
 
-Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de `staging` et de `production` sont dans les secrets et variables Actions du dépôt : voir [docs/deploiement.md](docs/deploiement.md).
+Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de la production sont dans les secrets et variables Actions du dépôt : voir [docs/deploiement.md](docs/deploiement.md).
 
 ## 4. Installer les dépendances
 

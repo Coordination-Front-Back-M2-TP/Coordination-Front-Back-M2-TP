@@ -1,5 +1,6 @@
 # Production de P1X3L sur le NAS. Mode d'emploi : docs/deploiement.md, section 5.
-# VERSION choisit le tag tiré sur GHCR : vX.Y.Z, ou latest pour la dernière version publiée.
+# VERSION choisit le tag tiré sur GHCR : latest pour la production, ou sha-<commit> pour un commit précis.
+# Le NAS a sa propre copie, durcie : y reporter tout changement de ce fichier avant de merger.
 name: p1x3l
 
 services:

@@ -1,38 +1,50 @@
 name: Déploiement continu
 
-# Notre flow (docs/strategie-de-branches.md) : chaque merge sur main publie des images sur GHCR (staging),
-# un tag vX.Y.Z posé sur un commit déjà publié donne ces mêmes images à la production.
-# GitHub ne joint jamais le NAS : les images y sont tirées à la main (docs/deploiement.md).
+# Notre flow (docs/strategie-de-branches.md) : chaque merge sur main part en production,
+# une fois la CI de main verte. Les images sont publiées sur GHCR avec les tags sha-<commit> et latest.
+# GitHub ne joint jamais le NAS : Watchtower y tire l'image latest (docs/deploiement.md).
 # Mode d'emploi et configuration : docs/deploiement.md.
 
 on:
-  push:
-    branches: [main, 'release/**']
-    tags: ['v*']
+  workflow_run:
+    workflows: ['Intégration continue']
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
-  staging:
-    name: Publier les images (staging)
-    if: github.ref_type == 'branch'
+  production:
+    name: Publier les images (production)
+    # Seulement la CI verte d'un push sur main de ce dépôt. Le filtre « branches » ci-dessus lit le nom
+    # de la branche d'origine : sans ces conditions, la CI d'une PR de fork dont la branche s'appelle main passerait.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
     environment:
-      name: staging
-      url: ${{ vars.STAGING_URL }}
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
     # Une seule publication à la fois. Celle en cours va au bout, la plus récente attend.
     concurrency:
-      group: deploiement-staging
+      group: deploiement-production-${{ matrix.partie }}
       cancel-in-progress: false
     strategy:
       matrix:
         partie: [front, back]
+    env:
+      # Le commit testé par la CI. github.sha désignerait le dernier commit de main, pas forcément celui-là.
+      COMMIT: ${{ github.event.workflow_run.head_sha }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.COMMIT }}
 
       - name: Nom de l'image
         # GHCR n'accepte que des minuscules, et le nom de l'organisation en contient des majuscules.
@@ -51,120 +63,24 @@ jobs:
         with:
           context: ${{ matrix.partie }}
           push: true
-          # sha-<commit> désigne exactement ce commit, staging suit le dernier commit publié.
-          tags: |
-            ${{ env.IMAGE }}:sha-${{ github.sha }}
-            ${{ env.IMAGE }}:staging
+          # sha-<commit> désigne exactement ce commit : il sert au retour arrière.
+          tags: ${{ env.IMAGE }}:sha-${{ env.COMMIT }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-          build-args: APP_VERSION=${{ github.sha }}
+            org.opencontainers.image.revision=${{ env.COMMIT }}
+          build-args: APP_VERSION=${{ env.COMMIT }}
           cache-from: type=gha,scope=${{ matrix.partie }}
           cache-to: type=gha,mode=max,scope=${{ matrix.partie }}
 
-      - name: Résumé
+      - name: Mettre en production (latest)
+        # Deux merges rapprochés : la CI du plus ancien peut finir en dernier. latest ne reçoit que
+        # le dernier commit de main, pour que la production ne recule jamais.
         run: |
-          echo "Image publiée : \`$IMAGE:sha-$GITHUB_SHA\` (aussi \`$IMAGE:staging\`)." >> "$GITHUB_STEP_SUMMARY"
-
-  verifier:
-    name: Vérifier la version
-    if: github.ref_type == 'tag'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
-    env:
-      TAG: ${{ github.ref_name }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Le tag suit semver
-        run: |
-          if ! [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::« $TAG » n'est pas une version vMAJEUR.MINEUR.CORRECTIF (semver)."
-            exit 1
-          fi
-
-      - name: Le commit est sur main ou sur une branche release/
-        run: |
-          if ! git branch -r --contains "$GITHUB_SHA" | grep -qE '^\s*origin/(main|release/.+)$'; then
-            echo "::error::Le tag $TAG ne pointe pas sur un commit de main ni d'une branche release/X.Y."
-            exit 1
-          fi
-
-      - name: Le commit a été publié en staging
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          deploiements=$(gh run list --workflow cd.yml --commit "$GITHUB_SHA" --event push --status success \
-            --json headBranch --jq '[.[] | select(.headBranch == "main" or (.headBranch | startswith("release/")))] | length')
-          if [[ "$deploiements" == 0 ]]; then
-            echo "::error::Le commit $GITHUB_SHA n'a pas encore été publié en staging. Attendre la fin de « Publier les images (staging) », puis relancer ce workflow."
-            exit 1
-          fi
-
-  production:
-    name: Publier les images (production)
-    needs: verifier
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    environment:
-      name: production
-      url: ${{ vars.PRODUCTION_URL }}
-    concurrency:
-      group: deploiement-production
-      cancel-in-progress: false
-    strategy:
-      matrix:
-        partie: [front, back]
-    env:
-      TAG: ${{ github.ref_name }}
-    steps:
-      - name: Nom de l'image
-        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/p1x3l-${{ matrix.partie }}" >> "$GITHUB_ENV"
-
-      - uses: docker/setup-buildx-action@v4.4.1
-
-      - uses: docker/login-action@v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-
-      - name: Étiqueter l'image de staging
-        # Pas de reconstruction : la production reçoit l'image exacte qui a tourné en staging.
-        # Relancer le workflow d'un ancien tag remet latest sur cette version (retour arrière).
-        run: |
-          docker buildx imagetools create \
-            --tag "$IMAGE:$TAG" \
-            --tag "$IMAGE:latest" \
-            "$IMAGE:sha-$GITHUB_SHA"
-          echo "Image de production : \`$IMAGE:$TAG\` (aussi \`$IMAGE:latest\`)." >> "$GITHUB_STEP_SUMMARY"
-
-  release:
-    name: Publier la release GitHub
-    needs: production
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Créer la release avec les notes générées
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          # Relancer le workflow d'un ancien tag le redéploie (retour arrière) : la release existe déjà.
-          if gh release view "$TAG" > /dev/null 2>&1; then
-            echo "La release $TAG existe déjà : rien à publier."
+          tete=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [[ "$tete" != "$COMMIT" ]]; then
+            echo "Un commit plus récent est sur main ($tete) : latest l'attend." >> "$GITHUB_STEP_SUMMARY"
+            echo "Image publiée : \`$IMAGE:sha-$COMMIT\`." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          options=(--verify-tag --generate-notes --title "$TAG")
-          if [[ "$TAG" == *-* ]]; then
-            options+=(--prerelease)
-          fi
-          gh release create "$TAG" "${options[@]}"
+          docker buildx imagetools create --tag "$IMAGE:latest" "$IMAGE:sha-$COMMIT"
+          echo "Image de production : \`$IMAGE:sha-$COMMIT\` (aussi \`$IMAGE:latest\`)." >> "$GITHUB_STEP_SUMMARY"
