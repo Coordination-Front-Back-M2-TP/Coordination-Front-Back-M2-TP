@@ -11,13 +11,13 @@ Tâche #44, user story [#21 — Poser un pixel](https://github.com/Coordination-
 
 ## Historique
 
-La table `PixelPlacement` garde chaque pose acceptée, même quand elle remplace un pixel : coordonnées, couleur, `accountId`, `teamId`, `placedAt` (heure serveur, égale au `updatedAt` du pixel) et `revision`. Elle n'est exposée par aucune route. `accountId` et `teamId` sont des chaînes sans clé étrangère, en attendant les tables des comptes et des équipes.
+La table `PixelPlacement` garde chaque pose acceptée, même quand elle remplace un pixel : coordonnées, couleur, `accountId`, `teamId`, `placedAt` (heure serveur, égale au `updatedAt` du pixel) et `revision`. La route `GET /api/placements` la donne par période, sans le compte ni l'équipe : voir [historique-back.md](historique-back.md). `accountId` et `teamId` sont des chaînes sans clé étrangère, en attendant les tables des comptes et des équipes.
 
 ## Points en attente
 
-- **Session** : l'authentification (#18) n'est pas livrée. Par défaut, `resolvePlayer` renvoie toujours `null` : en l'état, toute pose réelle reçoit `401`. L'authentification passera sa propre fonction à `createApp` / `createCanvasServer`. Le transport (cookie ou en-tête) reste à aligner avec le front, voir [pose-front.md](pose-front.md).
+- **Session** : livrée par la tâche #39, voir [comptes-back.md](comptes-back.md). Par défaut, `resolvePlayer` lit le cookie de session. Un joueur sans équipe reçoit `403 TEAM_REQUIRED` : voir [equipes-back.md](equipes-back.md).
 - **Palette** : le contrat la laisse « à valider ». Le back ne contrôle que le format `#RRGGBB` ; le contrôle « hors palette » s'ajoutera dans `canvas-service.js` quand l'équipe l'aura fixée.
-- **Délai** : relève de #22. En attendant, `cooldownEndsAt` vaut l'heure de la pose (aucun délai) et aucun `429` n'est renvoyé.
+- **Délai** : livré par la tâche #46, voir [delai-back.md](delai-back.md). Une pose avant la fin du délai reçoit `429 COOLDOWN_ACTIVE`.
 
 ## Vérifications
 

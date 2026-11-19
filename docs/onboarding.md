@@ -53,7 +53,7 @@ Suivre scrupuleusement le guide pas à pas dans [INSTALL.md](../INSTALL.md) :
    git fetch upstream
    ```
 
-3. Installer les dépendances du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
+3. Installer les dépendances de la racine (`npm ci`, qui installe le hook Git des messages de commit), du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
 4. Lancer le back dans un terminal (`npm run dev --prefix back`, écoute sur `http://localhost:3000`).
 5. Lancer le front dans un autre terminal (`npm run dev --prefix front`, ouvre `http://localhost:5173`).
 6. Vérifier que la page d'accueil affiche « P1X3L » et « Back : ok ».
@@ -82,7 +82,7 @@ Les responsabilités et rituels agiles sont détaillés dans [docs/gestion-de-pr
 
 Lire attentivement [GUIDELINES.md](../GUIDELINES.md) avant d'écrire la moindre ligne de code :
 
-- Séparation claire : `front/src/components/`, `front/src/api/`, `back/src/routes/`, `back/src/services/`.
+- Rangement par fonctionnalité : un dossier par composant dans `front/src/components/`, les appels à l'API dans `front/src/api/`, un dossier par fonctionnalité dans `back/src/` (par exemple `back/src/canvas/`). La règle est dans [GUIDELINES.md](../GUIDELINES.md), section 2.
 - Contrat d'API d'abord : toute route ou événement temps réel est formalisé avant son implémentation.
 - Format des erreurs standardisé : `{ "error": { "code": "...", "message": "..." } }`.
 - Langue : anglais pour le code et les clés JSON, français pour la documentation, les commentaires et les tickets.
@@ -136,7 +136,7 @@ Types autorisés : `feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `test`, `st
 ### Communiquer en cas de question ou de blocage
 
 - Une question technique ou fonctionnelle se pose directement dans le ticket GitHub concerné ou sur le salon Discord de l'équipe.
-- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : ajouter immédiatement le label `statut: bloqué` sur l'issue et expliquer le blocage en commentaire.
+- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : expliquer le blocage en commentaire sur l'issue et prévenir son tuteur. En lecture seule, le stagiaire ne peut pas poser de label : c'est le tuteur qui ajoute `statut: bloqué`.
 
 ---
 
@@ -177,7 +177,7 @@ Tous ces contrôles doivent être au vert.
 
 ## 7. Retours et évaluation de stage
 
-Pour valoriser le travail réalisé et préparer la fin de stage, deux documents sont à formaliser.
+Pour valoriser le travail réalisé et préparer la fin de stage, deux documents sont à formaliser. Les retours du stage du TD « Road to MVP » et les actions qui en découlent sont dans [retour-de-stage.md](retour-de-stage.md).
 
 ### Rapport d'activité du stagiaire
 

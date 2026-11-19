@@ -73,6 +73,16 @@ Les dépendances entre user stories retenues sont :
 - #31 est bloquée par #18 et #21 ; #32 par #31 (rôle admin) et #21 (historique des poses).
 - La story de badges #108, encore au backlog et à affiner, est bloquée par #18 et #21.
 
+Les workflows GitHub Actions appliquent la même logique de dépendances et de limites :
+
+| Mécanisme | Où | Effet |
+| --- | --- | --- |
+| `needs:` | [ci.yml](../.github/workflows/ci.yml) | Les jobs « Lint, tests et build » attendent la liste des projets ; « CI terminée » attend tous les jobs. |
+| `workflow_run` | [cd.yml](../.github/workflows/cd.yml) | Le déploiement en production attend que la CI de `main` soit verte. |
+| `concurrency` avec `cancel-in-progress` | [ci.yml](../.github/workflows/ci.yml) | Un nouveau push sur une PR annule le run précédent. Un run sur `main` n'est jamais annulé. |
+| `concurrency` sans annulation | [cd.yml](../.github/workflows/cd.yml) | Deux déploiements de la même image ne tournent jamais en même temps, et un déploiement commencé va jusqu'au bout. |
+| `timeout-minutes` | [ci.yml](../.github/workflows/ci.yml) | Chaque job a une durée maximale (5, 10 ou 15 minutes) au lieu des 6 heures par défaut. |
+
 Pour le Sprint 2, les dépendances entre tâches retenues sont :
 
 - #34 et #35 sont bloquées par leur contrat #33 ; #43 et #44 sont bloquées par leur contrat #42. Les contrats peuvent ainsi être relus avant que le front et le back avancent en parallèle.

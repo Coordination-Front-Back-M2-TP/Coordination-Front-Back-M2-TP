@@ -1,0 +1,54 @@
+# Développement local : lance le back et le front d'une seule commande. Mode d'emploi : INSTALL.md, section 5.
+#   docker compose up --watch
+# --watch recopie chaque fichier modifié dans le conteneur : le back redémarre et la page du front se recharge.
+# La production est ailleurs : deploy/compose.yml, avec les images publiées sur GHCR.
+name: p1x3l-dev
+
+services:
+  back:
+    build:
+      context: ./back
+      target: dev
+    ports: ['3000:3000']
+    volumes:
+      # La base SQLite survit à l'arrêt des conteneurs. docker compose down -v la remet à zéro.
+      - base-dev:/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    develop:
+      watch:
+        - action: sync
+          path: ./back/src
+          target: /app/src
+        # Nouvelle dépendance ou nouvelle migration : l'image est reconstruite, et les migrations appliquées au démarrage.
+        - action: rebuild
+          path: ./back/package-lock.json
+        - action: rebuild
+          path: ./back/prisma
+
+  front:
+    build:
+      context: ./front
+      target: dev
+    ports: ['5173:5173']
+    depends_on:
+      back:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./front/src
+          target: /app/src
+        - action: sync
+          path: ./front/index.html
+          target: /app/index.html
+        - action: rebuild
+          path: ./front/package-lock.json
+        - action: rebuild
+          path: ./front/vite.config.js
+
+volumes:
+  base-dev:

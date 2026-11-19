@@ -29,16 +29,18 @@ Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réu
 
 ## Installation
 
-Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md). La documentation de l'API (Swagger UI) est dans [docs/api.md](docs/api.md).
+Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement (à la main, ou d'une commande avec `docker compose up --watch`), vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md), et les retours de stage dans [docs/retour-de-stage.md](docs/retour-de-stage.md). La documentation de l'API (Swagger UI) est dans [docs/api.md](docs/api.md).
 
 ## Structure du dépôt
 
 ```text
 .github/    Gabarits d'issues et de PR, labels, CI et déploiement continu
 back/       API Node.js (Express)
+deploy/     Production sur le NAS (compose avec les images GHCR)
 docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement, onboarding, composants, API, erreurs, toile front/back
 e2e/        Tests de bout en bout (Playwright)
 front/      Application React (Vite)
+compose.yml Développement local avec Docker : back et front d'une seule commande
 ```
 
 ## Contribuer

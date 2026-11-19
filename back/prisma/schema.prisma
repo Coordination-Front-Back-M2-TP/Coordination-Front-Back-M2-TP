@@ -23,16 +23,73 @@ model Pixel {
 }
 
 // Historique des poses : une ligne par pose acceptée, même quand elle remplace un pixel visible.
-// accountId et teamId viennent de la session ; ils deviendront des clés étrangères avec les comptes (#18).
+// accountId et teamId viennent de la session. accountId est l'identifiant du compte, écrit en texte.
+// teamId est l'équipe du joueur au moment de la pose. La colonne reste facultative : les poses
+// enregistrées avant l'arrivée des équipes n'en ont pas.
 model PixelPlacement {
   id        Int      @id @default(autoincrement())
   x         Int
   y         Int
   color     String
   accountId String
-  teamId    String
+  teamId    String?
   placedAt  DateTime
   revision  Int      @unique
 
   @@index([accountId, placedAt])
+  // Sert au bannissement : retrouver la pose d'avant sur une case.
+  @@index([x, y, revision])
+}
+
+// Compte d'un joueur. pseudoKey est le pseudo en minuscules : il porte l'unicité sans tenir compte de la casse.
+// passwordHash contient l'empreinte scrypt du mot de passe et son sel, jamais le mot de passe.
+model Account {
+  id            Int       @id @default(autoincrement())
+  pseudo        String
+  pseudoKey     String    @unique
+  passwordHash  String
+  createdAt     DateTime
+  // Identifiant d'une équipe de team-catalog.js ; vide tant que le joueur n'en a pas choisi.
+  teamId        String?
+  teamChangedAt DateTime?
+  // « player » ou « admin ». Aucune route ne change le rôle : voir scripts/set-role.js.
+  role          String    @default("player")
+  // Heure du bannissement ; vide tant que le compte n'est pas banni.
+  bannedAt      DateTime?
+  sessions      Session[]
+}
+
+// Session d'un compte. tokenHash est l'empreinte SHA-256 du jeton du cookie :
+// une copie de la base ne suffit pas pour se faire passer pour un joueur.
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  accountId Int
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt DateTime
+  expiresAt DateTime
+
+  @@index([accountId])
+}
+
+// Journal des actions de modération : une ligne par action, jamais modifiée ni supprimée.
+// adminPseudo garde le pseudo de l'admin au moment de l'action. details est un objet JSON
+// qui dépend du type (pour un nettoyage : la zone, le nombre de pixels retirés, la révision ;
+// pour un bannissement : le pseudo du joueur, les pixels remis ou retirés, la révision).
+model ModerationAction {
+  id             Int      @id @default(autoincrement())
+  type           String
+  adminAccountId Int
+  adminPseudo    String
+  createdAt      DateTime
+  details        String
+}
+
+// Agent de dessin d'un compte : une ligne tant qu'il travaille, supprimée à l'arrêt.
+// La clé est le compte : un seul modèle actif par compte. pixels est le modèle, un tableau JSON
+// de { x, y, color } déjà placés sur la toile.
+model DrawingAgent {
+  accountId Int      @id
+  pixels    String
+  startedAt DateTime
 }

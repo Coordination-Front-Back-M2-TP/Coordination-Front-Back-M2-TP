@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { subscribeCanvas } from '../api/canvas.js'
-import { PixelPlacer } from './PixelPlacer/PixelPlacer.jsx'
+import { subscribeCanvas } from '../../api/canvas.js'
+import { PixelPlacer } from '../PixelPlacer/PixelPlacer.jsx'
 
 const STATUS_MESSAGES = {
   loading: 'Chargement de la toile…',

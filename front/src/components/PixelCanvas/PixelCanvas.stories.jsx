@@ -1,4 +1,4 @@
-import { parseCanvasSnapshot } from '../api/canvas-state.js'
+import { parseCanvasSnapshot } from '../../api/canvas-state.js'
 import { PixelCanvas } from './PixelCanvas.jsx'
 
 const snapshot = {

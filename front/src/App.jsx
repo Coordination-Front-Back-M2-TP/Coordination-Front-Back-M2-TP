@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getHealth } from './api/health.js'
-import { ServerStatus } from './components/ServerStatus.jsx'
-import { LiveCanvas } from './components/LiveCanvas.jsx'
+import { ServerStatus } from './components/ServerStatus/ServerStatus.jsx'
+import { LiveCanvas } from './components/LiveCanvas/LiveCanvas.jsx'
 
 // Page de départ : elle montre si le front joint le back, ce qui valide l'installation (INSTALL.md, section 6).
 function App() {

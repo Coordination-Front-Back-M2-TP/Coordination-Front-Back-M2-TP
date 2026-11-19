@@ -7,9 +7,9 @@ Git Flow est souvent appliqué par réflexe. Ce document part de notre contexte,
 - Une équipe de 3 personnes : un product owner, un tech lead front et un tech lead back. Tous les trois développent, sur le front comme sur le back.
 - Une application en deux parties, un front React et un back Node.js, dans un seul dépôt : `front/` et `back/`.
 - Du travail en sprints. Chaque ticket de l'outil de gestion de projet est relié à une branche et à une PR.
-- Deux environnements : staging (pré-production) et production. Ils seront hébergés sur le NAS de Théo et mis à jour par Watchtower. Ce n'est pas encore en place : il n'y avait pas de code à déployer.
+- Un environnement : la production, hébergée sur le NAS de Théo et mise à jour par Watchtower. Le flow d'origine prévoyait aussi un staging : il n'a jamais tourné (section 5).
 - Une seule version en production à la fois : personne n'a besoin de maintenir une ancienne version.
-- Des numéros de version lisibles, au format semver.
+- Savoir quel commit tourne en production.
 
 ## 2. Critères de choix
 
@@ -17,8 +17,8 @@ Git Flow est souvent appliqué par réflexe. Ce document part de notre contexte,
 | --- | --- |
 | C1. Simplicité | Peu de branches longues à retenir et à synchroniser. L'équipe découvre ce process. |
 | C2. Intégration fréquente | Front et back avancent en parallèle. Plus on intègre tard, plus les conflits et les surprises d'API coûtent cher. |
-| C3. Environnements | Passer de staging à production sans que les deux divergent. |
-| C4. Versions | Savoir ce qui tourne en production, avec un numéro semver. |
+| C3. Environnements | Mettre en production sans branche d'environnement qui diverge de `main`. |
+| C4. Versions | Savoir ce qui tourne en production. |
 | C5. Services indépendants | Si l'application se découpe en microservices, chacun doit pouvoir partir en production seul. |
 | C6. Outillage GitHub | `Closes #` ne ferme une issue que sur la branche par défaut. Protections et CI doivent rester simples. |
 | C7. Correctif urgent | Corriger la production sans embarquer du travail pas prêt. |
@@ -45,30 +45,29 @@ Notre évaluation, pour notre contexte : `+` répond bien, `~` en partie, `-` ma
 | Release Flow | ~ | + | ~ | + | ~ | + | + |
 
 - **Git Flow** perd sur l'essentiel pour nous. Il impose deux branches longues et intègre tard (`develop`, puis `release`). Ses versions sont synchronisées, alors que des microservices partent en production chacun de leur côté. Et il faut faire de `develop` la branche par défaut pour que `Closes #` fonctionne.
-- **Une branche `staging`** règle C3 en apparence seulement. Elle dérive de `main` et oblige à des fusions dans les deux sens. Staging est un environnement, pas une branche.
+- **Une branche d'environnement** (`staging`, `production`) règle C3 en apparence seulement. Elle dérive de `main` et oblige à des fusions dans les deux sens.
 - **Trunk-based** répond à tous nos critères, à condition de tenir sa discipline : petites PR, CI rapide, relecture rapide. Notre flow le reprend et l'adapte.
 
-## 5. Notre flow : tronc unique, branches courtes, promotion par tags
+## 5. Notre flow : tronc unique, branches courtes, déploiement à chaque merge
 
 ```text
 feat/12-connexion       o---o
                        /     \    PR + CI + relecture, squash
 main    ---o----------o-------o-------------o-------o--->
-                              |  v0.1.0      \     /  v0.1.1
-                              |               o---o   fix/15-date
-staging <- chaque merge sur main est déployé en staging
-prod    <- seul un tag vX.Y.Z validé en staging part en production
+                                             \     /
+                                              o---o   fix/15-date
+prod    <- chaque merge sur main part en production, une fois la CI verte
 ```
 
 1. **Une seule branche longue : `main`.** Elle reste toujours déployable. Elle est protégée : PR obligatoire, CI verte, une relecture. C'est la branche par défaut, donc `Closes #` ferme le ticket au merge.
 2. **Une branche courte par ticket** (`type/numéro-sujet`), partie de `main`, tenue par une personne, deux jours au plus. Si ça dépasse, le ticket est trop gros : on le découpe dans l'outil de gestion de projet. Le flow et le découpage en tickets se tiennent l'un l'autre.
 3. **Merge en squash** dans `main`, puis suppression de la branche. Un ticket donne un commit lisible dans l'historique.
 4. **Le travail pas fini ne reste pas dans une branche.** Il part dans `main` caché derrière un flag de configuration, ou en branchant l'interface en dernier ([feature toggles](https://martinfowler.com/articles/feature-toggles.html)).
-5. **Staging est un environnement, pas une branche.** Chaque merge sur `main` y est déployé automatiquement ([deploiement.md](deploiement.md)). Le déploiement sur le NAS de Théo reste à brancher.
-6. **La production reçoit un tag.** On tague `vX.Y.Z` un commit de `main` déjà validé en staging. Le tag déclenche le déploiement et la release GitHub. Le numéro suit semver, guidé par le type des commits (`feat`, `fix`, `!`).
-7. **Correctif urgent : d'abord sur `main`.** On ouvre une PR `fix/…` sur `main`. Si `main` est publiable, on pose un nouveau tag CORRECTIF. Sinon, on crée `release/X.Y` à partir du dernier tag, on y reporte le correctif par cherry-pick, et on tague depuis cette branche. Elle est supprimée quand la version quitte la production.
+5. **Chaque merge sur `main` part en production.** Une fois la CI de `main` verte, les images sont publiées et le NAS les met en ligne ([deploiement.md](deploiement.md)). Il n'y a ni branche ni étape entre `main` et la production.
+6. **La version est le commit.** `/api/health` renvoie le commit en ligne, et chaque image garde un tag `sha-<commit>`. Jusqu'au 19 novembre 2026, un tag `vX.Y.Z` déclenchait la mise en production : nous l'avons retiré : l'étape manuelle pesait à chaque mise en ligne, et le staging qui devait valider le commit ne tournait nulle part.
+7. **Correctif urgent : une PR sur `main`.** On ouvre une PR `fix/…`, ou une PR de revert du commit fautif. Son merge la met en production. Il n'y a plus de branche `release/X.Y`.
 8. **Le contrat entre front et back a sa propre PR.** Le contrat d'API (`docs/contrat-api.md`) change dans une PR relue par une personne front et une personne back. Un changement cassant se fait en plusieurs temps : on ajoute le nouveau, on migre le front, puis on retire l'ancien ([parallel change](https://martinfowler.com/bliki/ParallelChange.html)). Ainsi front et back partent en production chacun à leur rythme.
-9. **Des microservices, si l'architecture en a.** Un microservice doit pouvoir être déployé seul ([Lewis et Fowler, 2014](https://martinfowler.com/articles/microservices.html)). Chaque service a donc sa CI, filtrée sur son dossier, et ses propres tags (`api-v1.2.0`, `web-v0.4.0`). Tant que tout part ensemble, un seul numéro de version suffit.
+9. **Des microservices, si l'architecture en a.** Un microservice doit pouvoir être déployé seul ([Lewis et Fowler, 2014](https://martinfowler.com/articles/microservices.html)). Chaque service aurait donc sa CI et son déploiement, filtrés sur son dossier. Tant que tout part ensemble, un seul déploiement suffit.
 10. **La relecture.** Nous avons écarté Ship / Show / Ask pour l'instant : l'article lui-même conseille plutôt Show et Ask à une équipe qui se découvre, et nos PR servent aussi de trace pour les tickets. Chaque PR demande donc une relecture (Ask). En échange, les PR restent petites, et la relecture se fait dans la demi-journée pour ne pas bloquer le tronc. DORA cite la relecture lente comme un piège du trunk-based.
 
 ## 6. Ce que ce flow nous coûte
@@ -76,14 +75,16 @@ prod    <- seul un tag vX.Y.Z validé en staging part en production
 - De la discipline : petites PR, tests et CI qui tournent en quelques minutes.
 - Des flags à retirer une fois la fonctionnalité terminée.
 - Des relectures rapides, sinon le tronc stagne.
-- Une étape de tag pour chaque mise en production, à automatiser si possible.
+- Aucune validation entre le merge et la production : une PR cassée est en ligne en quelques minutes. La CI, les tests E2E et la relecture sont le seul filet, et le retour arrière passe par un revert.
+- Plus de numéros de version ni de notes de release : l'historique de `main` en tient lieu.
 
 ## 7. Quand revoir ce choix
 
 - S'il faut maintenir plusieurs versions en production : des branches de release (Release Flow), voire Git Flow, redeviennent pertinentes.
 - Si les branches vivent en moyenne plus de deux jours, ou si les conflits se multiplient.
 - Si la CI dépasse quelques minutes.
-- À chaque rétrospective de sprint, en regardant ces trois signaux.
+- Si un merge casse la production plus d'une fois par sprint : remettre une étape de validation avant la mise en ligne.
+- À chaque rétrospective de sprint, en regardant ces signaux.
 
 ## Sources
 
@@ -100,4 +101,3 @@ Consultées le 9 octobre 2026.
 - Pete Hodgson, [Feature Toggles](https://martinfowler.com/articles/feature-toggles.html).
 - Danilo Sato, [Parallel Change](https://martinfowler.com/bliki/ParallelChange.html).
 - James Lewis et Martin Fowler, [Microservices](https://martinfowler.com/articles/microservices.html), 25 mars 2014.
-- [Semantic Versioning 2.0.0](https://semver.org/lang/fr/).
