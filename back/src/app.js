@@ -13,6 +13,9 @@ import { createCanvasService } from './canvas/canvas-service.js'
 import { placementRepository } from './placements/placement-repository.js'
 import { createPlacementRouter } from './placements/placement-routes.js'
 import { createPlacementService } from './placements/placement-service.js'
+import { teamRepository } from './teams/team-repository.js'
+import { createTeamRouter } from './teams/team-routes.js'
+import { createTeamService } from './teams/team-service.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const openapiSpec = JSON.parse(readFileSync(join(__dirname, 'openapi.json'), 'utf8'))
@@ -21,6 +24,7 @@ const defaultCanvasService = createCanvasService({ repository: canvasRepository 
 const defaultPlacementService = createPlacementService({ repository: placementRepository })
 
 const defaultAccountService = createAccountService({ repository: accountRepository })
+const defaultTeamService = createTeamService({ repository: teamRepository })
 
 // L'application est séparée du serveur : les tests la lancent sur un port libre, sans toucher au port 3000.
 // resolvePlayer : lit le joueur de la requête, { accountId, teamId } ou null. Par défaut, il vient
@@ -29,6 +33,7 @@ export function createApp({
   canvasService = defaultCanvasService,
   placementService = defaultPlacementService,
   accountService = defaultAccountService,
+  teamService = defaultTeamService,
   resolvePlayer = createSessionPlayerResolver(accountService),
 } = {}) {
   const app = express()
@@ -44,6 +49,7 @@ export function createApp({
 
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
   app.use('/api', createAccountRouter({ accountService }))
+  app.use('/api', createTeamRouter({ teamService, accountService }))
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
   app.use('/api', createPlacementRouter({ placementService }))
 

@@ -24,7 +24,8 @@ model Pixel {
 
 // Historique des poses : une ligne par pose acceptée, même quand elle remplace un pixel visible.
 // accountId et teamId viennent de la session. accountId est l'identifiant du compte, écrit en texte.
-// teamId est vide tant que le joueur n'a pas d'équipe : les équipes arrivent avec la tâche #41.
+// teamId est l'équipe du joueur au moment de la pose. La colonne reste facultative : les poses
+// enregistrées avant l'arrivée des équipes n'en ont pas.
 model PixelPlacement {
   id        Int      @id @default(autoincrement())
   x         Int
@@ -41,12 +42,15 @@ model PixelPlacement {
 // Compte d'un joueur. pseudoKey est le pseudo en minuscules : il porte l'unicité sans tenir compte de la casse.
 // passwordHash contient l'empreinte scrypt du mot de passe et son sel, jamais le mot de passe.
 model Account {
-  id           Int       @id @default(autoincrement())
-  pseudo       String
-  pseudoKey    String    @unique
-  passwordHash String
-  createdAt    DateTime
-  sessions     Session[]
+  id            Int       @id @default(autoincrement())
+  pseudo        String
+  pseudoKey     String    @unique
+  passwordHash  String
+  createdAt     DateTime
+  // Identifiant d'une équipe de team-catalog.js ; vide tant que le joueur n'en a pas choisi.
+  teamId        String?
+  teamChangedAt DateTime?
+  sessions      Session[]
 }
 
 // Session d'un compte. tokenHash est l'empreinte SHA-256 du jeton du cookie :

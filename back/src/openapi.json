@@ -208,6 +208,162 @@
         }
       }
     },
+    "/api/auth/me/team": {
+      "put": {
+        "summary": "Rejoindre ou changer d'équipe",
+        "description": "Compte connecté requis. Le premier choix passe sans attendre ; ensuite, un changement au plus toutes les 5 minutes (TEAM_CHANGE_COOLDOWN_SECONDS). Redemander son équipe ne relance pas le délai.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "teamId"
+                ],
+                "properties": {
+                  "teamId": {
+                    "type": "string",
+                    "example": "rouge"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Équipe du joueur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "user",
+                    "teamChangeAvailableAt"
+                  ],
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    },
+                    "teamChangeAvailableAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Heure serveur à partir de laquelle le joueur pourra changer d'équipe."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "teamId absent ou qui n'est pas une chaîne (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Aucune équipe n'a cet identifiant (TEAM_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Le délai de changement d'équipe n'est pas écoulé (TEAM_CHANGE_COOLDOWN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Temps restant avant le prochain changement, en secondes entières, arrondi au-dessus.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams": {
+      "get": {
+        "summary": "Lister les équipes",
+        "description": "Lecture publique sans authentification. Renvoie les 4 équipes du jeu.",
+        "responses": {
+          "200": {
+            "description": "Les équipes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "teams"
+                  ],
+                  "properties": {
+                    "teams": {
+                      "type": "array",
+                      "minItems": 4,
+                      "maxItems": 4,
+                      "items": {
+                        "$ref": "#/components/schemas/Team"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Vérifier l'état et la version du back-end",
@@ -275,7 +431,7 @@
       },
       "post": {
         "summary": "Poser un pixel",
-        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session ; tant qu'il n'a pas d'équipe (#41), sa pose est inscrite sans équipe.",
+        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session. Une équipe est obligatoire : sans équipe, la réponse est 403 TEAM_REQUIRED.",
         "requestBody": {
           "required": true,
           "content": {
@@ -344,6 +500,16 @@
           },
           "401": {
             "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le joueur n'a pas encore choisi d'équipe (TEAM_REQUIRED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -519,9 +685,36 @@
             "example": "Alex"
           },
           "team": {
-            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Team"
+              }
+            ],
             "nullable": true,
-            "description": "Équipe du joueur. Toujours null tant que les équipes (#41) ne sont pas livrées."
+            "description": "Équipe du joueur ; null tant qu'il n'en a pas choisi."
+          }
+        }
+      },
+      "Team": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "rouge"
+          },
+          "name": {
+            "type": "string",
+            "example": "Rouge"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "example": "#D93A3A"
           }
         }
       },

@@ -12,6 +12,7 @@ import { createAccountService, readSessionTtlMs } from '../src/accounts/account-
 import { hashPassword, verifyPassword } from '../src/accounts/password.js'
 import { createCanvasRepository } from '../src/canvas/canvas-repository.js'
 import { createCanvasServer } from '../src/server.js'
+import { createTeamRepository } from '../src/teams/team-repository.js'
 
 const backDirectory = fileURLToPath(new URL('../', import.meta.url))
 const databasePath = join(backDirectory, 'prisma', `test-accounts-${process.pid}.db`)
@@ -27,6 +28,7 @@ function startServer() {
   return createCanvasServer({
     repository: createCanvasRepository(prisma),
     accountRepository: createAccountRepository(prisma),
+    teamRepository: createTeamRepository(prisma),
     cooldownMs: 0,
   })
 }
@@ -278,6 +280,9 @@ test('une session expirée n’est plus reconnue et elle est supprimée', async 
 test('un joueur connecté pose un pixel, inscrit à son compte dans l’historique', async () => {
   const { cookie } = await register('Peintre')
   const account = await prisma.account.findUnique({ where: { pseudoKey: 'peintre' } })
+  // Une équipe est obligatoire pour poser : voir teams.test.js.
+  const joined = await request('/api/auth/me/team', { method: 'PUT', cookie: cookie.pair, body: { teamId: 'rouge' } })
+  assert.equal(joined.status, 200)
 
   const response = await request('/api/pixels', {
     method: 'POST',
@@ -289,8 +294,7 @@ test('un joueur connecté pose un pixel, inscrit à son compte dans l’historiq
 
   const placement = await prisma.pixelPlacement.findUnique({ where: { revision: pixel.revision } })
   assert.equal(placement.accountId, String(account.id))
-  // Pas encore d'équipe : elles arrivent avec la tâche #41.
-  assert.equal(placement.teamId, null)
+  assert.equal(placement.teamId, 'rouge')
 })
 
 test('sans session, ou après déconnexion, la pose est refusée en 401', async () => {
