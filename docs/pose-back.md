@@ -17,7 +17,7 @@ La table `PixelPlacement` garde chaque pose acceptée, même quand elle remplace
 
 - **Session** : l'authentification (#18) n'est pas livrée. Par défaut, `resolvePlayer` renvoie toujours `null` : en l'état, toute pose réelle reçoit `401`. L'authentification passera sa propre fonction à `createApp` / `createCanvasServer`. Le transport (cookie ou en-tête) reste à aligner avec le front, voir [pose-front.md](pose-front.md).
 - **Palette** : le contrat la laisse « à valider ». Le back ne contrôle que le format `#RRGGBB` ; le contrôle « hors palette » s'ajoutera dans `canvas-service.js` quand l'équipe l'aura fixée.
-- **Délai** : relève de #22. En attendant, `cooldownEndsAt` vaut l'heure de la pose (aucun délai) et aucun `429` n'est renvoyé.
+- **Délai** : livré par la tâche #46, voir [delai-back.md](delai-back.md). Une pose avant la fin du délai reçoit `429 COOLDOWN_ACTIVE`.
 
 ## Vérifications
 
