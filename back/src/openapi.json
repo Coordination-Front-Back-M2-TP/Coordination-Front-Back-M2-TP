@@ -364,6 +364,218 @@
         }
       }
     },
+    "/api/moderation/cleanups": {
+      "post": {
+        "summary": "Nettoyer une zone de la toile",
+        "description": "Compte admin requis. Supprime les pixels visibles du rectangle, note l'action dans le journal et diffuse canvas:cleared aux abonnés de la toile. L'historique des poses n'est pas modifié.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fromX",
+                  "fromY",
+                  "toX",
+                  "toY"
+                ],
+                "properties": {
+                  "fromX": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "fromY": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "toX": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  },
+                  "toY": {
+                    "type": "integer",
+                    "minimum": -50,
+                    "maximum": 50
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zone nettoyée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "action"
+                  ],
+                  "properties": {
+                    "action": {
+                      "$ref": "#/components/schemas/ModerationAction"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Zone invalide (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/moderation/actions": {
+      "get": {
+        "summary": "Lire le journal de modération",
+        "description": "Compte admin requis. Les actions les plus récentes d'abord.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "description": "Identifiant de la dernière action déjà reçue (nextCursor de la page précédente).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Une page du journal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "actions",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "actions": {
+                      "type": "array",
+                      "maxItems": 200,
+                      "items": {
+                        "$ref": "#/components/schemas/ModerationAction"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "integer",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "limit ou before hors bornes (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Vérifier l'état et la version du back-end",
@@ -677,7 +889,8 @@
         "type": "object",
         "required": [
           "pseudo",
-          "team"
+          "team",
+          "role"
         ],
         "properties": {
           "pseudo": {
@@ -692,6 +905,13 @@
             ],
             "nullable": true,
             "description": "Équipe du joueur ; null tant qu'il n'en a pas choisi."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "player",
+              "admin"
+            ]
           }
         }
       },
@@ -715,6 +935,70 @@
             "type": "string",
             "pattern": "^#[0-9A-Fa-f]{6}$",
             "example": "#D93A3A"
+          }
+        }
+      },
+      "ModerationAction": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "admin",
+          "createdAt",
+          "details"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "zone_cleanup"
+            ]
+          },
+          "admin": {
+            "type": "string",
+            "description": "Pseudo de l'admin au moment de l'action"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "details": {
+            "type": "object",
+            "description": "Pour zone_cleanup : la zone, removedCount et revision.",
+            "properties": {
+              "fromX": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "fromY": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "toX": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "toY": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 50
+              },
+              "removedCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
           }
         }
       },

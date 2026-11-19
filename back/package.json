@@ -10,6 +10,7 @@
     "db:generate": "node scripts/prisma.js generate",
     "db:migrate:dev": "node scripts/prisma.js migrate dev",
     "db:migrate:deploy": "node scripts/prisma.js migrate deploy",
+    "account:role": "node scripts/set-role.js",
     "test": "node --test"
   },
   "engines": {

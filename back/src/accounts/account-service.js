@@ -3,6 +3,9 @@ import { badRequest, conflict, unauthorized } from '../errors/app-error.js'
 import { findTeam } from '../teams/team-catalog.js'
 import { hashPassword, UNKNOWN_ACCOUNT_HASH, verifyPassword } from './password.js'
 
+export const ADMIN_ROLE = 'admin'
+export const PLAYER_ROLE = 'player'
+
 const PSEUDO_PATTERN = /^[A-Za-z0-9_-]{3,20}$/
 const MIN_PASSWORD_LENGTH = 8
 const MAX_PASSWORD_LENGTH = 128
@@ -40,8 +43,13 @@ function readCredentials(body) {
 }
 
 // Ce que l'API montre d'un compte. team vaut null tant que le joueur n'a pas choisi d'équipe.
+// role sert au front à montrer les outils de modération ; les routes le revérifient toujours.
 export function toUser(account) {
-  return { pseudo: account.pseudo, team: findTeam(account.teamId) }
+  return {
+    pseudo: account.pseudo,
+    team: findTeam(account.teamId),
+    role: account.role === ADMIN_ROLE ? ADMIN_ROLE : PLAYER_ROLE,
+  }
 }
 
 export function createAccountService({ repository, now = () => new Date(), sessionTtlMs = readSessionTtlMs() }) {

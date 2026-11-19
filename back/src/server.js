@@ -6,6 +6,8 @@ import { createAccountService } from './accounts/account-service.js'
 import { createApp } from './app.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasService } from './canvas/canvas-service.js'
+import { moderationRepository as defaultModerationRepository } from './moderation/moderation-repository.js'
+import { createModerationService } from './moderation/moderation-service.js'
 import { placementRepository as defaultPlacementRepository } from './placements/placement-repository.js'
 import { createPlacementService } from './placements/placement-service.js'
 import { createTeamService } from './teams/team-service.js'
@@ -16,12 +18,15 @@ const CANVAS_ROOM = 'canvas'
 // placementRepository : accès à l'historique des poses ; les tests y passent leur propre base.
 // accountRepository : accès aux comptes et aux sessions ; par défaut, celui de la base de l'application.
 // teamRepository : accès à l'équipe des comptes ; teamChangeCooldownMs : délai entre deux changements d'équipe.
+// moderationRepository : nettoyage de zone et journal. Par défaut, celui de la base de l'application,
+// seulement avec le dépôt de toile par défaut : un test qui passe sa propre toile ne doit pas écrire ailleurs.
 export function createCanvasServer({
   repository = canvasRepository,
   placementRepository = defaultPlacementRepository,
   accountRepository,
   teamRepository,
   teamChangeCooldownMs,
+  moderationRepository = repository === canvasRepository ? defaultModerationRepository : null,
   resolvePlayer,
   cooldownMs,
 } = {}) {
@@ -36,7 +41,21 @@ export function createCanvasServer({
   const teamService = teamRepository
     ? createTeamService({ repository: teamRepository, cooldownMs: teamChangeCooldownMs })
     : undefined
-  const app = createApp({ canvasService, placementService, accountService, teamService, resolvePlayer })
+  // Le nettoyage d'une zone est diffusé aux abonnés de la toile, comme un changement de pixel.
+  const moderationService = moderationRepository
+    ? createModerationService({
+        repository: moderationRepository,
+        publishCleanup: (cleanup) => io.to(CANVAS_ROOM).emit('canvas:cleared', cleanup),
+      })
+    : undefined
+  const app = createApp({
+    canvasService,
+    placementService,
+    accountService,
+    teamService,
+    moderationService,
+    resolvePlayer,
+  })
   const httpServer = createServer(app)
   io = new Server(httpServer)
 

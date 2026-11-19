@@ -50,6 +50,8 @@ model Account {
   // Identifiant d'une équipe de team-catalog.js ; vide tant que le joueur n'en a pas choisi.
   teamId        String?
   teamChangedAt DateTime?
+  // « player » ou « admin ». Aucune route ne change le rôle : voir scripts/set-role.js.
+  role          String    @default("player")
   sessions      Session[]
 }
 
@@ -64,4 +66,16 @@ model Session {
   expiresAt DateTime
 
   @@index([accountId])
+}
+
+// Journal des actions de modération : une ligne par action, jamais modifiée ni supprimée.
+// adminPseudo garde le pseudo de l'admin au moment de l'action. details est un objet JSON
+// qui dépend du type (pour un nettoyage : la zone, le nombre de pixels retirés, la révision).
+model ModerationAction {
+  id             Int      @id @default(autoincrement())
+  type           String
+  adminAccountId Int
+  adminPseudo    String
+  createdAt      DateTime
+  details        String
 }

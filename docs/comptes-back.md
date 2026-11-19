@@ -11,7 +11,7 @@ Tâche #39, user story [#18 — Créer un compte et se connecter](https://github
 | `POST /api/auth/logout` | `204`, cookie effacé | Aucune : sans session, `204` aussi |
 | `GET /api/auth/me` | `200 { user }` | `401 UNAUTHORIZED` |
 
-`user` vaut `{ pseudo, team }`. `team` est l'équipe du joueur, ou `null` tant qu'il n'en a pas choisi : voir [equipes-back.md](equipes-back.md). Aucune réponse ne contient d'identifiant de compte, de mot de passe ou d'empreinte.
+`user` vaut `{ pseudo, team, role }`. `team` est l'équipe du joueur, ou `null` tant qu'il n'en a pas choisi : voir [equipes-back.md](equipes-back.md). `role` vaut `player` ou `admin` : voir [moderation-back.md](moderation-back.md). Aucune réponse ne contient d'identifiant de compte, de mot de passe ou d'empreinte.
 
 ## Ce que fait le serveur
 

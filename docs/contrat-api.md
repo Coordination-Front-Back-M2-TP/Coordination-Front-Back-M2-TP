@@ -268,6 +268,91 @@ Le gestionnaire Express de la PR #110 ne traite pas les erreurs Socket.IO. Le se
 - L’objectif produit est qu’un changement enregistré apparaisse chez les autres joueurs en moins d’une seconde.
 - Les erreurs HTTP utilisent le statut approprié et le format `error` standard. Les erreurs Socket.IO utilisent `canvas:error`.
 
+## Modérer la toile
+
+> **Proposition pour l’issue #59, écrite pour livrer la tâche #61.** Elle reste à relire par le front et le back. Elle couvre la user story [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31). Le bannissement (#32) n’y est pas encore.
+
+### Rôle
+
+Le joueur connecté renvoyé par `GET /api/auth/me` porte un champ `role` : `"player"` ou `"admin"`. Le front s’en sert pour montrer l’outil de modération aux seuls admins. Le serveur revérifie le rôle à chaque requête de modération : sans session, la réponse est `401 UNAUTHORIZED` ; avec un compte joueur, `403 FORBIDDEN`. Aucune route ne donne ni ne retire le rôle.
+
+### `POST /api/moderation/cleanups` — nettoyer une zone
+
+Compte admin requis.
+
+**Requête — `application/json`**
+
+```json
+{
+  "fromX": 10,
+  "fromY": 10,
+  "toX": 12,
+  "toY": 12
+}
+```
+
+La zone est un rectangle donné par deux coins inclus : `(fromX, fromY)` en haut à gauche, `(toX, toY)` en bas à droite. Les quatre valeurs sont des entiers de `-50` à `50`, avec `fromX ≤ toX` et `fromY ≤ toY`.
+
+**Succès — `200 OK`**
+
+```json
+{
+  "action": {
+    "id": 7,
+    "type": "zone_cleanup",
+    "admin": "Lea",
+    "createdAt": "2026-10-27T14:30:00.000Z",
+    "details": {
+      "fromX": 10,
+      "fromY": 10,
+      "toX": 12,
+      "toY": 12,
+      "removedCount": 4,
+      "revision": 186
+    }
+  }
+}
+```
+
+Les pixels visibles de la zone sont supprimés : leurs cases redeviennent vides. `removedCount` est le nombre de pixels retirés, `revision` la révision de la toile prise par le nettoyage. `action` est la ligne ajoutée au journal. Une zone vide répond aussi `200`, avec `removedCount` à `0`.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | Coin absent, hors de `-50..50`, non entier, ou coins inversés |
+| `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
+| `403 Forbidden` | `FORBIDDEN` | Le compte n’est pas admin |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+### Serveur → client : `canvas:cleared`
+
+Après l’enregistrement d’un nettoyage, le serveur émet `canvas:cleared` aux clients abonnés à la toile par `canvas:subscribe` :
+
+```json
+{
+  "fromX": 10,
+  "fromY": 10,
+  "toX": 12,
+  "toY": 12,
+  "revision": 186,
+  "clearedAt": "2026-10-27T14:30:00.000Z"
+}
+```
+
+Le client retire de son état chaque pixel de la zone dont la révision est inférieure à `revision`. Un pixel de la zone avec une révision supérieure vient d’une pose faite après le nettoyage : il reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient pas le pseudo de l’admin.
+
+### `GET /api/moderation/actions` — lire le journal
+
+Compte admin requis.
+
+| Paramètre | Type | Signification |
+| --- | --- | --- |
+| `limit` | entier de `1` à `200` | Nombre maximal d’actions dans la page. `50` par défaut |
+| `before` | entier ≥ 1 | Identifiant de la dernière action déjà reçue : la page commence juste avant |
+
+**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Les actions ont le format de `action` ci-dessus, la plus récente d’abord. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
+
+Les erreurs sont celles du nettoyage ; `400 INVALID_INPUT` correspond ici à `limit` ou `before` hors bornes.
+
 ## Points restant à valider avant implémentation
 
 - Le format de couleur `#RRGGBB` est celui du pixel transmis. La palette autorisée reste à fixer dans le contrat de pose de pixel (#21).

@@ -6,6 +6,9 @@ import { accountRepository } from './accounts/account-repository.js'
 import { createAccountRouter, createSessionPlayerResolver } from './accounts/account-routes.js'
 import { createAccountService } from './accounts/account-service.js'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
+import { moderationRepository } from './moderation/moderation-repository.js'
+import { createModerationRouter } from './moderation/moderation-routes.js'
+import { createModerationService } from './moderation/moderation-service.js'
 import swaggerUi from 'swagger-ui-express'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasRouter } from './canvas/canvas-routes.js'
@@ -25,6 +28,7 @@ const defaultPlacementService = createPlacementService({ repository: placementRe
 
 const defaultAccountService = createAccountService({ repository: accountRepository })
 const defaultTeamService = createTeamService({ repository: teamRepository })
+const defaultModerationService = createModerationService({ repository: moderationRepository })
 
 // L'application est séparée du serveur : les tests la lancent sur un port libre, sans toucher au port 3000.
 // resolvePlayer : lit le joueur de la requête, { accountId, teamId } ou null. Par défaut, il vient
@@ -34,6 +38,7 @@ export function createApp({
   placementService = defaultPlacementService,
   accountService = defaultAccountService,
   teamService = defaultTeamService,
+  moderationService = defaultModerationService,
   resolvePlayer = createSessionPlayerResolver(accountService),
 } = {}) {
   const app = express()
@@ -50,6 +55,7 @@ export function createApp({
   // Chaque fonctionnalité apporte ses routes (GUIDELINES.md, section 5).
   app.use('/api', createAccountRouter({ accountService }))
   app.use('/api', createTeamRouter({ teamService, accountService }))
+  app.use('/api', createModerationRouter({ moderationService, accountService }))
   app.use('/api', createCanvasRouter({ canvasService, resolvePlayer }))
   app.use('/api', createPlacementRouter({ placementService }))
 
