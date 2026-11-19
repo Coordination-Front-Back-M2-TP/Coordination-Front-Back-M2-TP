@@ -55,6 +55,25 @@ Le tableau montre deux pixels, sans colonne `teamId`. Le pixel (10, 10) a été 
 - **Sécurité** : sauvegarder le volume `canvas-data` avant une migration en production ([deploiement.md](deploiement.md), section 6).
 - **Relire le SQL généré** : à ce jour, Prisma ajoute aussi une réécriture de la table `CanvasState`. La première migration n'a pas le `DEFAULT 1` que déclare le schéma. Cette réécriture recopie les données, elle est sans danger, mais elle montre pourquoi on relit toujours le SQL avant de l'appliquer. Prisma ajoute aussi deux lignes de commentaire en tête de `migration_lock.toml`.
 
+### En production (à préparer avant l'oral)
+
+L'app est déjà déployée sur le NAS : le jury attendra aussi de voir comment une migration arrive en production. La démo locale montre la création de la migration ; la mise en production se fait **avant** l'oral, parce que le NAS met jusqu'à 10 minutes à prendre une nouvelle version ([deploiement.md](deploiement.md), section 2).
+
+Chemin d'une migration jusqu'à la production :
+
+1. PR avec la migration et le code qui l'utilise, CI verte, relecture, merge.
+2. Images publiées en staging, puis tag `vX.Y.Z` : images de production.
+3. Le NAS tire la nouvelle image et relance le back.
+4. Au démarrage, le back lance `migrate deploy` (`npm start`) avant d'écouter : la migration s'applique à la base de production.
+5. Le healthcheck du back passe, le front (`depends_on: service_healthy`) suit.
+
+Ce qui reste à faire pour une vraie migration de prod :
+
+- [ ] Après le merge de #126 (délai côté serveur), qui modifie `savePixel` : ouvrir une issue pour enregistrer l'équipe du pixel visible. Migration `teamId` ci-dessus, plus l'écriture de `teamId` dans `savePixel`, sinon les nouveaux pixels auraient une équipe vide. Utile au classement des équipes (#28) et au persona gamification.
+- [ ] Sauvegarder le volume `canvas-data`, puis livrer avec un tag.
+- [ ] Garder pour l'oral les logs du back sur le NAS (ligne `Applying migration`) et les données avant et après.
+- [ ] Compléter la section 3 de [deploiement.md](deploiement.md) : une colonne facultative laisse l'ancienne version marcher, donc le retour arrière reste possible sans annuler la migration.
+
 ### Remettre à zéro (après une répétition)
 
 ```powershell
