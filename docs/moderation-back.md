@@ -1,6 +1,6 @@
 # Modération : rôle admin, nettoyage d'une zone, journal (back)
 
-Tâche #61, user story [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31). Le back suit la [proposition de contrat](contrat-api.md#modérer-la-toile). Les comptes sont décrits dans [comptes-back.md](comptes-back.md). Le front est la tâche #60.
+Tâche #61, user story [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31). Le back suit la [proposition de contrat](contrat-api.md#modérer-la-toile). Les comptes sont décrits dans [comptes-back.md](comptes-back.md). Le front est la tâche #60. Le bannissement (#63) est décrit dans [bannissement-back.md](bannissement-back.md).
 
 ## Routes
 

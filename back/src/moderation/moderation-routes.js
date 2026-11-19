@@ -24,6 +24,24 @@ export function createModerationRouter({ moderationService, accountService }) {
     }
   })
 
+  router.get('/moderation/players', async (req, res, next) => {
+    try {
+      await requireAdmin(req)
+      res.json(await moderationService.listPlayers(req.query))
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  router.post('/moderation/bans', async (req, res, next) => {
+    try {
+      const admin = await requireAdmin(req)
+      res.json(await moderationService.banPlayer(req.body, admin))
+    } catch (error) {
+      next(error)
+    }
+  })
+
   router.get('/moderation/actions', async (req, res, next) => {
     try {
       await requireAdmin(req)

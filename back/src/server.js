@@ -18,7 +18,7 @@ const CANVAS_ROOM = 'canvas'
 // placementRepository : accès à l'historique des poses ; les tests y passent leur propre base.
 // accountRepository : accès aux comptes et aux sessions ; par défaut, celui de la base de l'application.
 // teamRepository : accès à l'équipe des comptes ; teamChangeCooldownMs : délai entre deux changements d'équipe.
-// moderationRepository : nettoyage de zone et journal. Par défaut, celui de la base de l'application,
+// moderationRepository : nettoyage de zone, bannissement et journal. Par défaut, celui de la base de l'application,
 // seulement avec le dépôt de toile par défaut : un test qui passe sa propre toile ne doit pas écrire ailleurs.
 export function createCanvasServer({
   repository = canvasRepository,
@@ -41,11 +41,13 @@ export function createCanvasServer({
   const teamService = teamRepository
     ? createTeamService({ repository: teamRepository, cooldownMs: teamChangeCooldownMs })
     : undefined
-  // Le nettoyage d'une zone est diffusé aux abonnés de la toile, comme un changement de pixel.
+  // Le nettoyage d'une zone et l'annulation des poses d'un joueur banni sont diffusés
+  // aux abonnés de la toile, comme un changement de pixel.
   const moderationService = moderationRepository
     ? createModerationService({
         repository: moderationRepository,
         publishCleanup: (cleanup) => io.to(CANVAS_ROOM).emit('canvas:cleared', cleanup),
+        publishRevert: (revert) => io.to(CANVAS_ROOM).emit('canvas:reverted', revert),
       })
     : undefined
   const app = createApp({

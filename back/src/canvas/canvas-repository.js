@@ -1,6 +1,6 @@
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import prismaClient from '@prisma/client'
-import { tooManyRequests } from '../errors/app-error.js'
+import { forbidden, tooManyRequests } from '../errors/app-error.js'
 
 process.env.DATABASE_URL ??= 'file:./prisma/dev.db'
 
@@ -11,6 +11,8 @@ export const prisma = new PrismaClient({
 
 const BOARD_WIDTH = 101
 const BOARD_HEIGHT = 101
+// Un identifiant de compte de la base. Les sessions factices des tests en ont d'autres.
+const ACCOUNT_ID_PATTERN = /^\d{1,15}$/
 
 function toPixelRecord(pixel) {
   return {
@@ -44,6 +46,7 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
     // dans la même transaction que le pixel visible.
     // cooldownMs : délai entre deux poses d'un même compte. Une pose envoyée avant la fin du délai
     // est refusée en 429 et la transaction est annulée : ni toile, ni historique, ni révision ne changent.
+    // Un compte banni est refusé en 403 ACCOUNT_BANNED, de la même façon.
     async savePixel({ x, y, color }, placement = null, { cooldownMs = 0 } = {}) {
       return client.$transaction(async (transaction) => {
         // L'écriture de la révision vient en premier : elle prend le verrou d'écriture de SQLite,
@@ -53,6 +56,15 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
           data: { revision: { increment: 1 } },
         })
         const updatedAt = now()
+        // Le bannissement est relu ici, sous le verrou : une pose envoyée pendant un bannissement
+        // passe entièrement avant, et elle est annulée, ou entièrement après, et elle est refusée.
+        if (placement && ACCOUNT_ID_PATTERN.test(placement.accountId)) {
+          const account = await transaction.account.findUnique({
+            where: { id: Number(placement.accountId) },
+            select: { bannedAt: true },
+          })
+          if (account?.bannedAt) throw forbidden('Ce compte est banni : il ne peut plus poser de pixel.', 'ACCOUNT_BANNED')
+        }
         if (placement && cooldownMs > 0) {
           const lastPlacement = await transaction.pixelPlacement.findFirst({
             where: { accountId: placement.accountId },

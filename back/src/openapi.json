@@ -473,6 +473,221 @@
         }
       }
     },
+    "/api/moderation/players": {
+      "get": {
+        "summary": "Lister les joueurs",
+        "description": "Compte admin requis. Les joueurs sont rangés par pseudo, sans tenir compte de la casse.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "description": "Pseudo du dernier joueur déjà reçu (nextCursor de la page précédente).",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Une page de la liste",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "players",
+                    "nextCursor"
+                  ],
+                  "properties": {
+                    "players": {
+                      "type": "array",
+                      "maxItems": 200,
+                      "items": {
+                        "$ref": "#/components/schemas/ModerationPlayer"
+                      }
+                    },
+                    "nextCursor": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "limit ou after hors contrat (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/moderation/bans": {
+      "post": {
+        "summary": "Bannir un joueur et annuler ses pixels",
+        "description": "Compte admin requis. Bannit le joueur, remplace ses pixels visibles par ceux d'avant lui d'après l'historique des poses (ou vide la case), note l'action dans le journal et diffuse canvas:reverted aux abonnés de la toile. L'historique des poses n'est pas modifié. Un joueur banni reçoit 403 ACCOUNT_BANNED quand il pose.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "pseudo"
+                ],
+                "properties": {
+                  "pseudo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Joueur banni",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "action"
+                  ],
+                  "properties": {
+                    "action": {
+                      "$ref": "#/components/schemas/ModerationAction"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Pseudo absent, vide ou qui n'est pas un texte (INVALID_INPUT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Aucun compte n'a ce pseudo (PLAYER_NOT_FOUND)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Joueur déjà banni (ALREADY_BANNED) ou compte admin (ADMIN_NOT_BANNABLE)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Compte non connecté (UNAUTHORIZED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Le compte n'est pas admin (FORBIDDEN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/moderation/actions": {
       "get": {
         "summary": "Lire le journal de modération",
@@ -643,7 +858,7 @@
       },
       "post": {
         "summary": "Poser un pixel",
-        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session. Une équipe est obligatoire : sans équipe, la réponse est 403 TEAM_REQUIRED.",
+        "description": "Compte connecté requis. Le compte et l'équipe viennent de la session, jamais du corps. Chaque pose acceptée est inscrite dans l'historique (compte, équipe, heure serveur) puis diffusée par pixel:updated. Le serveur vérifie le délai du compte entre deux poses (10 secondes par défaut, PIXEL_COOLDOWN_SECONDS) ; cooldownEndsAt donne l'heure serveur de la prochaine pose possible. Le joueur est lu dans le cookie de session p1x3l_session. Une équipe est obligatoire : sans équipe, la réponse est 403 TEAM_REQUIRED. Un compte banni ne peut plus poser : la réponse est 403 ACCOUNT_BANNED.",
         "requestBody": {
           "required": true,
           "content": {
@@ -721,7 +936,7 @@
             }
           },
           "403": {
-            "description": "Le joueur n'a pas encore choisi d'équipe (TEAM_REQUIRED)",
+            "description": "Le joueur n'a pas encore choisi d'équipe (TEAM_REQUIRED), ou son compte est banni (ACCOUNT_BANNED)",
             "content": {
               "application/json": {
                 "schema": {
@@ -955,7 +1170,8 @@
           "type": {
             "type": "string",
             "enum": [
-              "zone_cleanup"
+              "zone_cleanup",
+              "player_ban"
             ]
           },
           "admin": {
@@ -968,7 +1184,10 @@
           },
           "details": {
             "type": "object",
-            "description": "Pour zone_cleanup : la zone, removedCount et revision.",
+            "description": "Pour zone_cleanup : fromX, fromY, toX, toY, removedCount et revision. Pour player_ban : pseudo, restoredCount, clearedCount et revision.",
+            "required": [
+              "revision"
+            ],
             "properties": {
               "fromX": {
                 "type": "integer",
@@ -994,11 +1213,61 @@
                 "type": "integer",
                 "minimum": 0
               },
+              "pseudo": {
+                "type": "string",
+                "description": "Pseudo du joueur banni"
+              },
+              "restoredCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "clearedCount": {
+                "type": "integer",
+                "minimum": 0
+              },
               "revision": {
                 "type": "integer",
                 "minimum": 1
               }
             }
+          }
+        }
+      },
+      "ModerationPlayer": {
+        "type": "object",
+        "required": [
+          "pseudo",
+          "team",
+          "role",
+          "banned",
+          "bannedAt"
+        ],
+        "properties": {
+          "pseudo": {
+            "type": "string"
+          },
+          "team": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Team"
+              }
+            ],
+            "nullable": true
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "player",
+              "admin"
+            ]
+          },
+          "banned": {
+            "type": "boolean"
+          },
+          "bannedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         }
       },

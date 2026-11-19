@@ -270,7 +270,7 @@ Le gestionnaire Express de la PR #110 ne traite pas les erreurs Socket.IO. Le se
 
 ## Modérer la toile
 
-> **Proposition pour l’issue #59, écrite pour livrer la tâche #61.** Elle reste à relire par le front et le back. Elle couvre la user story [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31). Le bannissement (#32) n’y est pas encore.
+> **Proposition pour l’issue #59, écrite pour livrer les tâches #61 et #63.** Elle reste à relire par le front et le back. Elle couvre les user stories [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31) et [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32).
 
 ### Rôle
 
@@ -340,6 +340,100 @@ Après l’enregistrement d’un nettoyage, le serveur émet `canvas:cleared` au
 
 Le client retire de son état chaque pixel de la zone dont la révision est inférieure à `revision`. Un pixel de la zone avec une révision supérieure vient d’une pose faite après le nettoyage : il reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient pas le pseudo de l’admin.
 
+### `GET /api/moderation/players` — lister les joueurs
+
+Compte admin requis.
+
+| Paramètre | Type | Signification |
+| --- | --- | --- |
+| `limit` | entier de `1` à `200` | Nombre maximal de joueurs dans la page. `50` par défaut |
+| `after` | pseudo | Pseudo du dernier joueur déjà reçu : la page commence juste après |
+
+**Succès — `200 OK`**
+
+```json
+{
+  "players": [
+    {
+      "pseudo": "Troll",
+      "team": { "id": "rouge", "name": "Rouge", "color": "#D93A3A" },
+      "role": "player",
+      "banned": true,
+      "bannedAt": "2026-10-27T14:35:00.000Z"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+Les joueurs sont rangés par pseudo, sans tenir compte de la casse. `team` vaut `null` sans équipe, `bannedAt` vaut `null` tant que le joueur n’est pas banni. `nextCursor` se passe dans `after` pour la page suivante ; il vaut `null` à la fin de la liste. Les erreurs sont celles du journal.
+
+### `POST /api/moderation/bans` — bannir un joueur
+
+Compte admin requis.
+
+**Requête — `application/json`**
+
+```json
+{
+  "pseudo": "Troll"
+}
+```
+
+Le pseudo se lit sans tenir compte de la casse.
+
+**Succès — `200 OK`**
+
+```json
+{
+  "action": {
+    "id": 8,
+    "type": "player_ban",
+    "admin": "Lea",
+    "createdAt": "2026-10-27T14:35:00.000Z",
+    "details": {
+      "pseudo": "Troll",
+      "restoredCount": 12,
+      "clearedCount": 3,
+      "revision": 187
+    }
+  }
+}
+```
+
+Le joueur est banni et ses pixels encore visibles sont annulés. Chaque case reprend le pixel d’avant lui, d’après l’historique des poses (`restoredCount`) ; sans pixel d’avant, elle redevient vide (`clearedCount`). Le pixel d’avant ne vient jamais d’un autre joueur banni, ni d’avant un nettoyage de la case. `action` est la ligne ajoutée au journal.
+
+Un joueur banni garde son compte et sa session, mais il ne peut plus poser : `POST /api/pixels` répond `403 ACCOUNT_BANNED`.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | `pseudo` absent, vide ou qui n’est pas un texte |
+| `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
+| `403 Forbidden` | `FORBIDDEN` | Le compte n’est pas admin |
+| `404 Not Found` | `PLAYER_NOT_FOUND` | Aucun compte n’a ce pseudo |
+| `409 Conflict` | `ALREADY_BANNED` | Le joueur est déjà banni |
+| `409 Conflict` | `ADMIN_NOT_BANNABLE` | Le compte visé est admin |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+### Serveur → client : `canvas:reverted`
+
+Après un bannissement qui change la toile, le serveur émet `canvas:reverted` aux clients abonnés à la toile par `canvas:subscribe` :
+
+```json
+{
+  "revision": 187,
+  "revertedAt": "2026-10-27T14:35:00.000Z",
+  "restored": [
+    { "x": 10, "y": 10, "color": "#2F6FDE", "updatedAt": "2026-10-27T14:20:00.000Z", "revision": 120 }
+  ],
+  "cleared": [
+    { "x": 11, "y": 10 }
+  ]
+}
+```
+
+`restored` liste les pixels remis, au format `Pixel` : ils gardent l’heure et la révision de leur pose d’origine. `cleared` liste les cases vidées. Le client applique chaque case dont le pixel qu’il affiche a une révision inférieure à `revision` : il le remplace par le pixel de `restored`, ou le retire pour `cleared`. Une case dont le pixel a une révision supérieure vient d’une pose faite après le bannissement : elle reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient ni le pseudo du joueur banni ni celui de l’admin.
+
 ### `GET /api/moderation/actions` — lire le journal
 
 Compte admin requis.
@@ -349,7 +443,7 @@ Compte admin requis.
 | `limit` | entier de `1` à `200` | Nombre maximal d’actions dans la page. `50` par défaut |
 | `before` | entier ≥ 1 | Identifiant de la dernière action déjà reçue : la page commence juste avant |
 
-**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Les actions ont le format de `action` ci-dessus, la plus récente d’abord. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
+**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Les actions ont le format de `action` ci-dessus, la plus récente d’abord. `type` vaut `zone_cleanup` ou `player_ban`, et `details` dépend du type. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
 
 Les erreurs sont celles du nettoyage ; `400 INVALID_INPUT` correspond ici à `limit` ou `before` hors bornes.
 
