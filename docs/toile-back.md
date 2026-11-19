@@ -1,6 +1,6 @@
 # Lecture et diffusion de la toile côté back
 
-Le back implémente la lecture publique et l’abonnement temps réel prévus par le [contrat de la toile](contrat-api.md). Aucun compte n’est requis pour consulter les pixels. La pose d’un pixel et son endpoint restent hors périmètre : ils appartiennent à l’issue #21.
+Le back implémente la lecture publique et l’abonnement temps réel prévus par le [contrat de la toile](contrat-api.md). Aucun compte n’est requis pour consulter les pixels. La pose d’un pixel est décrite dans [pose-back.md](pose-back.md).
 
 ## Persistance
 
@@ -16,7 +16,7 @@ En local, la base est `back/prisma/dev.db`. Les migrations se lancent avec `npm 
 
 À chaque `canvas:subscribe`, le serveur joint le socket à la salle avant de lire l’instantané, puis répond par l’ACK Socket.IO. Cet ordre permet au client de mettre en attente les événements qui arriveraient avant l’ACK. `canvas:unsubscribe` quitte la salle ; une déconnexion la quitte également.
 
-Le service serveur `savePixel` valide les coordonnées et le format `#RRGGBB`, écrit l’état et sa révision en base, puis seulement après la transaction émet `pixel:updated` dans la salle. Cette méthode interne est destinée à être appelée par la future route de pose ; aucun événement de pose n’est accepté du client. `canvas:error` n’expose que `error.code` et `error.message`.
+Le service serveur `savePixel` valide les coordonnées et le format `#RRGGBB`, écrit l’état et sa révision en base, puis seulement après la transaction émet `pixel:updated` dans la salle. Elle est appelée par la route `POST /api/pixels` ; aucun événement de pose n’est accepté du client. `canvas:error` n’expose que `error.code` et `error.message`.
 
 La palette de couleurs autorisée reste à fixer avec le contrat de pose (#21). Pour la lecture, les couleurs sont validées au format `#RRGGBB`.
 

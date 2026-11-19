@@ -21,3 +21,18 @@ model Pixel {
   @@id([x, y])
   @@index([y, x])
 }
+
+// Historique des poses : une ligne par pose acceptée, même quand elle remplace un pixel visible.
+// accountId et teamId viennent de la session ; ils deviendront des clés étrangères avec les comptes (#18).
+model PixelPlacement {
+  id        Int      @id @default(autoincrement())
+  x         Int
+  y         Int
+  color     String
+  accountId String
+  teamId    String
+  placedAt  DateTime
+  revision  Int      @unique
+
+  @@index([accountId, placedAt])
+}

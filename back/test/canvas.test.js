@@ -127,14 +127,14 @@ test('persiste une pose avant de la diffuser et la conserve après reconnexion',
 })
 
 test('refuse les coordonnées ou couleurs hors contrat sans modifier la toile', async () => {
-  await assert.rejects(server.canvasService.savePixel(null), { name: 'TypeError' })
+  await assert.rejects(server.canvasService.savePixel(null), { code: 'INVALID_INPUT', statusCode: 400 })
   await assert.rejects(
     server.canvasService.savePixel({ x: 51, y: 0, color: '#123456' }),
-    { name: 'TypeError' },
+    { code: 'INVALID_INPUT', statusCode: 400 },
   )
   await assert.rejects(
     server.canvasService.savePixel({ x: 0, y: 0, color: 'red' }),
-    { name: 'TypeError' },
+    { code: 'INVALID_INPUT', statusCode: 400 },
   )
   assert.equal((await repository.getSnapshot()).revision, 2)
 })
