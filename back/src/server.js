@@ -5,18 +5,27 @@ import { Server } from 'socket.io'
 import { createApp } from './app.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasService } from './canvas/canvas-service.js'
+import { placementRepository as defaultPlacementRepository } from './placements/placement-repository.js'
+import { createPlacementService } from './placements/placement-service.js'
 
 const CANVAS_ROOM = 'canvas'
 
 // cooldownMs : délai entre deux poses d'un compte ; par défaut, celui de PIXEL_COOLDOWN_SECONDS.
-export function createCanvasServer({ repository = canvasRepository, resolvePlayer, cooldownMs } = {}) {
+// placementRepository : accès à l'historique des poses ; les tests y passent leur propre base.
+export function createCanvasServer({
+  repository = canvasRepository,
+  placementRepository = defaultPlacementRepository,
+  resolvePlayer,
+  cooldownMs,
+} = {}) {
   let io
   const canvasService = createCanvasService({
     repository,
     cooldownMs,
     publish: (pixel) => io.to(CANVAS_ROOM).emit('pixel:updated', pixel),
   })
-  const app = createApp({ canvasService, resolvePlayer })
+  const placementService = createPlacementService({ repository: placementRepository })
+  const app = createApp({ canvasService, placementService, resolvePlayer })
   const httpServer = createServer(app)
   io = new Server(httpServer)
 
