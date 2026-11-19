@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { parseCanvasSnapshot } from '../api/canvas-state.js'
+import { parseCanvasSnapshot } from '../../api/canvas-state.js'
 import { PixelCanvas } from './PixelCanvas.jsx'
 
 const date = '2026-10-27T14:30:00.000Z'

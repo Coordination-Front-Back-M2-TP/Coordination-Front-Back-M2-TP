@@ -82,7 +82,7 @@ Les responsabilités et rituels agiles sont détaillés dans [docs/gestion-de-pr
 
 Lire attentivement [GUIDELINES.md](../GUIDELINES.md) avant d'écrire la moindre ligne de code :
 
-- Séparation claire : `front/src/components/`, `front/src/api/`, `back/src/routes/`, `back/src/services/`.
+- Rangement par fonctionnalité : un dossier par composant dans `front/src/components/`, les appels à l'API dans `front/src/api/`, un dossier par fonctionnalité dans `back/src/` (par exemple `back/src/canvas/`). La règle est dans [GUIDELINES.md](../GUIDELINES.md), section 2.
 - Contrat d'API d'abord : toute route ou événement temps réel est formalisé avant son implémentation.
 - Format des erreurs standardisé : `{ "error": { "code": "...", "message": "..." } }`.
 - Langue : anglais pour le code et les clés JSON, français pour la documentation, les commentaires et les tickets.
