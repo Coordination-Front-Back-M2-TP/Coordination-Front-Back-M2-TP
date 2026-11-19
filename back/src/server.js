@@ -4,6 +4,9 @@ import { pathToFileURL } from 'node:url'
 import { Server } from 'socket.io'
 import { createAccountService } from './accounts/account-service.js'
 import { createApp } from './app.js'
+import { rankingRepository as defaultRankingRepository } from './rankings/ranking-repository.js'
+import { createRankingService } from './rankings/ranking-service.js'
+import { logger } from './utils/logger.js'
 import { canvasRepository } from './canvas/canvas-repository.js'
 import { createCanvasService } from './canvas/canvas-service.js'
 import { placementRepository as defaultPlacementRepository } from './placements/placement-repository.js'
@@ -11,25 +14,61 @@ import { createPlacementService } from './placements/placement-service.js'
 
 const CANVAS_ROOM = 'canvas'
 
+// Diffuse le classement aux abonnés de la toile après un changement de pixel.
+// Rien n'est émis si le classement n'a pas bougé, ni s'il est plus ancien que le dernier émis :
+// deux calculs lancés coup sur coup peuvent finir dans le désordre.
+function createRankingBroadcaster({ rankingService, emit }) {
+  let lastRevision = -1
+  let lastTeams = null
+
+  return async function broadcastRanking() {
+    try {
+      const ranking = await rankingService.getRanking()
+      if (ranking.revision <= lastRevision) return
+      const teams = JSON.stringify(ranking.teams)
+      const changed = teams !== lastTeams
+      lastRevision = ranking.revision
+      lastTeams = teams
+      if (changed) emit(ranking)
+    } catch (error) {
+      // La pose est déjà enregistrée et diffusée : un classement en échec ne doit pas la faire échouer.
+      logger.error('Diffusion du classement impossible', { errorName: error?.name })
+    }
+  }
+}
+
 // cooldownMs : délai entre deux poses d'un compte ; par défaut, celui de PIXEL_COOLDOWN_SECONDS.
 // placementRepository : accès à l'historique des poses ; les tests y passent leur propre base.
 // accountRepository : accès aux comptes et aux sessions ; par défaut, celui de la base de l'application.
+// rankingRepository : accès aux données du classement. Par défaut, celui de la base de l'application,
+// seulement avec le dépôt de toile par défaut : un test qui passe sa propre toile ne doit pas lire une autre base.
 export function createCanvasServer({
   repository = canvasRepository,
   placementRepository = defaultPlacementRepository,
   accountRepository,
+  rankingRepository = repository === canvasRepository ? defaultRankingRepository : null,
   resolvePlayer,
   cooldownMs,
 } = {}) {
   let io
+  const rankingService = rankingRepository ? createRankingService({ repository: rankingRepository }) : undefined
+  const broadcastRanking = rankingService
+    ? createRankingBroadcaster({
+        rankingService,
+        emit: (ranking) => io.to(CANVAS_ROOM).emit('ranking:updated', ranking),
+      })
+    : () => {}
   const canvasService = createCanvasService({
     repository,
     cooldownMs,
-    publish: (pixel) => io.to(CANVAS_ROOM).emit('pixel:updated', pixel),
+    publish: (pixel) => {
+      io.to(CANVAS_ROOM).emit('pixel:updated', pixel)
+      broadcastRanking()
+    },
   })
   const placementService = createPlacementService({ repository: placementRepository })
   const accountService = accountRepository ? createAccountService({ repository: accountRepository }) : undefined
-  const app = createApp({ canvasService, placementService, accountService, resolvePlayer })
+  const app = createApp({ canvasService, placementService, accountService, rankingService, resolvePlayer })
   const httpServer = createServer(app)
   io = new Server(httpServer)
 
@@ -55,7 +94,7 @@ export function createCanvasServer({
     })
   })
 
-  return { app, httpServer, io, canvasService }
+  return { app, httpServer, io, canvasService, rankingService }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
