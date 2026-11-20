@@ -24,7 +24,7 @@ Un pixel écrit sans joueur (un futur nettoyage de zone, #61) n'a pas de pose da
 ## Points en attente
 
 - **Contrat** : la tâche contrat de l'EPIC (#54) n'est pas faite. Les sections du contrat sont une proposition, écrite pour livrer cette tâche : elles restent à relire par le front (#55) et le back.
-- **Équipes** : la tâche #41 n'est pas livrée. `teamId` est la chaîne que la session donne à la pose. Une équipe sans pixel n'apparaît pas dans le classement : le back ne connaît pas encore la liste des 4 équipes. Elle s'ajoutera avec #41.
+- **Équipes** : `teamId` est l'identifiant de l'équipe de la session au moment de la pose. Une équipe sans pixel n'apparaît pas dans le classement, conformément au contrat ; la liste complète est disponible par `GET /api/teams`.
 - **Session** : tant que l'authentification (#18) n'est pas branchée, aucune pose réelle n'est acceptée : le classement est vide hors tests.
 - **Fréquence** : le classement est recalculé à chaque pose. À regrouper si le nombre de poses par seconde le demande.
 

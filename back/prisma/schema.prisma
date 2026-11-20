@@ -11,6 +11,14 @@ model CanvasState {
   revision Int @default(0)
 }
 
+// L'ordre de création reste stable, y compris pour les quatre équipes de départ.
+model Team {
+  sequence Int    @id @default(autoincrement())
+  id       String @unique
+  name     String
+  color    String
+}
+
 model Pixel {
   x         Int
   y         Int
@@ -49,7 +57,7 @@ model Account {
   pseudoKey     String    @unique
   passwordHash  String
   createdAt     DateTime
-  // Identifiant d'une équipe de team-catalog.js ; vide tant que le joueur n'en a pas choisi.
+  // Identifiant stable de l'équipe ; vide tant que le joueur n'en a pas choisi.
   teamId        String?
   teamChangedAt DateTime?
   // « player » ou « admin ». Aucune route ne change le rôle : voir scripts/set-role.js.

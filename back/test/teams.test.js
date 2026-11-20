@@ -10,6 +10,7 @@ import prismaClient from '@prisma/client'
 import { createAccountRepository } from '../src/accounts/account-repository.js'
 import { createCanvasRepository } from '../src/canvas/canvas-repository.js'
 import { createCanvasServer } from '../src/server.js'
+import { createRankingRepository } from '../src/rankings/ranking-repository.js'
 import { createTeamRepository } from '../src/teams/team-repository.js'
 import { createTeamService, readTeamChangeCooldownMs } from '../src/teams/team-service.js'
 
@@ -37,6 +38,7 @@ before(async () => {
     repository: createCanvasRepository(prisma),
     accountRepository: createAccountRepository(prisma),
     teamRepository: createTeamRepository(prisma),
+    rankingRepository: createRankingRepository(prisma),
     teamChangeCooldownMs: TEAM_CHANGE_COOLDOWN_MS,
     cooldownMs: 0,
   })
@@ -258,4 +260,68 @@ test('le délai suit l’horloge du serveur et TEAM_CHANGE_COOLDOWN_SECONDS', as
   for (const value of ['', '-5', 'abc']) {
     assert.equal(readTeamChangeCooldownMs({ TEAM_CHANGE_COOLDOWN_SECONDS: value }), 300_000, value)
   }
+})
+
+function createTeam(cookie, name, color = '#9333EA') {
+  return request('/api/teams', { method: 'POST', cookie, body: { name, color } })
+}
+
+test('une équipe créée est persistée, rejoint son joueur et apparaît au classement après son premier pixel', async () => {
+  const cookie = await register('Createur')
+  const response = await createTeam(cookie, '  Les Éclairs  ', '#9333ea')
+  assert.equal(response.status, 201)
+  const body = await response.json()
+  const team = { id: 'les-eclairs', name: 'Les Éclairs', color: '#9333EA' }
+  assert.deepEqual(body.team, team)
+  assert.deepEqual(body.user.team, team)
+  assert.equal((await (await request('/api/auth/me', { cookie })).json()).user.team.id, team.id)
+  assert.deepEqual((await (await request('/api/teams')).json()).teams.at(-1), team)
+  assert.equal((await createTeam(cookie, 'Trop vite')).status, 429)
+  assert.equal(await prisma.team.count({ where: { id: 'trop-vite' } }), 0)
+  const pixel = await request('/api/pixels', { method: 'POST', cookie, body: { x: 41, y: 41, color: '#123456' } })
+  assert.equal(pixel.status, 200)
+  const ranking = await (await request('/api/rankings')).json()
+  assert.equal(ranking.teams.find((entry) => entry.teamId === team.id).pixelCount, 1)
+  await rewindTeamChange('Createur', TEAM_CHANGE_COOLDOWN_MS)
+  assert.equal((await joinTeam(cookie, 'rouge')).status, 200)
+  assert.ok((await (await request('/api/teams')).json()).teams.some((item) => item.id === team.id))
+})
+
+test('validation, session, bannissement et conflits ne créent rien', async () => {
+  assert.equal((await createTeam(undefined, 'Sans compte')).status, 401)
+  const cookie = await register('Validateur')
+  for (const [name, color] of [['ab', '#9333EA'], ['a'.repeat(21), '#9333EA'], ['nom!', '#9333EA'], ['Valide', '#123456'], [null, '#9333EA']]) {
+    const response = await createTeam(cookie, name, color)
+    assert.equal(response.status, 400)
+    assert.equal((await response.json()).error.code, 'INVALID_INPUT')
+  }
+  const duplicate = await createTeam(cookie, 'les eclairs')
+  assert.equal(duplicate.status, 409)
+  assert.equal((await duplicate.json()).error.code, 'TEAM_NAME_TAKEN')
+  assert.equal((await (await request('/api/auth/me', { cookie })).json()).user.team, null)
+  await prisma.account.update({ where: { pseudoKey: 'validateur' }, data: { bannedAt: new Date() } })
+  const banned = await createTeam(cookie, 'Interdite')
+  assert.equal(banned.status, 403)
+  assert.equal((await banned.json()).error.code, 'ACCOUNT_BANNED')
+  assert.equal(await prisma.team.count({ where: { id: 'interdite' } }), 0)
+})
+
+test('deux créations simultanées de même nom ne créent qu’une équipe', async () => {
+  const first = await register('Concurrent1')
+  const second = await register('Concurrent2')
+  const responses = await Promise.all([createTeam(first, 'Même nom'), createTeam(second, 'meme nom')])
+  assert.deepEqual(responses.map((response) => response.status).sort(), [201, 409])
+  assert.equal(await prisma.team.count({ where: { id: 'meme-nom' } }), 1)
+  const users = await Promise.all([first, second].map(async (cookie) => (await (await request('/api/auth/me', { cookie })).json()).user))
+  assert.equal(users.filter((user) => user.team?.id === 'meme-nom').length, 1)
+})
+
+test('plusieurs équipes partagent une couleur et un autre joueur rejoint une équipe créée', async () => {
+  const creator = await register('AutreCreateur')
+  assert.equal((await createTeam(creator, 'Autre équipe', '#9333EA')).status, 201)
+  const player = await register('Rejoignant')
+  const result = await joinTeam(player, 'autre-equipe')
+  assert.equal(result.status, 200)
+  assert.equal((await result.json()).user.team.name, 'Autre équipe')
+  assert.equal((await (await request('/api/teams')).json()).teams.filter((team) => team.color === '#9333EA').length, 3)
 })

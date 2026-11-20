@@ -1,6 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { badRequest, conflict, unauthorized } from '../errors/app-error.js'
-import { findTeam } from '../teams/team-catalog.js'
 import { hashPassword, UNKNOWN_ACCOUNT_HASH, verifyPassword } from './password.js'
 
 export const ADMIN_ROLE = 'admin'
@@ -47,7 +46,7 @@ function readCredentials(body) {
 export function toUser(account) {
   return {
     pseudo: account.pseudo,
-    team: findTeam(account.teamId),
+    team: account.team ?? null,
     role: account.role === ADMIN_ROLE ? ADMIN_ROLE : PLAYER_ROLE,
   }
 }
