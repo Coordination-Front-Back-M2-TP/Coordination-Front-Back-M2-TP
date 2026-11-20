@@ -23,12 +23,12 @@ Avant le premier jour ou dès l'arrivée, s'assurer d'avoir :
 
 | Élément | Rôle | Action |
 | --- | --- | --- |
-| Dépôt GitHub | Lire le dépôt privé et proposer une contribution depuis un fork | Accepter l'invitation en lecture au dépôt amont, puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
+| Dépôt GitHub | Lire le dépôt et proposer une contribution depuis un fork | Accepter l'invitation en lecture au dépôt amont (public depuis le 20/11/2026), puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
 | Board GitHub | Lire tout le board, déplacer ses cartes et remplir leurs champs | Accepter l'accès en écriture (rôle Write) au board. L'accès au dépôt ne donne pas automatiquement accès au board : le tuteur l'ajoute à part. |
 | Discord de l'équipe | Communication quotidienne, questions, alertes | Rejoindre le serveur Discord de l'équipe 3L1K0PT3R |
 | Outils locaux | Git, Node.js (>= 22.12), GitHub CLI (`gh` >= 2.94) | Vérifier avec `git --version`, `node --version`, `gh --version` |
 
-Le fork privé dépend également des réglages de l'organisation GitHub. Si GitHub refuse sa création, demander au tuteur de vérifier que le fork des dépôts privés est autorisé ; ne pas demander de droit d'écriture sur le dépôt amont pour contourner ce réglage.
+Le dépôt étant public, son fork l'est aussi et ne dépend d'aucun réglage de l'organisation. Ne jamais demander de droit d'écriture sur le dépôt amont : `main` est protégée par un ruleset, et tout passe par une PR relue ([gestion de projet](gestion-de-projet.md), section 6).
 
 ### Ce que fait le tuteur à l'arrivée
 
