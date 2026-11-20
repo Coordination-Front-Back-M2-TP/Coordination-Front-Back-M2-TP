@@ -30,3 +30,23 @@ export async function joinTeam(teamId, signal) {
   }
   return user
 }
+
+export async function createTeam(name, color, signal) {
+  const response = await fetch('/api/teams', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ name, color }),
+    signal,
+  })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) {
+    const retryAfter = response.status === 429 ? Number(response.headers.get('Retry-After')) : 0
+    const retryAfterMs = Number.isSafeInteger(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 0
+    throw Object.assign(new Error('Création d’équipe refusée'), { code: payload?.error?.code, retryAfterMs })
+  }
+  const { team, user } = payload ?? {}
+  if (!isTeam(team) || typeof team.color !== 'string' || typeof user?.pseudo !== 'string'
+    || !isTeam(user.team) || user.team.id !== team.id) throw new Error('Équipe créée invalide')
+  return { team, user }
+}

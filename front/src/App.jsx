@@ -5,6 +5,7 @@ import { AccountBar } from './components/AccountBar/AccountBar.jsx'
 import { AuthForm } from './components/AuthForm/AuthForm.jsx'
 import { LiveCanvas } from './components/LiveCanvas/LiveCanvas.jsx'
 import { TeamPicker } from './components/TeamPicker/TeamPicker.jsx'
+import { TeamCreation } from './components/TeamCreation/TeamCreation.jsx'
 import { ServerStatus } from './components/ServerStatus/ServerStatus.jsx'
 
 // Page de départ : elle montre si le front joint le back, ce qui valide l'installation (INSTALL.md, section 6).
@@ -58,7 +59,8 @@ function App() {
         setUser(current)
       }} />}
       {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
-      {user && <TeamPicker key={user.pseudo} currentTeam={user.team} onTeamJoined={setUser} />}
+      {user && <TeamPicker key={`${user.pseudo}:${user.team?.id ?? ''}`} currentTeam={user.team} onTeamJoined={setUser} />}
+      {user && <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />}
       <LiveCanvas user={user ?? null} />
     </main>
   )
