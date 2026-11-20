@@ -25,8 +25,10 @@ export async function joinTeam(teamId, signal) {
     throw Object.assign(new Error('Choix d’équipe refusé'), { code: payload?.error?.code, retryAfterMs })
   }
   const user = payload?.user
-  if (typeof user?.pseudo !== 'string' || !isTeam(user.team) || user.team.id !== teamId) {
+  const availableAt = Date.parse(payload?.teamChangeAvailableAt)
+  if (typeof user?.pseudo !== 'string' || !isTeam(user.team) || user.team.id !== teamId
+    || !Number.isFinite(availableAt)) {
     throw new Error('Équipe du joueur invalide')
   }
-  return user
+  return { user, availableAt }
 }

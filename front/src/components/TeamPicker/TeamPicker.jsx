@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { joinTeam, listTeams } from '../../api/team-membership.js'
-import { useCooldown } from '../../hooks/use-cooldown.js'
 
 const ERROR_MESSAGES = {
   TEAM_CHANGE_COOLDOWN: 'Attendez la fin du délai avant de changer d’équipe.',
@@ -8,27 +7,26 @@ const ERROR_MESSAGES = {
   UNAUTHORIZED: 'Reconnectez-vous pour choisir une équipe.',
 }
 
-export function TeamPicker({ currentTeam, onTeamJoined }) {
+export function TeamPicker({ currentTeam, listRevision, disabled, pending, onPendingChange, onCooldown, onTeamJoined }) {
   const [teams, setTeams] = useState(null)
   const [loadFailed, setLoadFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [selection, setSelection] = useState('')
-  const [pending, setPending] = useState(false)
   const [error, setError] = useState(null)
   const submission = useRef(null)
-  const { seconds, startCooldown } = useCooldown()
-  const disabled = pending || seconds > 0
   const teamId = selection === currentTeam?.id ? '' : selection
 
   useEffect(() => {
     const controller = new AbortController()
     listTeams(controller.signal).then((result) => {
-      if (!controller.signal.aborted) setTeams(result)
+      if (controller.signal.aborted) return
+      setTeams(result)
+      setLoadFailed(false)
     }).catch(() => {
       if (!controller.signal.aborted) setLoadFailed(true)
     })
     return () => controller.abort()
-  }, [attempt])
+  }, [attempt, listRevision])
 
   useEffect(() => () => submission.current?.abort(), [])
 
@@ -37,17 +35,17 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
     if (disabled || !teamId || submission.current) return
     const controller = new AbortController()
     submission.current = controller
-    setPending(true)
+    onPendingChange(true)
     setError(null)
     try {
-      const user = await joinTeam(teamId, controller.signal)
+      const { user, availableAt } = await joinTeam(teamId, controller.signal)
       if (controller.signal.aborted) return
       setSelection('')
-      onTeamJoined(user)
+      onTeamJoined(user.team, availableAt)
     } catch (failure) {
       if (controller.signal.aborted) return
       if (failure.code === 'TEAM_CHANGE_COOLDOWN' && failure.retryAfterMs) {
-        startCooldown(failure.retryAfterMs)
+        onCooldown(failure.retryAfterMs)
       } else {
         const message = Object.hasOwn(ERROR_MESSAGES, failure.code)
           ? ERROR_MESSAGES[failure.code]
@@ -57,7 +55,7 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
     } finally {
       if (!controller.signal.aborted) {
         submission.current = null
-        setPending(false)
+        onPendingChange(false)
       }
     }
   }
@@ -91,7 +89,6 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
       <button type="submit" disabled={disabled || !teamId}>
         {pending ? 'Choix en cours…' : currentTeam ? 'Changer d’équipe' : 'Rejoindre l’équipe'}
       </button>
-      {seconds > 0 && <p role="timer">Changement d’équipe possible dans {seconds} s.</p>}
       {error && <p role="alert">{error}</p>}
     </form>
   )

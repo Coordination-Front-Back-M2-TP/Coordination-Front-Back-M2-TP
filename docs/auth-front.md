@@ -20,3 +20,9 @@ Les champs attendus et le format du joueur sont décrits dans [Comptes et sessio
 Après la connexion, le menu « Équipe à rejoindre » liste les équipes disponibles. Le premier choix est immédiat. Le nom de l'équipe rejointe apparaît à côté du pseudo et la pose devient disponible sans recharger la page. La toile reste consultable avant le choix.
 
 Le front charge les équipes via `GET /api/teams` et enregistre le choix via `PUT /api/auth/me/team`. Si le serveur refuse un changement d'équipe en raison du délai, le formulaire indique le temps restant donné par `Retry-After`.
+
+## Créer une équipe
+
+Une fois connecté, le joueur peut créer une équipe à côté du choix d’équipe en choisissant un nom et l’une des 16 couleurs. Le formulaire envoie `POST /api/teams`. Après confirmation, l’équipe s’affiche près du pseudo et le formulaire indique le temps restant avant le prochain changement d’équipe. Ce délai suspend les deux actions. La liste des équipes se recharge après la création.
+
+Si le serveur refuse une création pendant le délai, le formulaire utilise l’en-tête `Retry-After` pour indiquer quand réessayer. Les autres erreurs laissent le nom et la couleur saisis disponibles pour correction. Les règles et les réponses de la route figurent dans le [contrat de création d’équipe](contrat-api.md#créer-une-équipe).
