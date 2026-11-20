@@ -9,13 +9,22 @@
   display: flex;
   overflow: auto;
   scrollbar-width: none;
+  /* Le glisser et le pincement sont gérés par useZoomPan, au doigt comme à la souris. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.dragging,
+.dragging .canvas {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .stage:focus-visible {
   outline-offset: -4px;
 }
 
-/* Taille de la toile : à zoom 1, elle tient entière à l'écran ; --zoom l'agrandit.
+/* Taille de la toile : à zoom 1, elle tient entière à l'écran ; --zoom l'agrandit ou la réduit.
    margin: auto la centre quand elle est plus petite que l'écran, sans la couper quand elle est plus grande. */
 .canvas {
   flex: none;

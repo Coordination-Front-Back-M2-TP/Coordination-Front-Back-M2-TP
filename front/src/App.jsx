@@ -73,8 +73,24 @@ function App() {
             setUser(current)
           }} />}
           {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
-          {user && <TeamPicker key={`${user.pseudo}:${user.team?.id ?? ''}`} currentTeam={user.team} onTeamJoined={setUser} />}
-          {user && <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />}
+          {/* Sans équipe, le choix reste visible : il faut une équipe pour poser. Avec une équipe, le choix et
+              la création se replient pour laisser la toile visible, surtout sur téléphone. */}
+          {user && !user.team && <TeamPicker key={`${user.pseudo}:`} currentTeam={user.team} onTeamJoined={setUser} />}
+          {user && !user.team && (
+            <details className={styles.teamDetails}>
+              <summary>Créer une équipe</summary>
+              <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />
+            </details>
+          )}
+          {user?.team && (
+            <details className={styles.teamDetails}>
+              <summary>Changer ou créer une équipe</summary>
+              <div className={styles.teamPanel}>
+                <TeamPicker key={`${user.pseudo}:${user.team.id}`} currentTeam={user.team} onTeamJoined={setUser} />
+                <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />
+              </div>
+            </details>
+          )}
         </div>
       </div>
       <HudSlotContext value={hudSlot}>

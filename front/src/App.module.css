@@ -60,6 +60,21 @@
   padding: var(--space-3);
 }
 
+.teamDetails summary {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.teamPanel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.teamDetails[open] summary {
+  margin-bottom: var(--space-2);
+}
+
 @media (max-width: 760px) {
   .account {
     flex: 1 1 100%;

@@ -103,7 +103,9 @@ export function PixelPlacer({ canvas, user }) {
       <PixelCanvas canvas={canvas} onSelectCell={placementDisabled ? undefined : place} />
       <div className={`hud ${styles.dock}`}>
         <ColorPalette colors={PALETTE} value={color} onChange={setColor} disabled={pending} />
-        <p className={styles.hint}>Cliquez sur une case de la toile pour y poser la couleur choisie.</p>
+        <p className={styles.hint}>
+          Cliquez sur une case pour y poser la couleur choisie. Glissez pour vous déplacer, molette pour zoomer.
+        </p>
         <div className={styles.controls}>
           <form className={styles.form} onSubmit={handleSubmit} aria-label="Poser un pixel par ses coordonnées">
             <label>
