@@ -116,5 +116,106 @@ describe('session du joueur', () => {
     vi.stubGlobal('fetch', route({ ok: false, status: 401, json: async () => ({}) }))
     render(<App />)
     expect(await screen.findByLabelText('Mot de passe')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Créer une équipe' })).toBeNull()
+  })
+})
+
+describe('création d’équipe', () => {
+  function renderWithTeamApi(response) {
+    const fetch = vi.fn(async (url) => {
+      if (url === '/api/auth/me') {
+        return { ok: true, json: async () => ({ user: { pseudo: 'sam', team: null, role: 'player' } }) }
+      }
+      if (url === '/api/teams') return response()
+      return healthyResponse()
+    })
+
+    vi.stubGlobal('fetch', fetch)
+    render(<App />)
+    return fetch
+  }
+
+  async function fillTeam(name, color = '#9333EA') {
+    fireEvent.change(await screen.findByLabelText('Nom de l’équipe'), { target: { value: name } })
+    fireEvent.change(screen.getByLabelText('Couleur de l’équipe'), { target: { value: color } })
+    return screen.getByRole('button', { name: 'Créer l’équipe' })
+  }
+
+  it('propose les 16 couleurs et affiche la nouvelle équipe près du pseudo après le POST', async () => {
+    const team = { id: 'les-eclairs', name: 'Les Éclairs', color: '#9333EA' }
+    let finishCreation
+    const fetch = renderWithTeamApi(() => new Promise((resolve) => { finishCreation = resolve }))
+    const submit = await fillTeam('  Les Éclairs  ')
+    expect(screen.getByLabelText('Couleur de l’équipe').options).toHaveLength(17)
+
+    fireEvent.click(submit)
+    expect(submit.matches(':disabled')).toBe(true)
+    expect(screen.queryByText(team.name)).toBeNull()
+    expect(fetch).toHaveBeenCalledWith('/api/teams', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ name: 'Les Éclairs', color: '#9333EA' }),
+    })
+
+    await act(async () => finishCreation({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        team,
+        user: { pseudo: 'sam', team },
+        teamChangeAvailableAt: new Date(Date.now() + 300_000).toISOString(),
+      }),
+    }))
+
+    expect(screen.getByText('sam').parentElement.textContent).toContain('Équipe Les Éclairs')
+    expect(screen.getByText('Vous avez créé et rejoint l’équipe Les Éclairs.')).toBeTruthy()
+    expect(screen.getByText(/Prochain changement d’équipe dans/)).toBeTruthy()
+    expect(submit.disabled).toBe(true)
+  })
+
+  it.each(['  ab ', 'x'.repeat(21), 'Nom !'])('refuse le nom invalide %s avant le POST', async (name) => {
+    const fetch = renderWithTeamApi(() => { throw new Error('POST inattendu') })
+    fireEvent.click(await fillTeam(name))
+
+    expect(screen.getByRole('alert').textContent).toContain('Le nom d’équipe est invalide')
+    expect(fetch).not.toHaveBeenCalledWith('/api/teams', expect.anything())
+  })
+
+  it.each([
+    [400, 'INVALID_INPUT', 'Vérifiez le nom et la couleur'],
+    [401, 'UNAUTHORIZED', 'Reconnectez-vous'],
+    [403, 'ACCOUNT_BANNED', 'Votre compte est banni'],
+    [409, 'TEAM_NAME_TAKEN', 'Ce nom d’équipe est déjà utilisé'],
+    [500, 'INTERNAL_SERVER_ERROR', 'Impossible de créer l’équipe'],
+  ])('affiche l’erreur %s et conserve la saisie', async (status, code, message) => {
+    renderWithTeamApi(() => ({
+      ok: false,
+      status,
+      json: async () => ({ error: { code } }),
+    }))
+    const submit = await fillTeam('Les Éclairs')
+    fireEvent.click(submit)
+
+    expect((await screen.findByRole('alert')).textContent).toContain(message)
+    expect(screen.getByLabelText('Nom de l’équipe').value).toBe('Les Éclairs')
+    expect(screen.getByLabelText('Couleur de l’équipe').value).toBe('#9333EA')
+    expect(screen.getByText('sam').parentElement.textContent).not.toContain('Les Éclairs')
+    expect(submit.disabled).toBe(false)
+  })
+
+  it('bloque une nouvelle création pendant le délai annoncé par le serveur', async () => {
+    renderWithTeamApi(() => ({
+      ok: false,
+      status: 429,
+      headers: new Headers({ 'Retry-After': '23' }),
+      json: async () => ({ error: { code: 'TEAM_CHANGE_COOLDOWN' } }),
+    }))
+    const submit = await fillTeam('Les Éclairs')
+    fireEvent.click(submit)
+
+    expect(await screen.findByText('Prochain changement d’équipe dans 23 s.')).toBeTruthy()
+    expect(submit.disabled).toBe(true)
+    expect(screen.getByLabelText('Nom de l’équipe').value).toBe('Les Éclairs')
   })
 })

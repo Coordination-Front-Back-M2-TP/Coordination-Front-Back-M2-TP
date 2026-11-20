@@ -14,3 +14,9 @@ Le navigateur conserve le cookie de session posé par le serveur. Après un rech
 | Se déconnecter | POST /api/auth/logout | 204 | |
 
 Les champs attendus et le format du joueur sont décrits dans [Comptes et session (back)](comptes-back.md).
+
+## Créer une équipe
+
+Une fois connecté, le joueur peut créer une équipe depuis l’accueil en choisissant un nom et l’une des 16 couleurs. Le formulaire envoie `POST /api/teams`. Après confirmation, l’équipe s’affiche près du pseudo et le formulaire indique le temps restant avant le prochain changement d’équipe.
+
+Si le serveur refuse une création pendant le délai, le formulaire utilise l’en-tête `Retry-After` pour indiquer quand réessayer. Les autres erreurs laissent le nom et la couleur saisis disponibles pour correction. Les règles et les réponses de la route figurent dans le [contrat de création d’équipe](contrat-api.md#créer-une-équipe).
