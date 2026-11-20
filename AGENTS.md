@@ -44,7 +44,7 @@ Le board est le projet n° 1 de l'organisation `Coordination-Front-Back-M2-TP` (
 
 1. Ne rien inventer : produit, stack, membres, rôles, dates de sprint, consignes du prof. Une information inconnue reste `[[à remplir]]` ou devient une question.
 2. Aucun secret dans le dépôt : jeton, mot de passe, fichier `.env`.
-3. Tout changement passe par une issue, une branche et une PR relue. Le dépôt est public depuis le 20/11/2026 et le ruleset « Protéger main » l'impose : PR obligatoire, une approbation d'un autre membre, contrôles de la CI verts, squash seulement ([docs/gestion-de-projet.md](docs/gestion-de-projet.md), section 6).
+3. Tout changement passe par une issue, une branche et une PR relue. Le dépôt est **temporairement public** depuis le 20/11/2026 : il redeviendra privé à la date limite du projet. Tant qu'il est public, le ruleset « Protéger main » l'impose : PR obligatoire, une approbation d'un autre membre, contrôles de la CI verts, squash seulement ([docs/gestion-de-projet.md](docs/gestion-de-projet.md), section 6). Une fois le dépôt redevenu privé, le plan gratuit n'applique plus le ruleset : la règle reposera de nouveau sur l'équipe.
 4. Commiter souvent, par petites étapes. Pousser, ouvrir une PR, créer, modifier ou fermer un ticket seulement avec l'accord de la personne qui pilote l'agent. Une PR par issue, relue par un autre membre de l'équipe : personne ne merge sa propre PR.
 5. Ne pas modifier la CI/CD (`.github/workflows/`) ni les personas sans l'accord de la personne qui s'en occupe.
 6. Documentation et commentaires en français.
