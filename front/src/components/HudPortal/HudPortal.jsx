@@ -2,9 +2,9 @@ import { useContext } from 'react'
 import { createPortal } from 'react-dom'
 import { HudSlotContext } from './hud-slot.js'
 
-// Range ses enfants dans la colonne du HUD, sous le logo, quand elle existe.
-// Les messages de la toile (état, erreur, pixels en texte) s'y empilent sans se chevaucher.
-export function HudPortal({ children }) {
-  const slot = useContext(HudSlotContext)
-  return slot ? createPortal(children, slot) : children
+// Range ses enfants dans un emplacement du HUD (main à gauche, side à droite), quand il existe.
+// Les éléments s'y empilent sans se chevaucher.
+export function HudPortal({ slot = 'main', children }) {
+  const target = useContext(HudSlotContext)?.[slot]
+  return target ? createPortal(children, target) : children
 }

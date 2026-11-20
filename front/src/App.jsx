@@ -18,6 +18,7 @@ function App() {
   const [sessionUnavailable, setSessionUnavailable] = useState(false)
   // Élément de la colonne du HUD où LiveCanvas range ses messages (voir HudPortal).
   const [hudSlot, setHudSlot] = useState(null)
+  const [sideSlot, setSideSlot] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -63,37 +64,40 @@ function App() {
           )}
           <div ref={setHudSlot} className={styles.slot} />
         </div>
-        <div className={`hud ${styles.account}`}>
-          {user === undefined && <p role="status">Vérification de la session…</p>}
-          {user === null && sessionUnavailable && backStatus === 'ok' && (
-            <p role="status">Session indisponible. Vous pouvez vous reconnecter ci-dessous.</p>
-          )}
-          {user === null && <AuthForm onAuthenticated={(current) => {
-            setSessionUnavailable(false)
-            setUser(current)
-          }} />}
-          {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
-          {/* Sans équipe, le choix reste visible : il faut une équipe pour poser. Avec une équipe, le choix et
-              la création se replient pour laisser la toile visible, surtout sur téléphone. */}
-          {user && !user.team && <TeamPicker key={`${user.pseudo}:`} currentTeam={user.team} onTeamJoined={setUser} />}
-          {user && !user.team && (
-            <details className={styles.teamDetails}>
-              <summary>Créer une équipe</summary>
-              <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />
-            </details>
-          )}
-          {user?.team && (
-            <details className={styles.teamDetails}>
-              <summary>Changer ou créer une équipe</summary>
-              <div className={styles.teamPanel}>
-                <TeamPicker key={`${user.pseudo}:${user.team.id}`} currentTeam={user.team} onTeamJoined={setUser} />
+        <div className={styles.side}>
+          <div className={`hud ${styles.account}`}>
+            {user === undefined && <p role="status">Vérification de la session…</p>}
+            {user === null && sessionUnavailable && backStatus === 'ok' && (
+              <p role="status">Session indisponible. Vous pouvez vous reconnecter ci-dessous.</p>
+            )}
+            {user === null && <AuthForm onAuthenticated={(current) => {
+              setSessionUnavailable(false)
+              setUser(current)
+            }} />}
+            {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
+            {/* Sans équipe, le choix reste visible : il faut une équipe pour poser. Avec une équipe, le choix et
+                la création se replient pour laisser la toile visible, surtout sur téléphone. */}
+            {user && !user.team && <TeamPicker key={`${user.pseudo}:`} currentTeam={user.team} onTeamJoined={setUser} />}
+            {user && !user.team && (
+              <details className={styles.teamDetails}>
+                <summary>Créer une équipe</summary>
                 <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />
-              </div>
-            </details>
-          )}
+              </details>
+            )}
+            {user?.team && (
+              <details className={styles.teamDetails}>
+                <summary>Changer ou créer une équipe</summary>
+                <div className={styles.teamPanel}>
+                  <TeamPicker key={`${user.pseudo}:${user.team.id}`} currentTeam={user.team} onTeamJoined={setUser} />
+                  <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />
+                </div>
+              </details>
+            )}
+          </div>
+          <div ref={setSideSlot} className={styles.slot} />
         </div>
       </div>
-      <HudSlotContext value={hudSlot}>
+      <HudSlotContext value={hudSlot || sideSlot ? { main: hudSlot, side: sideSlot } : null}>
         <LiveCanvas user={user ?? null} />
       </HudSlotContext>
     </main>

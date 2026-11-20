@@ -53,7 +53,21 @@
   font-size: var(--text-sm);
 }
 
+/* Colonne de droite : le compte, puis le classement. */
+.side {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+  width: min(22rem, 100%);
+}
+
+.side .slot {
+  justify-items: stretch;
+  width: 100%;
+}
+
 .account {
+  width: 100%;
   display: grid;
   gap: var(--space-3);
   max-width: 22rem;
@@ -76,8 +90,17 @@
 }
 
 @media (max-width: 760px) {
-  .account {
+  .side {
     flex: 1 1 100%;
+    width: auto;
+  }
+
+  /* Sur téléphone, les petites cartes de gauche se rangent en ligne pour laisser la toile visible. */
+  .column,
+  .column > .slot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     max-width: none;
   }
 }

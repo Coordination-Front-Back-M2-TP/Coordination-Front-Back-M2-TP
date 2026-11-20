@@ -46,9 +46,11 @@ export function LiveCanvas({ user }) {
         )}
       </HudPortal>
       {canvas && <PixelPlacer key={user ? 'account:' + user.pseudo : 'visitor'} canvas={canvas} user={user} />}
-      <Ranking {...rankingState} onRetry={() => {
-        if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
-      }} />
+      <HudPortal slot="side">
+        <Ranking {...rankingState} onRetry={() => {
+          if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
+        }} />
+      </HudPortal>
     </section>
   )
 }
