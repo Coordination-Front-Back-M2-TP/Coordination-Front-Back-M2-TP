@@ -33,6 +33,8 @@ export function PixelPlacer({ canvas, user }) {
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [coordinates, setCoordinates] = useState({ x: '0', y: '0' })
+  // Sur téléphone, on pose en touchant la toile : la saisie par coordonnées se replie derrière un bouton.
+  const [showCoordinates, setShowCoordinates] = useState(false)
   const controller = useRef(null)
   const { seconds, startCooldown } = useCooldown()
   const coolingDown = seconds > 0
@@ -107,7 +109,11 @@ export function PixelPlacer({ canvas, user }) {
           Cliquez sur une case pour y poser la couleur choisie. Glissez pour vous déplacer, molette pour zoomer.
         </p>
         <div className={styles.controls}>
-          <form className={styles.form} onSubmit={handleSubmit} aria-label="Poser un pixel par ses coordonnées">
+          <button type="button" className={`secondary ${styles.coordinatesToggle}`} aria-expanded={showCoordinates}
+            onClick={() => setShowCoordinates((shown) => !shown)}>
+            {showCoordinates ? 'Masquer les coordonnées' : 'Coordonnées'}
+          </button>
+          <form className={showCoordinates ? styles.form : `${styles.form} ${styles.collapsed}`} onSubmit={handleSubmit} aria-label="Poser un pixel par ses coordonnées">
             <label>
               Colonne (x)
               <input

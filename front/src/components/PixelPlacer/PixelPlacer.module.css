@@ -43,6 +43,11 @@
   font-family: var(--font-mono);
 }
 
+/* Le bouton qui replie les coordonnées ne sert que sur téléphone. */
+.coordinatesToggle {
+  display: none;
+}
+
 .timer {
   align-self: center;
   font: 500 var(--text-base) var(--font-mono);
@@ -70,6 +75,14 @@
   }
 
   .hint {
+    display: none;
+  }
+
+  .coordinatesToggle {
+    display: block;
+  }
+
+  .collapsed {
     display: none;
   }
 }

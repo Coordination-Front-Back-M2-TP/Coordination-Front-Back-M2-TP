@@ -89,18 +89,62 @@
   margin-bottom: var(--space-2);
 }
 
+/* Le bouton Menu ne sert que sur téléphone. */
+.menuButton {
+  display: none;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+/* Sur téléphone : une ligne en haut (logo, Menu), le reste dans un panneau qui s'ouvre par-dessus la toile. */
 @media (max-width: 760px) {
+  .top {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    max-height: calc(100dvh - 2 * var(--hud-gap));
+    overflow: auto;
+  }
+
+  .top[data-open] {
+    z-index: 2;
+  }
+
+  .column {
+    display: contents;
+  }
+
+  .brand {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .menuButton {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .notice,
+  .slot,
   .side {
-    flex: 1 1 100%;
+    grid-column: 1 / -1;
+  }
+
+  .side {
     width: auto;
   }
 
-  /* Sur téléphone, les petites cartes de gauche se rangent en ligne pour laisser la toile visible. */
-  .column,
   .column > .slot {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    max-width: none;
+  }
+
+  /* Menu fermé : on cache le panneau, sauf les alertes, qui restent visibles. */
+  .top:not([data-open]) .side,
+  .top:not([data-open]) .column > .slot > :not([role="alert"]) {
+    display: none;
   }
 }

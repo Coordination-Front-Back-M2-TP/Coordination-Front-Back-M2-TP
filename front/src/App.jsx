@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { getHealth } from './api/health.js'
 import { getCurrentUser } from './api/auth.js'
 import { AccountBar } from './components/AccountBar/AccountBar.jsx'
@@ -19,6 +19,9 @@ function App() {
   // Élément de la colonne du HUD où LiveCanvas range ses messages (voir HudPortal).
   const [hudSlot, setHudSlot] = useState(null)
   const [sideSlot, setSideSlot] = useState(null)
+  // Sur téléphone, le compte, le classement et les réglages de la toile sont repliés derrière le bouton Menu.
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuId = useId()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -50,7 +53,10 @@ function App() {
   // La toile couvre l'écran ; le HUD (logo, compte, messages, dock) flotte par-dessus.
   return (
     <main className={styles.app}>
-      <div className={styles.top}>
+      <div className={styles.top} data-open={menuOpen || undefined}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setMenuOpen(false)
+        }}>
         <div className={styles.column}>
           <header className={`hud ${styles.brand}`}>
             {/* Le nom s'écrit en chiffres : sans aria-label, un lecteur d'écran l'épellerait. */}
@@ -64,7 +70,11 @@ function App() {
           )}
           <div ref={setHudSlot} className={styles.slot} />
         </div>
-        <div className={styles.side}>
+        <button type="button" className={`hud ${styles.menuButton}`} aria-expanded={menuOpen} aria-controls={menuId}
+          onClick={() => setMenuOpen((open) => !open)}>
+          {menuOpen ? 'Fermer' : user === null ? 'Connexion' : 'Menu'}
+        </button>
+        <div id={menuId} className={styles.side}>
           <div className={`hud ${styles.account}`}>
             {user === undefined && <p role="status">Vérification de la session…</p>}
             {user === null && sessionUnavailable && backStatus === 'ok' && (
