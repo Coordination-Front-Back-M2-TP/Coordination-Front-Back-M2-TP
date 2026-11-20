@@ -3,7 +3,7 @@ import { applyPixelUpdate, parseCanvasSnapshot, parsePixel } from './canvas-stat
 
 const SUBSCRIBE_TIMEOUT_MS = 10_000
 
-export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnect: false }) } = {}) {
+export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnect: false }), onRanking = () => {} } = {}) {
   const socket = createSocket()
   let canvas = null
   let pending = []
@@ -87,6 +87,7 @@ export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnec
     disconnect: onDisconnect,
     connect_error: onConnectError,
     'pixel:updated': onPixel,
+    'ranking:updated': (ranking) => { if (!disposed && subscribed) onRanking(ranking) },
     'canvas:error': fail,
   }
   for (const [event, handler] of Object.entries(listeners)) socket.on(event, handler)

@@ -117,3 +117,16 @@ describe('abonnement à la toile', () => {
     expect(transport.socket.emit).not.toHaveBeenCalledWith('canvas:unsubscribe')
   })
 })
+
+it('transmet le classement uniquement pendant un abonnement actif', () => {
+  const transport = fakeSocket()
+  const onRanking = vi.fn()
+  const stop = subscribeCanvas(() => {}, { createSocket: () => transport.socket, onRanking })
+  const ranking = { revision: 2, teams: [] }
+  transport.receive('ranking:updated', ranking)
+  expect(onRanking).toHaveBeenCalledWith(ranking)
+  transport.receive('disconnect')
+  transport.receive('ranking:updated', ranking)
+  expect(onRanking).toHaveBeenCalledOnce()
+  stop()
+})
