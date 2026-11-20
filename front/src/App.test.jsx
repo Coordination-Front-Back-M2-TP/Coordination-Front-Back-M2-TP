@@ -122,6 +122,27 @@ describe('session du joueur', () => {
 })
 
 describe('choix d’équipe avant la première pose', () => {
+  it('propose la création au joueur connecté et affiche immédiatement sa nouvelle équipe', async () => {
+    const team = { id: 'les-eclairs', name: 'Les Éclairs', color: '#9333EA' }
+    const user = { pseudo: 'sam', team: null }
+    const ok = (payload) => ({ ok: true, status: 200, json: async () => payload })
+    const fetchMock = vi.fn(async (url, options) => {
+      if (url === '/api/auth/me') return ok({ user })
+      if (url === '/api/teams' && options?.method === 'POST') return ok({ team, user: { ...user, team } })
+      if (url === '/api/teams') return ok({ teams: [team] })
+      return healthyResponse()
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    fireEvent.change(await screen.findByLabelText('Nom de l’équipe'), { target: { value: 'Les Éclairs' } })
+    fireEvent.change(screen.getByLabelText('Couleur de l’équipe'), { target: { value: '#9333EA' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’équipe' }))
+    await waitFor(() => expect(screen.getByText('sam').parentElement.textContent).toContain('Équipe Les Éclairs'))
+    const currentOption = await screen.findByRole('option', { name: 'Les Éclairs (équipe actuelle)' })
+    expect(currentOption.disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Changer d’équipe' }).disabled).toBe(true)
+  })
+
   it('laisse lire la toile puis autorise une pose après avoir rejoint une équipe', async () => {
     const date = '2026-11-20T12:00:00.000Z'
     const team = { id: 'rouge', name: 'Rouge', color: '#D93A3A' }

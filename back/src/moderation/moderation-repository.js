@@ -142,13 +142,16 @@ export function createModerationRepository(client = prisma, { now = () => new Da
     },
 
     // Les comptes dans l'ordre des pseudos. after : clé du dernier pseudo déjà lu, ou null.
-    listPlayers({ after = null, limit }) {
-      return client.account.findMany({
+    async listPlayers({ after = null, limit }) {
+      const accounts = await client.account.findMany({
         where: after === null ? {} : { pseudoKey: { gt: after } },
         orderBy: { pseudoKey: 'asc' },
         take: limit,
         select: { pseudo: true, teamId: true, role: true, bannedAt: true },
       })
+      const teams = await client.team.findMany({ select: { id: true, name: true, color: true } })
+      const byId = new Map(teams.map((team) => [team.id, team]))
+      return accounts.map((account) => ({ ...account, team: byId.get(account.teamId) ?? null }))
     },
 
     // Les actions les plus récentes d'abord. before : identifiant de la dernière action déjà lue, ou null.

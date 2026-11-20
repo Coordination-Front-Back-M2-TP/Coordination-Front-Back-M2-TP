@@ -432,9 +432,9 @@ Le front l’appelle au chargement de la page.
 | `name` | chaîne | Nom affiché |
 | `color` | chaîne `#RRGGBB` | Couleur de l’équipe |
 
-> **Changement décidé le 20/11/2026** : le nombre d’équipes n’a plus de limite et les joueurs peuvent créer une équipe ([besoin](besoin.md), section 3). La couleur d’une équipe sert à la reconnaître ; elle ne limite pas les couleurs que ses joueurs posent. La création d’équipe est décrite plus bas (« Créer une équipe »). Tant que la tâche back #158 n’est pas livrée, le back sert encore les 4 équipes fixes ci-dessous ; elles restent ensuite, comme équipes de départ.
+> **Changement décidé le 20/11/2026** : le nombre d’équipes n’a plus de limite et les joueurs peuvent créer une équipe ([besoin](besoin.md), section 3). La couleur d’une équipe sert à la reconnaître ; elle ne limite pas les couleurs que ses joueurs posent. La création d’équipe est décrite plus bas (« Créer une équipe »).
 
-Les 4 équipes servies aujourd’hui, livrées avec la tâche #41 :
+Les 4 équipes de départ, livrées avec la tâche #41 :
 
 | `id` | `name` | `color` |
 | --- | --- | --- |
@@ -503,7 +503,7 @@ Une équipe est obligatoire pour poser un pixel. `POST /api/pixels` répond `403
 
 ## Créer une équipe
 
-> **Proposition pour l’issue #157**, à relire par une personne du front et une personne du back avant le code. Elle couvre la user story [#156 — Créer une équipe](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/156), décidée le 20/11/2026 : le nombre d’équipes n’a pas de limite. Elle sert les tâches #158 (back) et #159 (front).
+> **Contrat de l’issue #157**, relu avec la PR #163. Il couvre la user story [#156 — Créer une équipe](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/156), décidée le 20/11/2026 : le nombre d’équipes n’a pas de limite. Il sert les tâches #158 (back) et #159 (front).
 
 ### Règles
 

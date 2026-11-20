@@ -1,5 +1,19 @@
-import { badRequest, notFound, tooManyRequests, unauthorized } from '../errors/app-error.js'
-import { findTeam, TEAMS } from './team-catalog.js'
+import { badRequest, conflict, forbidden, notFound, tooManyRequests, unauthorized } from '../errors/app-error.js'
+
+const PALETTE = new Set(['#000000', '#4B5563', '#9CA3AF', '#FFFFFF', '#D93A3A', '#F472B6', '#F59E0B', '#92400E', '#FACC15', '#FDE68A', '#22C55E', '#166534', '#22D3EE', '#2563EB', '#1E3A8A', '#9333EA'])
+
+function readTeam(body) {
+  if (!body || typeof body.name !== 'string' || typeof body.color !== 'string') {
+    throw badRequest('Ce nom ou cette couleur n’est pas accepté.', 'INVALID_INPUT')
+  }
+  const name = body.name.trim()
+  const color = body.color.toUpperCase()
+  if ([...name].length < 3 || [...name].length > 20 || !/^[\p{L}\p{M}\p{N} _-]+$/u.test(name) || !PALETTE.has(color)) {
+    throw badRequest('Ce nom ou cette couleur n’est pas accepté.', 'INVALID_INPUT')
+  }
+  const id = name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '-')
+  return { id, name, color }
+}
 
 // Durée décidée dans le besoin (docs/besoin.md) : au plus un changement toutes les 5 minutes, réglable.
 const DEFAULT_TEAM_CHANGE_COOLDOWN_SECONDS = 300
@@ -20,8 +34,27 @@ export function createTeamService({ repository, now = () => new Date(), cooldown
   }
 
   return {
-    listTeams() {
-      return TEAMS
+    listTeams: () => repository.listTeams(),
+
+    async createTeam(account, body) {
+      if (account.bannedAt) throw forbidden('Ce compte est banni.', 'ACCOUNT_BANNED')
+      const team = readTeam(body)
+      const changedAt = now()
+      let changed
+      try {
+        changed = await repository.createAndJoin({ accountId: account.id, team, changedAt, changedBefore: new Date(changedAt.getTime() - cooldownMs) })
+      } catch (error) {
+        if (error?.code === 'P2002') throw conflict('Ce nom d’équipe est déjà pris.', 'TEAM_NAME_TAKEN')
+        throw error
+      }
+      const current = await repository.findAccount(account.id)
+      if (!current) throw unauthorized('Vous n’êtes pas connecté.')
+      if (!changed) {
+        if (current.bannedAt) throw forbidden('Ce compte est banni.', 'ACCOUNT_BANNED')
+        const remainingMs = availableAt(current).getTime() - changedAt.getTime()
+        throw tooManyRequests('Vous devez attendre avant de changer à nouveau d’équipe.', 'TEAM_CHANGE_COOLDOWN', Math.max(1, Math.ceil(remainingMs / 1000)))
+      }
+      return { team, account: current, teamChangeAvailableAt: availableAt(current) }
     },
 
     // account : le compte de la session. Renvoie { account, teamChangeAvailableAt }, le compte à jour
@@ -30,7 +63,7 @@ export function createTeamService({ repository, now = () => new Date(), cooldown
       if (!body || typeof body !== 'object' || typeof body.teamId !== 'string') {
         throw badRequest('Cette équipe n’est pas acceptée.', 'INVALID_INPUT')
       }
-      const team = findTeam(body.teamId)
+      const team = await repository.findTeam(body.teamId)
       if (!team) throw notFound('Cette équipe n’existe pas.', 'TEAM_NOT_FOUND')
 
       // Redemander son équipe ne change rien et ne relance pas le délai.

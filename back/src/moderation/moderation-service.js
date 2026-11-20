@@ -1,6 +1,5 @@
 import { ADMIN_ROLE, PLAYER_ROLE } from '../accounts/account-service.js'
 import { badRequest } from '../errors/app-error.js'
-import { findTeam } from '../teams/team-catalog.js'
 
 const MIN_COORDINATE = -50
 const MAX_COORDINATE = 50
@@ -48,7 +47,7 @@ function toAction(record) {
 function toPlayer(account) {
   return {
     pseudo: account.pseudo,
-    team: findTeam(account.teamId),
+    team: account.team ?? null,
     role: account.role === ADMIN_ROLE ? ADMIN_ROLE : PLAYER_ROLE,
     banned: account.bannedAt !== null,
     bannedAt: account.bannedAt ? account.bannedAt.toISOString() : null,

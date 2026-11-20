@@ -2,8 +2,31 @@ import { prisma } from '../canvas/canvas-repository.js'
 
 export function createTeamRepository(client = prisma) {
   return {
-    findAccount(accountId) {
-      return client.account.findUnique({ where: { id: accountId } })
+    listTeams() {
+      return client.team.findMany({ orderBy: { sequence: 'asc' }, select: { id: true, name: true, color: true } })
+    },
+
+    findTeam(teamId) {
+      return client.team.findUnique({ where: { id: teamId }, select: { id: true, name: true, color: true } })
+    },
+
+    async findAccount(accountId) {
+      const account = await client.account.findUnique({ where: { id: accountId } })
+      if (!account) return null
+      const team = account.teamId ? await client.team.findUnique({ where: { id: account.teamId }, select: { id: true, name: true, color: true } }) : null
+      return { ...account, team }
+    },
+
+    async createAndJoin({ accountId, team, changedAt, changedBefore }) {
+      return client.$transaction(async (tx) => {
+        const { count } = await tx.account.updateMany({
+          where: { id: accountId, bannedAt: null, OR: [{ teamChangedAt: null }, { teamChangedAt: { lte: changedBefore } }] },
+          data: { teamId: team.id, teamChangedAt: changedAt },
+        })
+        if (!count) return false
+        await tx.team.create({ data: team })
+        return true
+      })
     },
 
     // Inscrit l'équipe du compte, seulement si son dernier changement date d'avant changedBefore
