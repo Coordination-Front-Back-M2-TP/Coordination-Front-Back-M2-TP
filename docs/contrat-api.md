@@ -514,7 +514,8 @@ Une équipe est obligatoire pour poser un pixel. `POST /api/pixels` répond `403
 - `id` : calculé par le serveur à partir du nom, en minuscules, sans accent, les espaces et les autres caractères remplacés par `-` (`Les Éclairs` donne `les-eclairs`). Il ne change plus ensuite. Deux noms qui donnent le même `id` sont le même nom.
 - Créer une équipe compte comme un changement d’équipe : le délai de `PUT /api/auth/me/team` s’applique. Le premier choix n’attend pas. Pendant le délai, rien n’est créé. Ce délai limite aussi la création d’équipes en série.
 - Un joueur banni ne crée pas d’équipe.
-- Une équipe vide reste : elle n’est ni supprimée ni renommée. Supprimer ou renommer une équipe n’est pas prévu.
+- Une équipe vide reste : elle n’est ni supprimée ni renommée. Supprimer une équipe, la renommer ou changer sa couleur n’est pas prévu pour l’instant. Changer de couleur parmi celles de la palette pourra venir plus tard.
+- Les 4 équipes de départ gardent leurs couleurs actuelles, même si elles ne sont pas dans la palette (décidé le 20/11/2026).
 - Aucun message temps réel n’annonce une nouvelle équipe, comme pour les comptes. Le front relit `GET /api/teams` quand il rencontre un `teamId` inconnu (voir le classement).
 
 ### `POST /api/teams` — créer une équipe
