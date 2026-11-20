@@ -7,12 +7,15 @@ import { PixelCanvas } from '../PixelCanvas/PixelCanvas.jsx'
 import styles from './PixelPlacer.module.css'
 
 const SIGN_IN_MESSAGE = 'Connectez-vous pour poser un pixel.'
+const TEAM_REQUIRED_MESSAGE = 'Choisissez une équipe avant de poser un pixel.'
 
 // Les messages sont fixes : le texte d'erreur du serveur n'est jamais inséré dans l'interface.
 function errorMessage(error) {
   switch (error?.code) {
     case 'UNAUTHORIZED':
       return SIGN_IN_MESSAGE
+    case 'TEAM_REQUIRED':
+      return TEAM_REQUIRED_MESSAGE
     case 'COOLDOWN_ACTIVE':
       return 'Attendez la fin de votre délai avant de poser un autre pixel.'
     case 'INVALID_INPUT':
@@ -37,10 +40,10 @@ export function PixelPlacer({ canvas, user }) {
 
   useEffect(() => () => controller.current?.abort(), [])
 
-  if (user === null) {
+  if (user === null || user?.team === null) {
     return (
       <>
-        <p>{SIGN_IN_MESSAGE}</p>
+        <p>{user === null ? SIGN_IN_MESSAGE : TEAM_REQUIRED_MESSAGE}</p>
         <PixelCanvas canvas={canvas} />
       </>
     )

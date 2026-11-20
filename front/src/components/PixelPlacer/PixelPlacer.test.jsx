@@ -100,6 +100,7 @@ it('affiche un message fixe pour chaque refus du serveur', async () => {
   const submit = () => act(async () => fireEvent.click(screen.getByRole('button', { name: 'Poser le pixel' })))
   const cases = [
     [new PlacePixelError('UNAUTHORIZED'), 'Connectez-vous pour poser un pixel.'],
+    [new PlacePixelError('TEAM_REQUIRED'), 'Choisissez une équipe avant de poser un pixel.'],
     [new PlacePixelError('COOLDOWN_ACTIVE'), 'Attendez la fin de votre délai avant de poser un autre pixel.'],
     [new PlacePixelError('INVALID_INPUT'), 'Cette case ou cette couleur n’est pas acceptée.'],
     [new PlacePixelError('INTERNAL_SERVER_ERROR'), 'La pose a échoué. Réessayez dans un instant.'],

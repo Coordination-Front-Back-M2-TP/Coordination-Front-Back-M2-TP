@@ -22,7 +22,8 @@ export function AccountBar({ user, onLoggedOut }) {
 
   return (
     <p>
-      Connecté en tant que <strong>{user.pseudo}</strong>{' '}
+      Connecté en tant que <strong>{user.pseudo}</strong>
+      {user.team && <> · Équipe <strong>{user.team.name}</strong></>}{' '}
       <button type="button" disabled={pending} onClick={handleLogout}>{pending ? 'Déconnexion…' : 'Se déconnecter'}</button>
       {error && <span role="alert"> La déconnexion a échoué. Réessayez.</span>}
     </p>
