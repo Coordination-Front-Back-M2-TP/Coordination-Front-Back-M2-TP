@@ -14,3 +14,9 @@ Le navigateur conserve le cookie de session posé par le serveur. Après un rech
 | Se déconnecter | POST /api/auth/logout | 204 | |
 
 Les champs attendus et le format du joueur sont décrits dans [Comptes et session (back)](comptes-back.md).
+
+## Rejoindre une équipe
+
+Après la connexion, le menu « Équipe à rejoindre » liste les équipes disponibles. Le premier choix est immédiat. Le nom de l'équipe rejointe apparaît à côté du pseudo et la pose devient disponible sans recharger la page. La toile reste consultable avant le choix.
+
+Le front charge les équipes via `GET /api/teams` et enregistre le choix via `PUT /api/auth/me/team`. Si le serveur refuse un changement d'équipe en raison du délai, le formulaire indique le temps restant donné par `Retry-After`.
