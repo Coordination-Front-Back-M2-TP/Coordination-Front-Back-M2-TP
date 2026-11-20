@@ -11,6 +11,16 @@ Tâche #43, user story [#21 — Poser un pixel](https://github.com/Coordination-
 
 Au clavier, les champs « Colonne (x) » et « Ligne (y) » et le bouton « Poser le pixel » font la même pose. Une seule pose part à la fois : un double clic n'envoie pas deux requêtes.
 
+## Délai entre deux poses
+
+Après une pose acceptée, le compte à rebours affiche le temps avant la prochaine pose. Sa durée vient de
+la différence entre `cooldownEndsAt` et `pixel.updatedAt`, deux dates fournies par le serveur. Le front
+démarre le décompte à la réception de la réponse et suspend la pose sur la toile et au clavier jusqu’à
+l’échéance. Le serveur contrôle toujours le délai du compte.
+
+Après un rechargement ou une pose depuis un autre onglet, un refus `429 COOLDOWN_ACTIVE` relance le compte
+à rebours à partir de `Retry-After`. Sans cet en-tête, le front affiche un message d’attente.
+
 ## Compte, équipe et historique
 
 Le front n'envoie ni jeton, ni identifiant de compte, ni identifiant d'équipe. Le serveur les déduit de la session et les inscrit dans l'historique, avec l'heure serveur (contrat, section `POST /api/pixels`). Un test vérifie que le corps de la requête ne contient que `x`, `y` et `color`.
@@ -34,11 +44,9 @@ Les messages sont fixes : le texte du serveur n'est jamais affiché.
 | Code | Message |
 | --- | --- |
 | `UNAUTHORIZED` | Connectez-vous pour poser un pixel. |
-| `COOLDOWN_ACTIVE` | Attendez encore N secondes… (N vient de l'en-tête `Retry-After`) |
+| `COOLDOWN_ACTIVE` | Compte à rebours si `Retry-After` est fourni, message d’attente sinon. |
 | `INVALID_INPUT` | Cette case ou cette couleur n'est pas acceptée. |
 | autre, réseau, réponse invalide | La pose a échoué. Réessayez dans un instant. |
-
-Le compte à rebours du délai relève de la user story #22.
 
 ## Points en attente d'une décision
 
@@ -48,4 +56,4 @@ Le compte à rebours du délai relève de la user story #22.
 
 ## Vérifications
 
-`npm test --prefix front` couvre l'appel (corps, cookie, codes d'erreur, `Retry-After`, réponse invalide, coupure réseau), la traduction du clic en coordonnées jusqu'aux coins de la toile, la pose au clavier, le refus de coordonnées hors toile, l'absence de compte et les messages d'erreur.
+`npm test --prefix front` couvre l'appel (corps, cookie, codes d'erreur, `Retry-After`, réponse invalide, coupure réseau), la traduction du clic en coordonnées jusqu'aux coins de la toile, la pose au clavier, le refus de coordonnées hors toile, l’absence de compte, les messages d’erreur, le compte à rebours après un succès ou un refus et la reprise de la pose à l’échéance.

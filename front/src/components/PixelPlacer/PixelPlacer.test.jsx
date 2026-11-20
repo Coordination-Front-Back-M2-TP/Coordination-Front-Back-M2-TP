@@ -9,7 +9,10 @@ vi.mock('../../api/pixels.js', async (importOriginal) => ({ ...(await importOrig
 
 const date = '2026-10-27T14:30:00.000Z'
 const canvas = parseCanvasSnapshot({ width: 101, height: 101, revision: 0, snapshotAt: date, pixels: [] })
-const saved = (x, y, color) => ({ pixel: { x, y, color, updatedAt: date, revision: 1 }, cooldownEndsAt: '2026-10-27T14:30:10.000Z' })
+const saved = (x, y, color, cooldownEndsAt = date) => ({
+  pixel: { x, y, color, updatedAt: date, revision: 1 },
+  cooldownEndsAt,
+})
 
 // jsdom ne calcule pas la mise en page : on donne à la toile une taille affichée de 404 × 404 (4 px par case).
 function layOut(element) {
@@ -24,6 +27,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.restoreAllMocks()
   vi.mocked(placePixel).mockReset()
 })
@@ -96,7 +100,7 @@ it('affiche un message fixe pour chaque refus du serveur', async () => {
   const submit = () => act(async () => fireEvent.click(screen.getByRole('button', { name: 'Poser le pixel' })))
   const cases = [
     [new PlacePixelError('UNAUTHORIZED'), 'Connectez-vous pour poser un pixel.'],
-    [new PlacePixelError('COOLDOWN_ACTIVE', { retryAfterSeconds: 7 }), 'Attendez encore 7 secondes avant de poser un autre pixel.'],
+    [new PlacePixelError('COOLDOWN_ACTIVE'), 'Attendez la fin de votre délai avant de poser un autre pixel.'],
     [new PlacePixelError('INVALID_INPUT'), 'Cette case ou cette couleur n’est pas acceptée.'],
     [new PlacePixelError('INTERNAL_SERVER_ERROR'), 'La pose a échoué. Réessayez dans un instant.'],
   ]
@@ -105,4 +109,47 @@ it('affiche un message fixe pour chaque refus du serveur', async () => {
     await submit()
     expect(screen.getByText(message)).toBeTruthy()
   }
+})
+
+it('affiche le délai du serveur et rétablit la pose à son échéance', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance', 'Date'] })
+  vi.setSystemTime(new Date('2030-01-01'))
+  vi.mocked(placePixel).mockResolvedValueOnce(saved(0, 0, '#000000', '2026-10-27T14:30:02.500Z'))
+  vi.mocked(placePixel).mockResolvedValueOnce(saved(0, 0, '#000000'))
+  render(<PixelPlacer canvas={canvas} />)
+  const button = screen.getByRole('button', { name: 'Poser le pixel' })
+  const board = screen.getByRole('img')
+  layOut(board)
+  await act(async () => fireEvent.click(button))
+
+  expect(screen.getByRole('timer').textContent).toBe('Prochaine pose dans 3 s.')
+  expect(button.disabled).toBe(true)
+  fireEvent.click(board, { clientX: 100, clientY: 100 })
+  fireEvent.submit(screen.getByRole('form'))
+  expect(placePixel).toHaveBeenCalledTimes(1)
+
+  act(() => vi.advanceTimersByTime(1499))
+  expect(screen.getByRole('timer').textContent).toBe('Prochaine pose dans 2 s.')
+  act(() => vi.advanceTimersByTime(1000))
+  expect(screen.getByRole('timer').textContent).toBe('Prochaine pose dans 1 s.')
+  act(() => vi.advanceTimersByTime(1))
+  expect(screen.queryByRole('timer')).toBeNull()
+  expect(screen.getByText('Vous pouvez poser un pixel.')).toBeTruthy()
+  expect(button.disabled).toBe(false)
+  await act(async () => fireEvent.click(board, { clientX: 100, clientY: 100 }))
+  expect(placePixel).toHaveBeenCalledTimes(2)
+})
+
+it('relance le compte à rebours avec Retry-After après un refus du serveur', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] })
+  vi.mocked(placePixel).mockRejectedValueOnce(new PlacePixelError('COOLDOWN_ACTIVE', { retryAfterSeconds: 7 }))
+  render(<PixelPlacer canvas={canvas} />)
+  const button = screen.getByRole('button', { name: 'Poser le pixel' })
+  await act(async () => fireEvent.click(button))
+
+  expect(screen.getByRole('timer').textContent).toBe('Prochaine pose dans 7 s.')
+  expect(button.disabled).toBe(true)
+  act(() => vi.advanceTimersByTime(7000))
+  expect(screen.queryByRole('timer')).toBeNull()
+  expect(button.disabled).toBe(false)
 })

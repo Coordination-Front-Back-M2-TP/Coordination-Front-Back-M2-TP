@@ -144,7 +144,7 @@ Un hook Git vérifie chaque message de commit en local, avant même le push : un
 - La description contient une ligne `Closes #numéro`. Le merge ferme l'issue tout seul.
 - Compléter le gabarit de PR, section par section : description, issue liée, un seul type (celui du titre), Definition of Done entièrement cochée. Le contrôle « Description complète » dit ce qui manque.
 - Une PR est approuvée par un autre membre de l'équipe que son auteur. Le contrôle « Relecture approuvée » reste rouge jusque-là, et aussi tant qu'un relecteur demande des modifications.
-- Ne pas merger si un contrôle est rouge. Le dépôt privé du plan gratuit ne permet pas de règle de branche : rien n'empêche techniquement le merge, la règle repose sur l'équipe.
+- Ne pas merger si un contrôle est rouge. Le ruleset « Protéger main » bloque le merge tant que les contrôles obligatoires ne sont pas verts, qu'il manque une approbation ou qu'une conversation reste ouverte. « Liens cassés (lychee) » et « Relecture approuvée » ne bloquent pas, mais un contrôle rouge se corrige avant le merge.
 - Une PR vise `main` et se merge avec « Squash and merge » (section 7).
 
 ### Contribuer depuis un fork
