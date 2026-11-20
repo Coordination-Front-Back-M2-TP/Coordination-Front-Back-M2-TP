@@ -47,7 +47,6 @@ Une valeur absente, vide, nulle, négative ou illisible donne la valeur par déf
 ## Points en attente
 
 - **Contrat** : la tâche #37 est en relecture. Si le contrat change (chemins, codes, règles de saisie), le back suit.
-- **Code des entrées invalides** : le back renvoie `INVALID_INPUT`, comme pour la pose. Le front de la tâche #38 attend `VALIDATION_ERROR` : à aligner.
 - **Essais de connexion répétés** : rien ne limite le nombre d'essais. À ajouter avant une ouverture au public.
 - **Historique** : `PixelPlacement.accountId` reste un texte sans clé étrangère vers `Account`.
 

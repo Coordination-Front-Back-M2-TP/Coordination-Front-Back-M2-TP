@@ -39,7 +39,7 @@ export function LiveCanvas({ user }) {
         </div>
       )}
       {canvas && status !== 'live' && <p>Dernier état reçu affiché ; les nouveaux pixels peuvent manquer.</p>}
-      {canvas && <PixelPlacer canvas={canvas} user={user} />}
+      {canvas && <PixelPlacer key={user ? 'account:' + user.pseudo : 'visitor'} canvas={canvas} user={user} />}
       <Ranking {...rankingState} onRetry={() => {
         if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
       }} />
