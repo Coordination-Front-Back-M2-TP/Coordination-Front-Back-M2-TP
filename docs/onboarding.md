@@ -38,7 +38,7 @@ Le stagiaire est en lecture seule sur le dépôt et en écriture sur le board : 
 2. **Board**, une fois l'invitation au dépôt acceptée : dans le board, menu `…`, Settings, Manage access, ajouter son compte avec le rôle **Write**. GitHub n'accepte un collaborateur extérieur sur le board que s'il a déjà accès à un dépôt de l'organisation.
 3. **Tickets** : lui assigner son issue d'onboarding (#161) et les tickets qu'elle liste. En lecture seule sur le dépôt, il ne peut pas se les assigner.
 4. **Vérifier** : `gh api repos/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/collaborators/<compte>/permission --jq .role_name` doit répondre `read`, et Manage access doit afficher le rôle Write pour son compte sur le board.
-5. **Tester le parcours** avant son arrivée, avec un compte en lecture seule : fork, branche, PR, et la carte qui bouge sur le board.
+5. **Tester le parcours** avant son arrivée, avec un compte de test aux mêmes droits (Read sur le dépôt, Write sur le board) : fork, branche, carte passée à la main en « En cours », PR, puis carte qui passe seule en « En revue ».
 
 ### Installation locale
 
