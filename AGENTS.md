@@ -29,7 +29,7 @@ Depuis la racine du dépôt, dépendances installées ([INSTALL.md](INSTALL.md),
 | Tests E2E | `npm test --prefix e2e` (après `npm exec --prefix e2e -- playwright install chromium`) |
 | Lint Markdown | `npx --yes markdownlint-cli2@0.23.3 "**/*.md" "!**/node_modules" "!.github/pull_request_template.md"` |
 
-Ce sont les vérifications de la CI : les lancer avant d'ouvrir une PR. Le lint Markdown exclut `**/node_modules`, sinon il lit aussi la doc des dépendances de `front/` et `back/`. Les liens se vérifient dans la CI (`lychee`). Les adresses du dépôt et du board, privés, sont exclues dans `.lycheeignore`. Une adresse `localhost` s'écrit en code (`` `http://localhost:3000` ``) : lychee ne peut pas la joindre.
+Ce sont les vérifications de la CI : les lancer avant d'ouvrir une PR. Le lint Markdown exclut `**/node_modules`, sinon il lit aussi la doc des dépendances de `front/` et `back/`. Les liens se vérifient dans la CI (`lychee`). Les adresses du dépôt et du board sont exclues dans `.lycheeignore` : le board est privé, et lychee n'a pas besoin de vérifier le dépôt lui-même. Une adresse `localhost` s'écrit en code (`` `http://localhost:3000` ``) : lychee ne peut pas la joindre.
 
 ## Board
 
@@ -44,7 +44,7 @@ Le board est le projet n° 1 de l'organisation `Coordination-Front-Back-M2-TP` (
 
 1. Ne rien inventer : produit, stack, membres, rôles, dates de sprint, consignes du prof. Une information inconnue reste `[[à remplir]]` ou devient une question.
 2. Aucun secret dans le dépôt : jeton, mot de passe, fichier `.env`.
-3. Tout changement passe par une issue, une branche et une PR relue. Le dépôt est privé sur le plan gratuit : aucun verrou technique ne protège `main`, la règle repose sur l'équipe.
+3. Tout changement passe par une issue, une branche et une PR relue. Le dépôt est public depuis le 20/11/2026 et le ruleset « Protéger main » l'impose : PR obligatoire, une approbation d'un autre membre, contrôles de la CI verts, squash seulement ([docs/gestion-de-projet.md](docs/gestion-de-projet.md), section 6).
 4. Commiter souvent, par petites étapes. Pousser, ouvrir une PR, créer, modifier ou fermer un ticket seulement avec l'accord de la personne qui pilote l'agent. Une PR par issue, relue par un autre membre de l'équipe : personne ne merge sa propre PR.
 5. Ne pas modifier la CI/CD (`.github/workflows/`) ni les personas sans l'accord de la personne qui s'en occupe.
 6. Documentation et commentaires en français.

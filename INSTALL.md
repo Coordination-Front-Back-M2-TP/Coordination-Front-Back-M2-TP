@@ -10,7 +10,7 @@ Ce guide part d'un poste vide et va jusqu'au projet lancé en local : le back (A
 | Node.js, avec npm | 22.12 ou plus (testé avec la 24.14) | `node --version` |
 | Docker, avec Compose (facultatif, pour tout lancer d'une commande) | Compose 2.22 ou plus (testé avec Docker 28.1 et Compose 2.35) | `docker compose version` |
 
-Accès nécessaires : le dépôt GitHub et le board ([TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1)). Les deux sont privés : il faut y être invité.
+Accès nécessaires : le dépôt GitHub et le board ([TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1)). Le dépôt est public depuis le 20/11/2026 ; le board reste privé : il faut y être invité.
 
 ## 2. Récupérer le code
 
@@ -24,7 +24,7 @@ git clone https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Ba
 cd Coordination-Front-Back-M2-TP
 ```
 
-Le dépôt est privé : Git demande de se connecter avec un compte GitHub qui y a accès.
+Le dépôt est public : le clonage ne demande pas de compte. Pousser une branche en demande un, avec les droits d'écriture ou sur son propre fork.
 
 ## 3. Configurer
 
