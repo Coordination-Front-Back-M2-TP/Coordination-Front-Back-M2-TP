@@ -25,7 +25,8 @@
 
   /* Au départ, la toile couvre tout l'écran et déborde sur le côté le plus court ; la zone défile.
      Le HUD se pose par-dessus. Zoom 1 (« Vue d'ensemble ») : toute la toile tient à l'écran. */
-  .scene { position: fixed; inset: 0; overflow: auto; display: flex; scrollbar-width: none }
+  .scene { position: fixed; inset: 0; overflow: auto; display: flex; scrollbar-width: none; cursor: grab }
+  .scene.glisse { cursor: grabbing; user-select: none }
   .plateau { position: relative; width: calc(min(100vw, 100vh) * var(--zoom, 1)); aspect-ratio: 1; flex: none; margin: auto }
   .toile { width: 100%; height: 100%; display: block; image-rendering: pixelated; background: #fff }
   .viseur { position: absolute; width: calc(100% / 101); aspect-ratio: 1; left: calc(62 / 101 * 100%); top: calc(54 / 101 * 100%);
@@ -122,28 +123,63 @@
   <script>
     dessinerLogo(document.getElementById('logo'), '#18181B', 4)
 
-    // Même zoom que le front : de 1 (toute la toile) à 8, par pas de 1,5. Au départ, la toile couvre l'écran.
+    // Zoom 1 : toute la toile tient à l'écran (« Vue d'ensemble »). En dessous, elle rapetisse encore ;
+    // au-dessus, elle déborde et se déplace. Au départ, elle couvre l'écran.
+    const ZOOM_MIN = 0.25
+    const ZOOM_MAX = 8
     const scene = document.querySelector('.scene')
     const plateau = document.querySelector('.plateau')
     const boutons = { zoomer: document.getElementById('zoomer'), dezoomer: document.getElementById('dezoomer'), ensemble: document.getElementById('ensemble') }
-    let zoom = Math.min(8, Math.max(innerWidth, innerHeight) / Math.min(innerWidth, innerHeight))
+    let zoom = Math.min(ZOOM_MAX, Math.max(innerWidth, innerHeight) / Math.min(innerWidth, innerHeight))
 
-    function appliquer(suivant) {
-      // Le point au centre de l'écran y reste après le zoom.
-      const fx = scene.scrollWidth ? (scene.scrollLeft + scene.clientWidth / 2) / scene.scrollWidth : 0.5
-      const fy = scene.scrollHeight ? (scene.scrollTop + scene.clientHeight / 2) / scene.scrollHeight : 0.5
-      zoom = Math.min(8, Math.max(1, suivant))
+    // Zoome en gardant fixe le point de la toile qui est sous (cx, cy), en pixels de l'écran.
+    function appliquer(suivant, cx = scene.clientWidth / 2, cy = scene.clientHeight / 2) {
+      const avant = plateau.getBoundingClientRect()
+      const fx = (cx - avant.left) / avant.width
+      const fy = (cy - avant.top) / avant.height
+      zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, suivant))
       plateau.style.setProperty('--zoom', zoom)
-      scene.scrollLeft = fx * scene.scrollWidth - scene.clientWidth / 2
-      scene.scrollTop = fy * scene.scrollHeight - scene.clientHeight / 2
-      boutons.zoomer.disabled = zoom >= 8
-      boutons.dezoomer.disabled = boutons.ensemble.disabled = zoom <= 1
+      const apres = plateau.getBoundingClientRect()
+      scene.scrollLeft += apres.left + fx * apres.width - cx
+      scene.scrollTop += apres.top + fy * apres.height - cy
+      boutons.zoomer.disabled = zoom >= ZOOM_MAX
+      boutons.dezoomer.disabled = zoom <= ZOOM_MIN
     }
 
     boutons.zoomer.addEventListener('click', () => appliquer(zoom * 1.5))
     boutons.dezoomer.addEventListener('click', () => appliquer(zoom / 1.5))
     boutons.ensemble.addEventListener('click', () => appliquer(1))
+
+    // Molette : zoom autour du curseur.
+    scene.addEventListener('wheel', (event) => {
+      event.preventDefault()
+      appliquer(zoom * Math.exp(-event.deltaY * 0.0015), event.clientX, event.clientY)
+    }, { passive: false })
+
+    // Glisser à la souris : déplace la toile. Un simple clic resterait un clic de pose.
+    let glisse = null
+    scene.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0) return
+      glisse = { x: event.clientX, y: event.clientY, left: scene.scrollLeft, top: scene.scrollTop, bouge: false }
+    })
+    addEventListener('pointermove', (event) => {
+      if (!glisse) return
+      const dx = event.clientX - glisse.x
+      const dy = event.clientY - glisse.y
+      if (!glisse.bouge && Math.hypot(dx, dy) < 4) return
+      glisse.bouge = true
+      scene.classList.add('glisse')
+      scene.scrollLeft = glisse.left - dx
+      scene.scrollTop = glisse.top - dy
+    })
+    addEventListener('pointerup', () => {
+      glisse = null
+      scene.classList.remove('glisse')
+    })
+
     appliquer(zoom)
+    scene.scrollLeft = (scene.scrollWidth - scene.clientWidth) / 2
+    scene.scrollTop = (scene.scrollHeight - scene.clientHeight) / 2
   </script>
 </body>
 </html>
