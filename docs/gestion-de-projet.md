@@ -73,6 +73,16 @@ Les dépendances entre user stories retenues sont :
 - #31 est bloquée par #18 et #21 ; #32 par #31 (rôle admin) et #21 (historique des poses).
 - La story de badges #108, encore au backlog et à affiner, est bloquée par #18 et #21.
 
+Les workflows GitHub Actions appliquent la même logique de dépendances et de limites :
+
+| Mécanisme | Où | Effet |
+| --- | --- | --- |
+| `needs:` | [ci.yml](../.github/workflows/ci.yml) | Les jobs « Lint, tests et build » attendent la liste des projets ; « CI terminée » attend tous les jobs. |
+| `workflow_run` | [cd.yml](../.github/workflows/cd.yml) | Le déploiement en production attend que la CI de `main` soit verte. |
+| `concurrency` avec `cancel-in-progress` | [ci.yml](../.github/workflows/ci.yml) | Un nouveau push sur une PR annule le run précédent. Un run sur `main` n'est jamais annulé. |
+| `concurrency` sans annulation | [cd.yml](../.github/workflows/cd.yml) | Deux déploiements de la même image ne tournent jamais en même temps, et un déploiement commencé va jusqu'au bout. |
+| `timeout-minutes` | [ci.yml](../.github/workflows/ci.yml) | Chaque job a une durée maximale (5, 10 ou 15 minutes) au lieu des 6 heures par défaut. |
+
 Pour le Sprint 2, les dépendances entre tâches retenues sont :
 
 - #34 et #35 sont bloquées par leur contrat #33 ; #43 et #44 sont bloquées par leur contrat #42. Les contrats peuvent ainsi être relus avant que le front et le back avancent en parallèle.
@@ -123,7 +133,13 @@ Tout le monde développe, Lucas compris, sur le front comme sur le back : qui pr
 Ces réglages ne sont pas dans le code : ils se font sur GitHub. La mention « fait le » indique ce qui est déjà en place.
 
 1. **Réglages du dépôt** (fait le 09/10/2026) : `main` reste la branche par défaut (sinon `Closes #` ne ferme pas les issues). Seul le merge en squash est permis, avec le titre de la PR comme message, et la branche est supprimée après le merge. Les environnements `staging` et `production` existent : ils gardent l'historique des déploiements. Le plan gratuit ne donne pas accès aux secrets d'environnement sur un dépôt privé : les secrets et variables du déploiement sont au niveau du dépôt (voir [deploiement.md](deploiement.md)). Le pourquoi de ces choix : [strategie-de-branches.md](strategie-de-branches.md).
-2. **Règle de branche sur `main`** : le dépôt est privé et l'organisation est sur le plan gratuit, qui ne permet pas de règle de branche sur un dépôt privé. La règle « tout passe par une PR relue, CI verte » est donc une règle d'équipe : personne ne pousse sur `main`, personne ne merge une PR rouge. Le contrôle « Relecture approuvée » la rend visible : son job échoue tant qu'un autre membre n'a pas approuvé. Sur une PR issue d'un fork, il lit les avis avec un jeton en lecture seule, sans écrire de statut. Si le dépôt passe en public ou l'organisation sur le plan Team : Settings, Rules ou Branches, activer la PR obligatoire, une approbation minimum, et les contrôles requis « Titre au format Conventional Commits », « Issue liée », « Description complète », « Relecture approuvée », « CI terminée », « Markdown (markdownlint) », « Liens cassés (lychee) ».
+2. **Règle de branche sur `main`** (fait le 20/11/2026, quand le dépôt est passé en public pour un temps ; il redeviendra privé à la date limite du projet, et le plan gratuit n'appliquera alors plus le ruleset) : le ruleset « Protéger main » (Settings, Rules, Rulesets) s'applique à la branche par défaut, sans exception, administrateurs compris. Il impose :
+   - une PR pour tout changement, avec une approbation d'un autre membre que la dernière personne à avoir poussé, annulée si la PR reçoit un nouveau push ;
+   - toutes les conversations résolues, le merge en squash seulement et un historique linéaire ;
+   - les contrôles « CI terminée », « Markdown (markdownlint) », « Titre au format Conventional Commits », « Issue liée » et « Description complète » au vert ;
+   - ni force push, ni suppression de `main`.
+
+   « Liens cassés (lychee) » n'est pas obligatoire : il dépend de sites extérieurs, et une panne chez eux bloquerait tous les merges. « Relecture approuvée » ne l'est pas non plus : l'approbation obligatoire du ruleset la remplace. Le contrôle reste affiché ; sur une PR issue d'un fork, il lit les avis avec un jeton en lecture seule, sans écrire de statut. Si le ruleset bloque une urgence, un administrateur le désactive le temps de régler le problème, puis le réactive.
 3. **Board** (fait le 09/10/2026) : projet n° 1 de l'organisation, relié au dépôt. Colonnes, champs et vues décrits à la section 2. La vue Story map se règle dans View : Board, Column by `Activité`, Swimlanes `Tranche`, filtre `is:issue label:"type: user-story"`.
 4. **Workflows du board** (réglés à la main : l'API de GitHub ne permet pas de les activer). Dans le projet, menu `…`, Workflows :
    - « Auto-add to project » : ce dépôt, filtre `is:issue is:open` (modifié le 27/10/2026 : l'ancien filtre `is:issue,pr is:open` ajoutait aussi les PR). Seules les issues ouvertes arrivent sur le board, sans jeton à gérer. Une PR se lit dans « Linked pull requests » sur son issue ; « Pull request linked to issue » continue de passer l'issue en revue.

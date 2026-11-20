@@ -1,7 +1,4 @@
-// Appels d'authentification. Routes SUPPOSÉES : le contrat de l'EPIC #17 (tâche #37) n'est pas encore mergé.
-// Tout ce qui dépend de ce contrat (chemins, corps, codes) est concentré ici, pour l'ajuster en un seul endroit.
-// La session est portée par un cookie géré par le serveur : le front ne stocke aucun jeton.
-
+// Le navigateur gère le cookie de session sur la même origine que l'API.
 export class AuthError extends Error {
   constructor(code) {
     super(code)
@@ -9,43 +6,39 @@ export class AuthError extends Error {
   }
 }
 
-async function post(path, body, signal) {
-  const response = await fetch(path, {
-    method: 'POST',
+async function request(path, { method, body, signal } = {}) {
+  const response = await fetch('/api/auth/' + path, {
+    method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
+    credentials: 'same-origin',
     signal,
   })
+
+  if (path === 'me' && response.status === 401) return null
+  if (response.ok && path === 'logout') return
+
+  const payload = await response.json().catch(() => null)
   if (!response.ok) {
-    const payload = await response.json().catch(() => null)
-    throw new AuthError(payload?.error?.code ?? 'UNKNOWN')
+    const code = typeof payload?.error?.code === 'string' ? payload.error.code : 'UNKNOWN'
+    throw new AuthError(code)
   }
-  return response.status === 204 ? null : response.json().catch(() => null)
+  if (typeof payload?.user?.pseudo !== 'string') throw new AuthError('INVALID_RESPONSE')
+  return payload.user
 }
 
-function readUser(body) {
-  const pseudo = body?.user?.pseudo
-  if (typeof pseudo !== 'string') throw new AuthError('INVALID_RESPONSE')
-  return { pseudo }
+export function getCurrentUser(signal) {
+  return request('me', { signal })
 }
 
-// Renvoie le joueur connecté, ou null s'il n'y a pas de session (401).
-export async function getCurrentUser(signal) {
-  const response = await fetch('/api/auth/me', { signal })
-  if (response.status === 401) return null
-  if (!response.ok) throw new AuthError('UNKNOWN')
-  const body = await response.json().catch(() => null)
-  return body?.user ? readUser(body) : null
+export function register(pseudo, password) {
+  return request('register', { method: 'POST', body: { pseudo, password } })
 }
 
-export async function register(pseudo, password, signal) {
-  return readUser(await post('/api/auth/register', { pseudo, password }, signal))
+export function login(pseudo, password) {
+  return request('login', { method: 'POST', body: { pseudo, password } })
 }
 
-export async function login(pseudo, password, signal) {
-  return readUser(await post('/api/auth/login', { pseudo, password }, signal))
-}
-
-export async function logout(signal) {
-  await post('/api/auth/logout', null, signal)
+export function logout() {
+  return request('logout', { method: 'POST' })
 }

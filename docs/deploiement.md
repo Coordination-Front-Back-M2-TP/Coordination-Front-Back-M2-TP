@@ -1,73 +1,90 @@
 # Déploiement continu
 
-Ce document décrit la CD du projet : ce qui est publié, comment publier une version, et comment la mettre en ligne. Le pourquoi du flow est dans [strategie-de-branches.md](strategie-de-branches.md). Le workflow est [.github/workflows/cd.yml](../.github/workflows/cd.yml).
+Ce document décrit la CD du projet : ce qui est publié, comment un changement part en production, et comment revenir en arrière. Le pourquoi du flow est dans [strategie-de-branches.md](strategie-de-branches.md). Le workflow est [.github/workflows/cd.yml](../.github/workflows/cd.yml).
 
 L'application tourne sur le NAS de Theo. Pour la sécurité du NAS, GitHub ne peut pas s'y connecter : la CD publie des images Docker sur GHCR (le registre de GitHub), et c'est le NAS qui vient les chercher (section 5).
 
 ## 1. Ce qui se passe tout seul
 
-| Événement | Job | Résultat |
-| --- | --- | --- |
-| Merge d'une PR sur `main` | Publier les images (staging) | Les images `p1x3l-front` et `p1x3l-back` sont construites et publiées avec les tags `sha-<commit>` et `staging` |
-| Push sur une branche `release/X.Y` (correctif) | Publier les images (staging) | Pareil |
-| Push d'un tag `vX.Y.Z` | Vérifier la version | Le tag suit semver, il pointe sur `main` ou `release/X.Y`, et ce commit a déjà été publié en staging |
-| Vérification réussie | Publier les images (production) | Les images `sha-<commit>` reçoivent les tags `vX.Y.Z` et `latest`, sans être reconstruites |
-| Images de production publiées | Publier la release GitHub | La release `vX.Y.Z` est créée, avec les notes générées à partir des PR |
+| Événement | Résultat |
+| --- | --- |
+| Merge d'une PR sur `main` | La CI tourne sur `main` |
+| CI de `main` verte | Les images `p1x3l-front` et `p1x3l-back` sont construites et publiées avec le tag `sha-<commit>`, puis `latest` |
+| `latest` a changé | Le NAS met la nouvelle version en ligne dans les 10 minutes (section 5) |
+
+Il n'y a ni tag de version ni étape manuelle : merger, c'est mettre en production. Si la CI de `main` échoue, rien n'est publié et la production ne bouge pas.
 
 Les images sont dans l'onglet Packages de l'organisation : `ghcr.io/coordination-front-back-m2-tp/p1x3l-front` et `ghcr.io/coordination-front-back-m2-tp/p1x3l-back`.
 
-Une seule publication tourne à la fois par environnement. Celle en cours va au bout, la suivante attend.
+Une seule publication tourne à la fois. Celle en cours va au bout, la suivante attend. Si deux PR sont mergées coup sur coup, seul le dernier commit de `main` reçoit `latest` : le premier garde son image `sha-<commit>`, et la production passe directement au second.
 
-Un tag avec un suffixe (`v1.0.0-rc.1`) donne une pré-release.
+La version en ligne est le commit renvoyé par `/api/health`. Les tags `v0.1.0`, `v0.1.1` et `v0.2.0` datent de l'ancien flow, où un tag déclenchait la mise en production : ils restent dans l'historique, et plus aucun n'est posé.
 
-## 2. Mettre une version en production
+## 2. Avant de merger
 
-1. Choisir un commit déjà publié en staging : l'onglet Actions, workflow « Déploiement continu », liste les publications.
-2. Choisir le numéro avec semver (section 7 de [CONTRIBUTING.md](../CONTRIBUTING.md)).
-3. Poser le tag sur ce commit et le pousser :
+Comme chaque merge part en production, la relecture est la dernière vérification.
 
-```bash
-git switch main
-git pull
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Le tag publie tout seul les images de production. Le NAS les met en ligne dans les 10 minutes (section 5). Si la vérification échoue parce que staging n'avait pas fini, relancer le workflow du tag (Re-run all jobs) une fois staging terminé.
+- La PR change [deploy/compose.yml](../deploy/compose.yml) (volume, variable, réseau, port) : reporter le changement sur le NAS avant de merger (section 5, « Le fichier Compose du NAS »). Watchtower remplace l'image, pas la configuration du conteneur.
+- La PR ajoute une migration de base de données : elle s'applique au démarrage du back, et un retour arrière du code ne la défait pas.
+- Après le merge, vérifier la production : `https://p1x3l.theo-stoffelbach.fr/api/health` doit renvoyer le commit mergé.
 
 ## 3. Revenir à la version précédente
 
-Dans l'onglet Actions, ouvrir l'exécution du workflow « Déploiement continu » de l'ancien tag, puis « Re-run all jobs ». Elle remet `latest` sur les images de ce tag. Le NAS la remet en ligne dans les 10 minutes. La release existe déjà : elle n'est pas recréée.
+Le chemin normal est une PR de revert sur `main` (`git revert <commit>`), relue et mergée comme les autres : elle part en production toute seule.
 
-Une base de données migrée ne revient pas en arrière toute seule. [[À préciser quand le projet a une base de données.]]
+Si la production est en panne et que le revert ne peut pas attendre, épingler l'ancienne image sur le NAS. Dans `/volume2/docker/p1x3l/docker-compose.yml`, remplacer `:latest` par `:sha-<commit>` (le dernier commit sain) pour le service en panne, puis :
+
+```bash
+sudo DOCKER_CONFIG=/volume2/docker/watchtower-central docker compose up -d --wait
+```
+
+Une image épinglée ne suit plus `latest` : remettre `:latest` une fois `main` corrigée.
+
+Une base de données migrée ne revient pas en arrière toute seule. [[À préciser : procédure de retour arrière d'une migration.]]
 
 ## 4. Configuration
 
 La publication n'a besoin d'aucun secret : le workflow utilise le jeton fourni par GitHub, avec le droit `packages: write`.
 
-Les variables suivantes se règlent dans Settings, Secrets and variables, Actions. Elles servent seulement à afficher l'adresse dans les environnements GitHub.
+La variable suivante se règle dans Settings, Secrets and variables, Actions. Elle sert seulement à afficher l'adresse dans l'environnement GitHub `production`.
 
 | Nom | Type | Rôle |
 | --- | --- | --- |
-| `STAGING_URL` | Variable, facultative | Adresse publique de staging |
 | `PRODUCTION_URL` | Variable, facultative | Adresse publique de la production |
 
 ## 5. Mise en ligne sur le NAS
 
 La production est en ligne sur <https://p1x3l.theo-stoffelbach.fr> depuis la `v0.1.0` (11 octobre 2026).
 
-Sur le NAS, Watchtower vérifie toutes les 10 minutes si l'image `latest` de `p1x3l-front` et de `p1x3l-back` a changé, et recrée le conteneur si c'est le cas. Comme `latest` ne bouge qu'au tag `vX.Y.Z`, un merge sur `main` ne touche pas la production.
+Sur le NAS, Watchtower vérifie toutes les 10 minutes si l'image `latest` de `p1x3l-front` et de `p1x3l-back` a changé, et recrée le conteneur si c'est le cas. `latest` change à chaque merge sur `main` dont la CI est verte.
 
 ### Ce qui tourne
 
 | Élément | Valeur |
 | --- | --- |
 | Conteneurs | `p1x3l_front` (nginx, port 8080) et `p1x3l_back` (Express, port 3000) |
+| Données | Volume `p1x3l_canvas-data`, monté dans `/data` du back : la base SQLite de la toile |
 | Réseaux | `p1x3l_public` : le reverse proxy et le front seulement. `p1x3l_internal` : le front et le back, sans accès à Internet |
 | Ports ouverts sur le NAS | Aucun : tout passe par le reverse proxy (Nginx Proxy Manager), en HTTPS |
 | Vérification | `https://p1x3l.theo-stoffelbach.fr/api/health` renvoie `{"status":"ok"}` |
 
 Le front sert les fichiers construits et transmet `/api` ainsi que `/socket.io/` au back, WebSocket compris : le navigateur ne parle qu'à une seule origine, comme en local avec le proxy de Vite. Le flux de la toile utilise le chemin Socket.IO par défaut `/socket.io/`.
+
+### Le fichier Compose du NAS
+
+Le NAS n'utilise pas [deploy/compose.yml](../deploy/compose.yml) tel quel. Sa copie, `/volume2/docker/p1x3l/docker-compose.yml`, est durcie : conteneurs nommés `p1x3l_front` et `p1x3l_back`, système de fichiers en lecture seule (`read_only: true`), aucune capacité (`cap_drop: ALL`), sous-réseau fixe.
+
+Watchtower remplace l'image d'un conteneur et garde sa configuration. Un changement de `deploy/compose.yml` n'arrive donc pas tout seul sur le NAS : il faut le reporter à la main dans la copie, puis recréer les conteneurs.
+
+```bash
+cd /volume2/docker/p1x3l
+sudo DOCKER_CONFIG=/volume2/docker/watchtower-central docker compose up -d --wait
+sudo docker logs --tail 20 p1x3l_back
+```
+
+Comme le back est en lecture seule, tout dossier où il écrit a besoin d'un volume. C'est le cas de `/data`, qui porte la base de données.
+
+Le 19 novembre 2026, la première version avec une base de données a mis le back en boucle de redémarrage (`unable to open database file: /data/p1x3l.db`) : la copie du NAS n'avait pas le volume `canvas-data:/data`. L'ajouter et recréer les conteneurs a suffi.
 
 ### Réglages du reverse proxy
 
@@ -97,7 +114,7 @@ Les en-têtes de sécurité (HSTS, `X-Frame-Options`, `Referrer-Policy`…) vien
 
 ### Première installation (déjà faite)
 
-Pour mémoire, ou pour réinstaller. Les commandes se lancent en root sur le NAS, dans `/volume2/docker/p1x3l`. Les images sont privées : `DOCKER_CONFIG` désigne les identifiants GHCR du NAS (un jeton `read:packages`). Sans lui, Docker répond `denied`.
+Pour mémoire, ou pour réinstaller. Les commandes se lancent en root (`sudo`) sur le NAS, dans `/volume2/docker/p1x3l`. Les images sont privées : `DOCKER_CONFIG` désigne les identifiants GHCR du NAS (un jeton `read:packages`). Sans lui, Docker répond `denied`.
 
 ```bash
 docker network create --subnet 10.240.0.48/28 p1x3l_public
@@ -106,17 +123,17 @@ DOCKER_CONFIG=/volume2/docker/watchtower-central docker compose up -d --wait
 docker network connect p1x3l_public nginx-proxy-manager
 ```
 
-`manifest unknown` au `pull` veut dire que `latest` n'existe pas encore : aucun tag `vX.Y.Z` n'a été publié.
+`manifest unknown` au `pull` veut dire que `latest` n'existe pas encore : aucune publication n'a abouti.
 
 ### Lancer une version en local
 
-Le fichier [deploy/compose.yml](../deploy/compose.yml) reprend la production et lance une version précise :
+Le fichier [deploy/compose.yml](../deploy/compose.yml) reprend la production. `VERSION` vaut `latest`, ou `sha-<commit>` pour un commit précis :
 
 ```bash
-VERSION=v0.1.0 docker compose -f deploy/compose.yml up -d
+VERSION=latest docker compose -f deploy/compose.yml up -d
 ```
 
 ## 6. Ce qu'il reste à brancher
 
-- **Staging** : les images `staging` sont publiées à chaque merge, mais rien ne les fait tourner. [[À décider en équipe : un second sous-domaine sur le NAS, ou les lancer en local avec `VERSION=staging`.]]
-- **Base de données** : le compose n'en a pas encore. Elle ira dans le réseau `interne`, avec un volume pour ses données.
+- **Pré-production** : il n'y a plus d'environnement de staging. Un changement se vérifie en local et dans la CI avant le merge. [[À décider en équipe : faut-il un environnement de pré-production sur le NAS.]]
+- **Base de données** : SQLite est stockée dans le volume Docker `canvas-data`, monté dans `/data` du back. Les migrations sont appliquées au démarrage du back. Sauvegarder ce volume avant toute opération de maintenance qui pourrait supprimer les données.

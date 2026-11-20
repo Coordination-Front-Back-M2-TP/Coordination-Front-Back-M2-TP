@@ -39,10 +39,10 @@ Toutes les commandes se lancent depuis la racine du dépôt :
 
 ### `ServerStatus`
 
-Le composant [`ServerStatus`](../front/src/components/ServerStatus.jsx) affiche l'état de la connexion entre l'application React et l'API Express :
+Le composant [`ServerStatus`](../front/src/components/ServerStatus/ServerStatus.jsx) affiche l'état de la connexion entre l'application React et l'API Express :
 
-- Fichier source : `front/src/components/ServerStatus.jsx`
-- Fichier de stories : `front/src/components/ServerStatus.stories.jsx`
+- Fichier source : `front/src/components/ServerStatus/ServerStatus.jsx`
+- Fichier de stories : `front/src/components/ServerStatus/ServerStatus.stories.jsx`
 
 #### États documentés
 
@@ -54,14 +54,18 @@ Le composant [`ServerStatus`](../front/src/components/ServerStatus.jsx) affiche 
 
 ### `PixelCanvas`
 
-Le composant [`PixelCanvas`](../front/src/components/PixelCanvas.jsx) affiche la toile publique avec les dimensions et les couleurs fournies par le serveur. Les cases vides sont sur un damier ; une liste textuelle donne les coordonnées et les couleurs au clavier. Le fichier `front/src/components/PixelCanvas.stories.jsx` présente une toile vide et une toile avec trois pixels. Les dimensions et couleurs des stories sont des exemples, pas une décision sur la résolution ou la palette du jeu.
+Le composant [`PixelCanvas`](../front/src/components/PixelCanvas/PixelCanvas.jsx) affiche la toile publique avec les dimensions et les couleurs fournies par le serveur. Les cases vides sont sur un damier ; une liste textuelle donne les coordonnées et les couleurs au clavier. Le fichier `front/src/components/PixelCanvas/PixelCanvas.stories.jsx` présente une toile vide et une toile avec trois pixels. Les dimensions et couleurs des stories sont des exemples, pas une décision sur la résolution ou la palette du jeu.
 
 `LiveCanvas` gère l’abonnement, les états de connexion et le bouton de reprise sur la page d’accueil. Le protocole et ses tests sont décrits dans [toile-front.md](toile-front.md).
 
+### `ColorPalette` et `PixelPlacer`
+
+[`ColorPalette`](../front/src/components/ColorPalette/ColorPalette.jsx) affiche les couleurs sous forme de boutons radio nommés : le choix se fait au clavier, et la couleur choisie est encadrée. [`PixelPlacer`](../front/src/components/PixelPlacer/PixelPlacer.jsx) réunit la palette, le clic de pose sur `PixelCanvas`, une saisie des coordonnées au clavier et l'annonce du résultat. Comme chaque composant, chacun a son dossier, avec ses styles, ses tests et ses stories. Le parcours est décrit dans [pose-front.md](pose-front.md).
+
 ## 4. Conventions pour ajouter un nouveau composant
 
-- Créer le composant dans `front/src/components/NomDuComposant.jsx` (nom en PascalCase conformément à [GUIDELINES.md](../GUIDELINES.md)).
-- Créer le fichier de stories attenant `front/src/components/NomDuComposant.stories.jsx`.
+- Créer le dossier du composant, `front/src/components/NomDuComposant/`, et le composant `NomDuComposant.jsx` dedans (nom en PascalCase conformément à [GUIDELINES.md](../GUIDELINES.md)).
+- Créer dans le même dossier ses stories (`NomDuComposant.stories.jsx`), ses tests (`NomDuComposant.test.jsx`) et, s'il en a, ses styles (`NomDuComposant.module.css`).
 - Exporter chaque variante sous forme de fonction nommée :
 
 ```jsx

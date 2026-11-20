@@ -98,15 +98,14 @@ Une user story entre dans un sprint seulement si :
 
 ### Branches
 
-Notre flow : tronc unique, branches courtes, promotion par tags. Le pourquoi (contexte, critères, comparaison avec Git Flow, GitHub flow, GitLab Flow, trunk-based et Release Flow) est dans [docs/strategie-de-branches.md](docs/strategie-de-branches.md).
+Notre flow : tronc unique, branches courtes, déploiement à chaque merge. Le pourquoi (contexte, critères, comparaison avec Git Flow, GitHub flow, GitLab Flow, trunk-based et Release Flow) est dans [docs/strategie-de-branches.md](docs/strategie-de-branches.md).
 
 - `main` est la seule branche longue, toujours déployable, et la branche par défaut. Personne n'y pousse directement.
 - Une branche courte par issue, partie de `main`, tenue par une personne, deux jours au plus. Au-delà, l'issue est trop grosse : la découper.
 - La branche se fusionne dans `main` par PR en squash, puis elle est supprimée.
 - Le travail pas fini part dans `main` caché derrière un flag de configuration, jamais dans une branche longue.
-- `staging` est un environnement, pas une branche : chaque merge sur `main` y est déployé.
-- La production reçoit un tag `vX.Y.Z` posé sur un commit de `main` validé en staging.
-- Correctif urgent : PR `fix/…` sur `main`, puis tag CORRECTIF. Si `main` n'est pas publiable, créer `release/X.Y` depuis le dernier tag et y reporter le correctif par cherry-pick.
+- Chaque merge sur `main` part en production, une fois la CI de `main` verte. Merger, c'est mettre en production.
+- Correctif urgent : PR `fix/…` sur `main`, ou PR de revert du commit fautif.
 
 Format du nom : `type/numéro-description-courte`, en minuscules, avec des tirets, sans accents ni espaces.
 
@@ -114,17 +113,9 @@ Exemples : `feat/43-palette-et-pose`, `fix/46-delai-verifie-par-le-serveur`, `do
 
 ### Versions
 
-Les versions suivent le [versionnage sémantique](https://semver.org/lang/fr/) : `MAJEUR.MINEUR.CORRECTIF`.
+La version en production est un commit de `main` : `/api/health` le renvoie, et chaque image publiée garde un tag `sha-<commit>` ([docs/deploiement.md](docs/deploiement.md)).
 
-- **MAJEUR** : un changement qui casse la compatibilité.
-- **MINEUR** : l'ajout d'une fonctionnalité sans rien casser.
-- **CORRECTIF** : la correction d'un bug sans rien casser.
-
-Tant que le projet est en `0.y.z`, l'API n'est pas stable. La version `1.0.0` fixe l'API publique.
-
-Le type du commit (section 8) guide le numéro : `feat` donne une version MINEUR, `fix` un CORRECTIF, et un `!` après le type (ou `BREAKING CHANGE:` dans le corps) une version MAJEUR.
-
-Une version se publie en posant un tag `v1.2.0` sur `main` : la CD la déploie en production et crée la release GitHub ([docs/deploiement.md](docs/deploiement.md)). Si plusieurs services partent en production séparément, chacun a ses tags (`api-v1.2.0`, `web-v0.4.0`). Le product owner décide de publier une version, à la revue de sprint, une fois staging vérifié.
+Il n'y a plus de numéro de version ni de tag à poser. Les tags `v0.1.0`, `v0.1.1` et `v0.2.0` datent de l'ancien flow et restent dans l'historique. Le type du commit (section 8) dit toujours ce qui change : `feat` ajoute, `fix` corrige, et un `!` après le type (ou `BREAKING CHANGE:` dans le corps) casse la compatibilité.
 
 ## 8. Messages de commit et titres de PR
 
@@ -145,13 +136,15 @@ La description est en français, à l'impératif, sans point final. Exemples :
 
 Le titre de la PR devient le message du commit final (squash). Il suit donc le même format.
 
+Un hook Git vérifie chaque message de commit en local, avant même le push : un commit hors format est refusé, avec le lien vers cette section. Il s'installe tout seul avec `npm ci` à la racine du dépôt ([INSTALL.md](INSTALL.md), section 4). Ses règles, dans [commitlint.config.mjs](commitlint.config.mjs), sont celles du contrôle « Titre au format Conventional Commits » des PR : les 11 types ci-dessus, une description non vide, sans point final. En cas d'urgence, `git commit --no-verify` saute le hook ; le titre de la PR reste vérifié par la CI.
+
 ## 9. Pull requests
 
 - Une PR par issue. Une PR courte se relit mieux : si elle grossit, la découper.
 - La description contient une ligne `Closes #numéro`. Le merge ferme l'issue tout seul.
 - Compléter le gabarit de PR, section par section : description, issue liée, un seul type (celui du titre), Definition of Done entièrement cochée. Le contrôle « Description complète » dit ce qui manque.
 - Une PR est approuvée par un autre membre de l'équipe que son auteur. Le contrôle « Relecture approuvée » reste rouge jusque-là, et aussi tant qu'un relecteur demande des modifications.
-- Ne pas merger si un contrôle est rouge. Le dépôt privé du plan gratuit ne permet pas de règle de branche : rien n'empêche techniquement le merge, la règle repose sur l'équipe.
+- Ne pas merger si un contrôle est rouge. Le ruleset « Protéger main » bloque le merge tant que les contrôles obligatoires ne sont pas verts, qu'il manque une approbation ou qu'une conversation reste ouverte. « Liens cassés (lychee) » et « Relecture approuvée » ne bloquent pas, mais un contrôle rouge se corrige avant le merge.
 - Une PR vise `main` et se merge avec « Squash and merge » (section 7).
 
 ### Contribuer depuis un fork
@@ -167,13 +160,13 @@ Ne pas essayer de pousser sur `upstream` : l'accès en lecture seule est intenti
 
 ### Relire une PR de fork
 
-Un contributeur en lecture seule ne peut rien casser seul : le seul risque est qu'on merge une PR piégée. Ce qui est mergé part en staging, puis en production au prochain tag. En plus de la section 10, le relecteur vérifie :
+Un contributeur en lecture seule ne peut rien casser seul : le seul risque est qu'on merge une PR piégée. Ce qui est mergé part en production dans les minutes qui suivent. En plus de la section 10, le relecteur vérifie :
 
 - **Les fichiers sensibles**, lus ligne à ligne : `.github/` (workflows, gabarits, labels), `AGENTS.md`, `package.json` et `package-lock.json`, `front/Dockerfile`, `back/Dockerfile` et `front/nginx.conf`. Un changement sans rapport avec le ticket est refusé.
 - **L'issue liée** : une seule ligne `Closes`, vers le ticket du contributeur. Au merge, chaque `Closes #numéro` ferme l'issue citée.
 - **Les dépendances, avant de lancer la PR en local** : une nouvelle dépendance ou un script `postinstall` s'exécute sur la machine du relecteur, avec ses accès GitHub. Tant que le diff n'est pas lu, installer avec `npm ci --ignore-scripts`.
 - **Les workflows, avant de cliquer sur « Approve and run »** : GitHub demande cette approbation avant de lancer la CI d'une PR de fork. La CI tourne alors sans secret et avec un jeton en lecture, mais elle exécute la version des workflows de la PR.
-- **Avant un tag de version** : relire ce qui a été mergé depuis un fork depuis le tag précédent.
+- **Avant de merger** : le merge met la PR en production. C'est la dernière vérification.
 
 ## 10. Revue de code
 
@@ -191,7 +184,12 @@ La CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) traite chaque dossi
 
 - elle exige le `package-lock.json` du dossier, puis installe avec `npm ci` ;
 - elle lance `npm run lint`, `npm test` et `npm run build`, chacun seulement si le script existe dans le `package.json` ;
-- le contrôle « CI terminée » résume tous les dossiers : c'est lui qu'il faut regarder.
+- le dossier `e2e/` est traité à part, dans le job « Tests E2E (Playwright) » : ses tests ont besoin du navigateur Chromium, installé par `npx playwright install --with-deps chromium` ;
+- le contrôle « CI terminée » résume tous les dossiers : c'est lui qu'il faut regarder ;
+- un nouveau push sur une PR annule le run précédent de cette PR (`concurrency`) : c'est normal de voir un run « Cancelled » remplacé par un plus récent. Un run sur `main` n'est jamais annulé ;
+- chaque job a une durée maximale (`timeout-minutes`) : 5 minutes pour les petits jobs, 10 pour lint, tests et build, 15 pour les tests E2E. Un job qui dépasse s'arrête en échec : chercher ce qui bloque (installation, serveur de test qui ne démarre pas) plutôt que d'augmenter la limite.
+
+La CI n'a volontairement pas de filtre `paths:` : le contrôle « CI terminée » doit exister sur chaque PR, même une PR qui ne touche que la documentation.
 
 Le script `test` créé par `npm init` échoue exprès (« no test specified ») : le remplacer par la vraie commande de test.
 
@@ -218,13 +216,13 @@ Les labels viennent de [.github/labels.yml](.github/labels.yml). Ne pas les cré
 
 | Quand | Ce qui se passe | Où |
 | --- | --- | --- |
+| Un commit est créé en local | Son message est vérifié ; il est refusé s'il ne suit pas le format de la section 8 | [.husky/commit-msg](.husky/commit-msg) et [commitlint.config.mjs](commitlint.config.mjs) |
 | Une issue est créée ou modifiée | Le label de zone est posé ou mis à jour | [.github/workflows/issues.yml](.github/workflows/issues.yml) |
 | Une PR est ouverte ou modifiée | Le titre, l'issue liée et le gabarit rempli sont vérifiés | [.github/workflows/pr-checks.yml](.github/workflows/pr-checks.yml) |
 | Une PR est ouverte, modifiée ou relue | Le job « Relecture approuvée » lit les avis et réussit seulement après une approbation valide | [.github/workflows/relecture.yml](.github/workflows/relecture.yml) |
-| Du code est poussé dans une PR ou sur `main` | Lint, tests et build de chaque projet Node | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
+| Du code est poussé dans une PR ou sur `main` | Lint, tests et build de chaque projet Node, et tests E2E (Playwright) | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
 | Un fichier Markdown change | Le format et les liens sont vérifiés | [.github/workflows/docs-ci.yml](.github/workflows/docs-ci.yml) |
-| Une PR est mergée sur `main` | Le commit est déployé en staging | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
-| Un tag `vX.Y.Z` est poussé | Le commit est vérifié, déployé en production, et la release GitHub est créée | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
+| Une PR est mergée sur `main` et la CI de `main` est verte | Le commit est déployé en production | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
 | `labels.yml` change sur `main` | Les labels du dépôt sont synchronisés | [.github/workflows/labels-sync.yml](.github/workflows/labels-sync.yml) |
 | Une issue est créée | Elle arrive sur le board, en Backlog. Une PR n'y arrive pas : elle se lit sur son issue | Workflows intégrés du board |
 | Une sous-issue est créée sous un ticket du board | Elle arrive aussi sur le board | Workflows intégrés du board |

@@ -1,7 +1,9 @@
 name: Intégration continue
 
-# Lance le lint, les tests et le build de chaque projet Node du dépôt (front, back).
-# Un projet est un dossier qui contient un package.json commité. Mode d'emploi : CONTRIBUTING.md, section 11.
+# Lance le lint, les tests et le build de chaque projet Node du dépôt (front, back), puis les tests E2E.
+# Un projet est un dossier qui contient un package.json commité, sauf e2e/ : ses tests Playwright ont
+# besoin d'un navigateur et tournent dans le job dédié « e2e ». Le package.json de la racine ne sert qu'au
+# hook Git des messages de commit : rien à tester ni à construire. Mode d'emploi : CONTRIBUTING.md, section 11.
 
 on:
   push:
@@ -11,10 +13,19 @@ on:
 permissions:
   contents: read
 
+# Un nouveau push sur une PR annule le run précédent de cette PR, devenu inutile.
+# Sur main, le groupe est le commit lui-même : un run de main n'est jamais annulé ni mis en attente.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+# Chaque job a un timeout-minutes, environ dix fois sa durée habituelle (moins d'une minute) :
+# un job bloqué s'arrête vite au lieu de tourner jusqu'à la limite de GitHub (6 heures).
 jobs:
   projets:
     name: Trouver les projets Node
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       dossiers: ${{ steps.liste.outputs.dossiers }}
     steps:
@@ -22,7 +33,7 @@ jobs:
       - name: Lister les dossiers qui ont un package.json
         id: liste
         run: |
-          dossiers=$(git ls-files ':(glob)**/package.json' | xargs -r -n1 dirname | jq -R . | jq -sc .)
+          dossiers=$(git ls-files ':(glob)**/package.json' | grep -vxE 'package.json|e2e/package.json' | xargs -r -n1 dirname | jq -R . | jq -sc .)
           echo "Projets trouvés : $dossiers"
           echo "dossiers=$dossiers" >> "$GITHUB_OUTPUT"
 
@@ -31,6 +42,7 @@ jobs:
     needs: projets
     if: needs.projets.outputs.dossiers != '[]'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -60,11 +72,40 @@ jobs:
       - name: Build
         run: npm run build --if-present
 
+  e2e:
+    name: Tests E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: |
+            front/package-lock.json
+            e2e/package-lock.json
+      - name: Installer les dépendances du front et des tests E2E
+        run: npm ci --prefix front && npm ci --prefix e2e
+      - name: Installer le navigateur Chromium
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: Lancer les tests E2E
+        run: npm test --prefix e2e
+      - name: Conserver le rapport Playwright en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: e2e/playwright-report/
+          retention-days: 7
+
   resultat:
     name: CI terminée
-    needs: [projets, node]
+    needs: [projets, node, e2e]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       # Un seul contrôle à regarder (ou à rendre obligatoire), quel que soit le nombre de projets.
       - name: Vérifier que chaque job a réussi

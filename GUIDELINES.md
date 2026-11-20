@@ -14,9 +14,31 @@ Ces règles valent pour tout le code du dépôt. Les relecteurs s'en servent pen
 front/        application React (Vite)
 back/         API Node.js (Express)
 docs/         documentation (stratégie de branches, gestion de projet)
+e2e/          tests de bout en bout (Playwright)
 ```
 
-Un composant React va dans `front/src/components/`, un appel à l'API dans `front/src/api/`. Une route du back va dans `back/src/routes/`, la logique du jeu dans `back/src/services/`. Les tests du back vont dans `back/test/`, ceux du front à côté du fichier testé.
+Le code est rangé **par fonctionnalité** : tout ce qui sert à une même chose est dans le même dossier.
+
+```text
+front/src/
+  api/                     appels à l'API et au temps réel (canvas.js, pixels.js…)
+  components/
+    PixelPlacer/           un dossier par composant :
+      PixelPlacer.jsx        le composant
+      PixelPlacer.module.css ses styles, s'il en a
+      PixelPlacer.stories.jsx ses stories Ladle
+      PixelPlacer.test.jsx   ses tests
+back/src/
+  canvas/                  un dossier par fonctionnalité du jeu :
+    canvas-routes.js         routes HTTP (lire la requête, répondre)
+    canvas-service.js        règles du jeu
+    canvas-repository.js     accès aux données (Prisma)
+  errors/, middleware/, utils/   ce qui sert à toutes les fonctionnalités
+  app.js                   monte les routes de chaque fonctionnalité sous /api
+back/test/                 tests du back, un fichier par sujet
+```
+
+Une nouvelle fonctionnalité du back (par exemple les équipes) a son dossier `back/src/teams/`, avec les mêmes trois fichiers. Un nouveau composant a son dossier dans `front/src/components/`, même s'il n'a qu'un fichier pour l'instant. Les tests du front sont à côté du fichier testé.
 
 ## 3. Nommage
 
@@ -40,7 +62,7 @@ Langue du code : anglais pour le code (noms, routes, clés JSON), français pour
 ## 5. Back
 
 - Framework : Express 5, sur Node.js 22.12 ou plus.
-- Trois couches : `routes/` lit la requête et répond, `services/` applique les règles du jeu (délai, quota, équipes), `db/` accède aux données avec Prisma.
+- Trois couches, dans le dossier de chaque fonctionnalité (section 2) : `*-routes.js` lit la requête et répond, `*-service.js` applique les règles du jeu (délai, quota, équipes), `*-repository.js` accède aux données avec Prisma.
 - Chaque entrée de l'API est validée avant d'être utilisée.
 - Une erreur renvoie le bon code HTTP et un corps au format de la section 6.
 
@@ -61,7 +83,7 @@ Format d'une erreur :
 
 ## 7. Tests
 
-- Outils : Vitest pour le front, à installer avec le premier composant testé, et `node:test` (intégré à Node.js) pour le back.
+- Outils : Vitest pour le front, à installer avec le premier composant testé, et `node:test` (intégré à Node.js) pour le back. Les tests de bout en bout utilisent Playwright, dans `e2e/` à la racine (voir [docs/tests-e2e.md](docs/tests-e2e.md)).
 - Une nouvelle fonctionnalité a au moins un test. Un bug corrigé reçoit un test qui l'aurait détecté.
 - Les tests passent en local avant d'ouvrir la PR. La CI les relance.
 

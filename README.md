@@ -4,7 +4,7 @@ Une pixel war en équipes : une toile partagée où chacun pose un pixel à la f
 
 ## Contexte
 
-Projet du cours « Coordination Front&Back » (Ynov, M2). Une pixel war est une toile commune où chaque joueur pose un pixel, puis attend avant le suivant : les dessins naissent de la coordination entre joueurs. Ici, les joueurs s'affrontent en équipes de couleur. Pour les aider, une IA transforme une consigne (« un dragon rouge ») en modèle de pixels, et un agent de dessin le pose au rythme du joueur. Le projet oblige le front et le back à se coordonner en temps réel, ce qui est le sujet du cours.
+Projet du cours « Coordination Front&Back » (Ynov, M2). Une pixel war est une toile commune où chaque joueur pose un pixel, puis attend avant le suivant : les dessins naissent de la coordination entre joueurs. Ici, les joueurs s'affrontent en équipes, sans limite de nombre, et chacun pose la couleur de son choix. Pour les aider, une IA transforme une consigne (« un dragon rouge ») en modèle de pixels, et un agent de dessin le pose au rythme du joueur. Le projet oblige le front et le back à se coordonner en temps réel, ce qui est le sujet du cours.
 
 **Fonctionnalité principale :** poser des pixels en temps réel sur une toile partagée, à la main ou avec un agent de dessin qui suit un modèle proposé par l'IA.
 
@@ -13,7 +13,7 @@ Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réu
 ## Fonctionnalités
 
 - Toile partagée en temps réel, avec un délai entre deux pixels.
-- Comptes et équipes de couleur.
+- Comptes et équipes, créées par les joueurs.
 - Modèles de pixels générés par une IA (GPT) à partir d'une consigne, vérifiée par Jev.
 - Agent de dessin qui pose le modèle à la place du joueur, au même rythme que lui.
 - Classement des équipes et timelapse de la toile.
@@ -29,15 +29,18 @@ Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réu
 
 ## Installation
 
-Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md). La documentation de l'API (Swagger UI) est dans [docs/api.md](docs/api.md).
+Le guide pas à pas est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement (à la main, ou d'une commande avec `docker compose up --watch`), vérification, tests et problèmes fréquents. Le parcours d'accueil du stagiaire est dans [docs/onboarding.md](docs/onboarding.md), et les retours de stage dans [docs/retour-de-stage.md](docs/retour-de-stage.md). La documentation de l'API (Swagger UI) est dans [docs/api.md](docs/api.md).
 
 ## Structure du dépôt
 
 ```text
 .github/    Gabarits d'issues et de PR, labels, CI et déploiement continu
 back/       API Node.js (Express)
-docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement, onboarding, composants, api, erreurs
+deploy/     Production sur le NAS (compose avec les images GHCR)
+docs/       Besoin, personas, story map, gestion de projet, stratégie de branches, déploiement, onboarding, composants, API, erreurs, toile front/back
+e2e/        Tests de bout en bout (Playwright)
 front/      Application React (Vite)
+compose.yml Développement local avec Docker : back et front d'une seule commande
 ```
 
 ## Contribuer

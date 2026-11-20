@@ -23,21 +23,21 @@ Avant le premier jour ou dès l'arrivée, s'assurer d'avoir :
 
 | Élément | Rôle | Action |
 | --- | --- | --- |
-| Dépôt GitHub | Lire le dépôt privé et proposer une contribution depuis un fork | Accepter l'invitation en lecture au dépôt amont, puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
-| Board GitHub | Lire tout le board : tickets, statuts, dépendances, vues | Accepter l'accès en lecture (rôle Read) au board. L'accès au dépôt ne donne pas automatiquement accès au board : le tuteur l'ajoute à part. |
+| Dépôt GitHub | Lire le dépôt et proposer une contribution depuis un fork | Accepter l'invitation en lecture au dépôt amont (public depuis le 20/11/2026), puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
+| Board GitHub | Lire tout le board, déplacer ses cartes et remplir leurs champs | Accepter l'accès en écriture (rôle Write) au board. L'accès au dépôt ne donne pas automatiquement accès au board : le tuteur l'ajoute à part. |
 | Discord de l'équipe | Communication quotidienne, questions, alertes | Rejoindre le serveur Discord de l'équipe 3L1K0PT3R |
 | Outils locaux | Git, Node.js (>= 22.12), GitHub CLI (`gh` >= 2.94) | Vérifier avec `git --version`, `node --version`, `gh --version` |
 
-Le fork privé dépend également des réglages de l'organisation GitHub. Si GitHub refuse sa création, demander au tuteur de vérifier que le fork des dépôts privés est autorisé ; ne pas demander de droit d'écriture sur le dépôt amont pour contourner ce réglage.
+Le dépôt étant public, son fork l'est aussi et ne dépend d'aucun réglage de l'organisation. Ne jamais demander de droit d'écriture sur le dépôt amont : `main` est protégée par un ruleset, et tout passe par une PR relue ([gestion de projet](gestion-de-projet.md), section 6).
 
 ### Ce que fait le tuteur à l'arrivée
 
-Le stagiaire est en lecture seule sur le dépôt et sur le board : il lit tout, il ne peut rien modifier, et il contribue par des PR depuis son fork. Le prof lui demande d'essayer de casser le projet s'il en a les droits : ces réglages sont la limite de son périmètre.
+Le stagiaire est en lecture seule sur le dépôt et en écriture sur le board : il lit tout, il fait avancer ses cartes, et il contribue au code par des PR depuis son fork. Le rôle Write sur le board vient du [retour de stage](retour-de-stage.md) : en Read, il ne pouvait pas faire avancer ses tickets. Le seul risque est l'archivage d'une carte, qui se rattrape. Le prof lui demande d'essayer de casser le projet s'il en a les droits : ces réglages sont la limite de son périmètre.
 
 1. **Dépôt** : dans le dépôt, Settings, Collaborators and teams, Add people, rôle **Read**. Il devient collaborateur extérieur de ce seul dépôt. Ne pas l'inviter dans l'organisation : un membre hérite du rôle de base des membres sur le board et peut créer des dépôts et des équipes. Ne pas lui donner Triage non plus : ce rôle permet déjà de fermer n'importe quelle issue.
-2. **Board**, une fois l'invitation au dépôt acceptée : dans le board, menu `…`, Settings, Manage access, ajouter son compte avec le rôle **Read**. GitHub n'accepte un collaborateur extérieur sur le board que s'il a déjà accès à un dépôt de l'organisation.
-3. **Tickets** : lui assigner ses tickets (au Sprint 2 : #43, #44 et #95). En lecture seule, il ne peut pas se les assigner.
-4. **Vérifier** : `gh api repos/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/collaborators/<compte>/permission --jq .role_name` doit répondre `read`, et Manage access doit afficher le rôle Read pour son compte sur le board.
+2. **Board**, une fois l'invitation au dépôt acceptée : dans le board, menu `…`, Settings, Manage access, ajouter son compte avec le rôle **Write**. GitHub n'accepte un collaborateur extérieur sur le board que s'il a déjà accès à un dépôt de l'organisation.
+3. **Tickets** : lui assigner son issue d'onboarding (#161) et les tickets qu'elle liste. En lecture seule sur le dépôt, il ne peut pas se les assigner.
+4. **Vérifier** : `gh api repos/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/collaborators/<compte>/permission --jq .role_name` doit répondre `read`, et Manage access doit afficher le rôle Write pour son compte sur le board.
 
 ### Installation locale
 
@@ -53,7 +53,7 @@ Suivre scrupuleusement le guide pas à pas dans [INSTALL.md](../INSTALL.md) :
    git fetch upstream
    ```
 
-3. Installer les dépendances du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
+3. Installer les dépendances de la racine (`npm ci`, qui installe le hook Git des messages de commit), du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
 4. Lancer le back dans un terminal (`npm run dev --prefix back`, écoute sur `http://localhost:3000`).
 5. Lancer le front dans un autre terminal (`npm run dev --prefix front`, ouvre `http://localhost:5173`).
 6. Vérifier que la page d'accueil affiche « P1X3L » et « Back : ok ».
@@ -82,7 +82,7 @@ Les responsabilités et rituels agiles sont détaillés dans [docs/gestion-de-pr
 
 Lire attentivement [GUIDELINES.md](../GUIDELINES.md) avant d'écrire la moindre ligne de code :
 
-- Séparation claire : `front/src/components/`, `front/src/api/`, `back/src/routes/`, `back/src/services/`.
+- Rangement par fonctionnalité : un dossier par composant dans `front/src/components/`, les appels à l'API dans `front/src/api/`, un dossier par fonctionnalité dans `back/src/` (par exemple `back/src/canvas/`). La règle est dans [GUIDELINES.md](../GUIDELINES.md), section 2.
 - Contrat d'API d'abord : toute route ou événement temps réel est formalisé avant son implémentation.
 - Format des erreurs standardisé : `{ "error": { "code": "...", "message": "..." } }`.
 - Langue : anglais pour le code et les clés JSON, français pour la documentation, les commentaires et les tickets.
@@ -95,16 +95,29 @@ Le suivi du travail se fait sur le board GitHub Projects : [TP Coordination Fron
 
 ### Choisir un ticket
 
-Pour le TD « Road to MVP », le plan respecte la consigne d'une story fullstack pour l'équipe et d'une pour le stagiaire :
+Le tuteur prépare une issue d'onboarding, assignée au stagiaire : elle liste ses tickets dans l'ordre, avec ce dont chacun a besoin. Pour le stagiaire du 20/11/2026, c'est #161 : trois tâches de trois user stories, qui démarrent toutes sans attendre un ticket pas encore codé.
 
-- `#15` « Voir la toile en direct » est la story de l'équipe ; ses tâches de contrat, front et back sont déjà réparties entre ses membres.
-- `#21` « Poser un pixel » est la story proposée au stagiaire. Son compte GitHub n'étant pas encore connu, l'issue ne lui est pas assignée à l'avance.
+| Ordre | Ticket | User story | Ce qui est prêt avant son arrivée |
+| --- | --- | --- | --- |
+| 1 | #55 Front : podium en direct | #28 Voir le classement des équipes | Back livré (#56), contrat relu (#54) |
+| 2 | #57 Front : lecteur du timelapse | #29 Revoir la toile en accéléré | Back livré (#58), contrat relu (#54) |
+| 3 | #158 Back : créer une équipe | #156 Créer une équipe | Contrat écrit et relu par l'équipe (#157) |
 
-Le tuteur confirme le ticket et son périmètre à l'arrivée du stagiaire. La story #21 dépend aussi de #18 (« Créer un compte et se connecter »), ajoutée au Sprint 2 le 27/10/2026 pour cette raison. Le contrat de #21 (#42) est écrit et relu par l'équipe avant l'arrivée du stagiaire : il part de routes et de messages déjà fixés. Ses tâches front et back (#43 et #44) et les tests (#95) restent sans assignation jusqu'à son arrivée. Pour les tests (#95), le stagiaire écrit les tests de la pose avec l'outil E2E que l'équipe met en place dans #114 : il n'installe rien et ne touche pas à la CI.
+Le tuteur confirme ce périmètre à l'arrivée du stagiaire. Le contrat de chaque ticket est écrit et relu par l'équipe avant que le stagiaire le commence : il part de routes et de messages déjà fixés, comme pour le contrat #42 lors du premier stage.
 
-### S'assigner le ticket
+### Faire avancer ses tickets
 
-En lecture seule, le stagiaire ne peut ni s'assigner une issue ni déplacer une carte du board. Le tuteur lui assigne ses tickets à son arrivée (section 2). Ensuite, le board avance seul : quand il ouvre sa PR avec `Closes #numéro`, le ticket passe en « En revue », puis en « Terminé » au merge. Ses tickets passent donc de « Prêt » à « En revue » sans passer par « En cours ».
+Le tuteur lui assigne ses tickets (section 2). Le stagiaire passe lui-même sa carte en « En cours » quand il crée sa branche. Ensuite, le board avance seul : quand il ouvre sa PR avec `Closes #numéro`, le ticket passe en « En revue », puis en « Terminé » au merge. Le tuteur vérifie le statut des user stories de son stagiaire à chaque point d'équipe : aucun workflow ne fait avancer une user story avec ses tâches.
+
+### Ce qu'il fait seul, ce qu'il demande
+
+| Le stagiaire fait seul | Il demande à son tuteur |
+| --- | --- |
+| Lire tout le dépôt et tout le board | Lui assigner un ticket |
+| Déplacer ses cartes et remplir leurs champs sur le board | Poser ou retirer un label (`statut: bloqué`) |
+| Créer ses branches, commiter, pousser sur son fork | Fermer ou rouvrir une issue |
+| Ouvrir ses PR et répondre aux relectures | Merger une PR |
+| Commenter les issues et les PR | Changer la CI ou les droits |
 
 ---
 
@@ -136,7 +149,7 @@ Types autorisés : `feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `test`, `st
 ### Communiquer en cas de question ou de blocage
 
 - Une question technique ou fonctionnelle se pose directement dans le ticket GitHub concerné ou sur le salon Discord de l'équipe.
-- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : ajouter immédiatement le label `statut: bloqué` sur l'issue et expliquer le blocage en commentaire.
+- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : expliquer le blocage en commentaire sur l'issue et prévenir son tuteur. En lecture seule, le stagiaire ne peut pas poser de label : c'est le tuteur qui ajoute `statut: bloqué`.
 
 ---
 
@@ -177,7 +190,7 @@ Tous ces contrôles doivent être au vert.
 
 ## 7. Retours et évaluation de stage
 
-Pour valoriser le travail réalisé et préparer la fin de stage, deux documents sont à formaliser.
+Pour valoriser le travail réalisé et préparer la fin de stage, deux documents sont à formaliser. Les retours du stage du TD « Road to MVP » et les actions qui en découlent sont dans [retour-de-stage.md](retour-de-stage.md).
 
 ### Rapport d'activité du stagiaire
 

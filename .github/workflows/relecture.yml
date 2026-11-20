@@ -2,7 +2,9 @@ name: Relecture
 
 # Le job « Relecture approuvée » échoue tant qu'une PR attend une approbation de l'équipe
 # ou qu'un membre demande des modifications. Il lit seulement les avis et les droits.
-# Le dépôt privé du plan gratuit n'a pas de règle de branche : l'équipe respecte ce contrôle avant le merge.
+# Tant que le dépôt est public, le ruleset « Protéger main » exige déjà une approbation : ce contrôle reste
+# affiché, sans être obligatoire. Quand le dépôt redeviendra privé (plan gratuit, sans ruleset appliqué),
+# l'équipe le respecte de nouveau avant le merge.
 
 on:
   pull_request:
