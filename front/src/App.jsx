@@ -7,6 +7,8 @@ import { LiveCanvas } from './components/LiveCanvas/LiveCanvas.jsx'
 import { TeamPicker } from './components/TeamPicker/TeamPicker.jsx'
 import { TeamCreation } from './components/TeamCreation/TeamCreation.jsx'
 import { ServerStatus } from './components/ServerStatus/ServerStatus.jsx'
+import { HudSlotContext } from './components/HudPortal/hud-slot.js'
+import styles from './App.module.css'
 
 // Page de départ : elle montre si le front joint le back, ce qui valide l'installation (INSTALL.md, section 6).
 function App() {
@@ -14,6 +16,8 @@ function App() {
   // undefined : session en cours de vérification ; null : visiteur ; objet : joueur connecté.
   const [user, setUser] = useState(undefined)
   const [sessionUnavailable, setSessionUnavailable] = useState(false)
+  // Élément de la colonne du HUD où LiveCanvas range ses messages (voir HudPortal).
+  const [hudSlot, setHudSlot] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -42,26 +46,40 @@ function App() {
     return () => controller.abort()
   }, [])
 
+  // La toile couvre l'écran ; le HUD (logo, compte, messages, dock) flotte par-dessus.
   return (
-    <main>
-      {/* Le nom s'écrit en chiffres : sans aria-label, un lecteur d'écran l'épellerait. */}
-      <h1 aria-label="Pixel">P1X3L</h1>
-      <ServerStatus status={backStatus} />
-      {backStatus === 'injoignable' && (
-        <p role="alert">Impossible de vérifier la connexion au serveur. Rechargez la page pour réessayer.</p>
-      )}
-      {user === undefined && <p role="status">Vérification de la session…</p>}
-      {user === null && sessionUnavailable && backStatus === 'ok' && (
-        <p role="status">Session indisponible. Vous pouvez vous reconnecter ci-dessous.</p>
-      )}
-      {user === null && <AuthForm onAuthenticated={(current) => {
-        setSessionUnavailable(false)
-        setUser(current)
-      }} />}
-      {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
-      {user && <TeamPicker key={`${user.pseudo}:${user.team?.id ?? ''}`} currentTeam={user.team} onTeamJoined={setUser} />}
-      {user && <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />}
-      <LiveCanvas user={user ?? null} />
+    <main className={styles.app}>
+      <div className={styles.top}>
+        <div className={styles.column}>
+          <header className={`hud ${styles.brand}`}>
+            {/* Le nom s'écrit en chiffres : sans aria-label, un lecteur d'écran l'épellerait. */}
+            <h1 aria-label="Pixel" className={styles.logo}>P1X3L</h1>
+            <ServerStatus status={backStatus} />
+          </header>
+          {backStatus === 'injoignable' && (
+            <p role="alert" className={`hud ${styles.notice}`}>
+              Impossible de vérifier la connexion au serveur. Rechargez la page pour réessayer.
+            </p>
+          )}
+          <div ref={setHudSlot} className={styles.slot} />
+        </div>
+        <div className={`hud ${styles.account}`}>
+          {user === undefined && <p role="status">Vérification de la session…</p>}
+          {user === null && sessionUnavailable && backStatus === 'ok' && (
+            <p role="status">Session indisponible. Vous pouvez vous reconnecter ci-dessous.</p>
+          )}
+          {user === null && <AuthForm onAuthenticated={(current) => {
+            setSessionUnavailable(false)
+            setUser(current)
+          }} />}
+          {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
+          {user && <TeamPicker key={`${user.pseudo}:${user.team?.id ?? ''}`} currentTeam={user.team} onTeamJoined={setUser} />}
+          {user && <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />}
+        </div>
+      </div>
+      <HudSlotContext value={hudSlot}>
+        <LiveCanvas user={user ?? null} />
+      </HudSlotContext>
     </main>
   )
 }

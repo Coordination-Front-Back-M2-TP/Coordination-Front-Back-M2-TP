@@ -1,5 +1,18 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { HudPortal } from '../HudPortal/HudPortal.jsx'
 import styles from './PixelCanvas.module.css'
+
+// Zoom 1 : la toile entière tient à l'écran. Au-delà, elle déborde et la zone défile.
+const ZOOM_MIN = 1
+const ZOOM_MAX = 8
+const ZOOM_STEP = 1.5
+
+// Zoom de départ : la toile couvre tout l'écran, comme dans la maquette A.
+function coverZoom() {
+  if (typeof window === 'undefined' || !window.innerWidth || !window.innerHeight) return ZOOM_MIN
+  const { innerWidth: width, innerHeight: height } = window
+  return Math.min(ZOOM_MAX, Math.max(width, height) / Math.min(width, height))
+}
 
 // Traduit un clic en coordonnées de case, origine au centre. La bordure est retirée pour viser la bonne case.
 function cellFromClick(event, { width, height }) {
@@ -15,9 +28,13 @@ function cellFromClick(event, { width, height }) {
 // Sans onSelectCell, la toile reste en lecture seule : c'est le cas d'un visiteur sans compte.
 export function PixelCanvas({ canvas, onSelectCell }) {
   const ref = useRef(null)
+  const stageRef = useRef(null)
+  // Point de la toile au centre de l'écran, en proportion : il reste au centre quand on zoome.
+  const focus = useRef({ x: 0.5, y: 0.5 })
   const captionId = useId()
   const [showPixels, setShowPixels] = useState(false)
   const [canDraw, setCanDraw] = useState(true)
+  const [zoom, setZoom] = useState(coverZoom)
   const count = canvas.pixels.size
 
   useEffect(() => {
@@ -36,39 +53,75 @@ export function PixelCanvas({ canvas, onSelectCell }) {
     }
   }, [canvas])
 
+  // Après chaque zoom, on ramène au centre de l'écran le point qui y était avant.
+  useLayoutEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return
+    stage.scrollLeft = focus.current.x * stage.scrollWidth - stage.clientWidth / 2
+    stage.scrollTop = focus.current.y * stage.scrollHeight - stage.clientHeight / 2
+  }, [zoom, canDraw])
+
+  function changeZoom(next) {
+    const stage = stageRef.current
+    if (stage?.scrollWidth && stage.scrollHeight) {
+      focus.current = {
+        x: (stage.scrollLeft + stage.clientWidth / 2) / stage.scrollWidth,
+        y: (stage.scrollTop + stage.clientHeight / 2) / stage.scrollHeight,
+      }
+    }
+    setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, next)))
+  }
+
   return (
     <figure className={styles.figure}>
       {canDraw ? (
-        <canvas
-          ref={ref}
-          width={canvas.width}
-          height={canvas.height}
-          className={onSelectCell ? `${styles.canvas} ${styles.selectable}` : styles.canvas}
-          onClick={onSelectCell ? (event) => {
-            const cell = cellFromClick(event, canvas)
-            if (cell) onSelectCell(cell)
-          } : undefined}
-          role="img"
-          aria-label={`Toile partagée de ${canvas.width} par ${canvas.height} pixels`}
-          aria-describedby={captionId}
-        >
-          Les coordonnées et les couleurs sont disponibles dans la liste des pixels ci-dessous.
-        </canvas>
+        <div ref={stageRef} className={styles.stage} tabIndex={0} role="region" aria-label="Zone de la toile, défilable">
+          <canvas
+            ref={ref}
+            width={canvas.width}
+            height={canvas.height}
+            className={onSelectCell ? `${styles.canvas} ${styles.selectable}` : styles.canvas}
+            style={{ '--zoom': zoom, '--cols': canvas.width, '--rows': canvas.height }}
+            onClick={onSelectCell ? (event) => {
+              const cell = cellFromClick(event, canvas)
+              if (cell) onSelectCell(cell)
+            } : undefined}
+            role="img"
+            aria-label={`Toile partagée de ${canvas.width} par ${canvas.height} pixels`}
+            aria-describedby={captionId}
+          >
+            Les coordonnées et les couleurs sont disponibles dans la liste des pixels ci-dessous.
+          </canvas>
+        </div>
       ) : <p role="alert">L’affichage graphique est indisponible. Consultez les pixels en texte ci-dessous.</p>}
-      <figcaption id={captionId} className={styles.caption}>
+      <figcaption id={captionId} className="visually-hidden">
         {count === 0 ? 'Aucun pixel posé.' : `${count} pixel${count > 1 ? 's' : ''} coloré${count > 1 ? 's' : ''}.`}
         {' '}Le damier représente les cases vides. L’origine (0, 0) est au centre.
       </figcaption>
-      <details open={!canDraw || undefined} onToggle={(event) => setShowPixels(event.currentTarget.open || !canDraw)}>
-        <summary>Consulter les pixels en texte</summary>
-        {showPixels && (
-          <ul className={styles.pixels} tabIndex={0} aria-label="Coordonnées et couleurs des pixels">
-            {Array.from(canvas.pixels.values(), (pixel) => (
-              <li key={`${pixel.x},${pixel.y}`}>({pixel.x}, {pixel.y}) : {pixel.color}</li>
-            ))}
-          </ul>
+      <HudPortal>
+        {canDraw && (
+          <div className={`hud ${styles.zoom}`} role="group" aria-label="Zoom de la toile">
+            <button type="button" className="secondary" onClick={() => changeZoom(zoom * ZOOM_STEP)} disabled={zoom >= ZOOM_MAX}
+              aria-label="Zoomer">+</button>
+            <button type="button" className="secondary" onClick={() => changeZoom(zoom / ZOOM_STEP)} disabled={zoom <= ZOOM_MIN}
+              aria-label="Dézoomer">−</button>
+            <button type="button" className="secondary" onClick={() => changeZoom(ZOOM_MIN)} disabled={zoom <= ZOOM_MIN}>
+              Vue d’ensemble
+            </button>
+          </div>
         )}
-      </details>
+        <details className={`hud ${styles.details}`} open={!canDraw || undefined}
+          onToggle={(event) => setShowPixels(event.currentTarget.open || !canDraw)}>
+          <summary>Consulter les pixels en texte</summary>
+          {showPixels && (
+            <ul className={styles.pixels} tabIndex={0} aria-label="Coordonnées et couleurs des pixels">
+              {Array.from(canvas.pixels.values(), (pixel) => (
+                <li key={`${pixel.x},${pixel.y}`}>({pixel.x}, {pixel.y}) : {pixel.color}</li>
+              ))}
+            </ul>
+          )}
+        </details>
+      </HudPortal>
     </figure>
   )
 }
