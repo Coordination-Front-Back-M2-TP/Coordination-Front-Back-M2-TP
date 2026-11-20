@@ -17,9 +17,9 @@ Les champs attendus et le format du joueur sont décrits dans [Comptes et sessio
 
 ## Rejoindre une équipe
 
-Après la connexion, le menu « Équipe à rejoindre » liste les équipes disponibles. Le premier choix est immédiat. Le nom de l'équipe rejointe apparaît à côté du pseudo et la pose devient disponible sans recharger la page. La toile reste consultable avant le choix.
+Après la connexion, le menu « Équipe à rejoindre » liste les équipes disponibles. L'équipe actuelle reste visible dans la liste, mais ne peut pas être choisie à nouveau. Le premier choix est immédiat. Le nom de l'équipe rejointe apparaît à côté du pseudo et la pose devient disponible sans recharger la page. La toile reste consultable avant le choix.
 
-Le front charge les équipes via `GET /api/teams` et enregistre le choix via `PUT /api/auth/me/team`. Si le serveur refuse un changement d'équipe en raison du délai, le formulaire indique le temps restant donné par `Retry-After`.
+Le front charge les équipes via `GET /api/teams` et enregistre le choix via `PUT /api/auth/me/team`. Le bouton « Actualiser les équipes » recharge la liste lorsqu'une équipe a été créée pendant que la page était ouverte. Si le serveur refuse un changement d'équipe en raison du délai, le formulaire indique le temps restant donné par `Retry-After`.
 
 ## Créer une équipe
 

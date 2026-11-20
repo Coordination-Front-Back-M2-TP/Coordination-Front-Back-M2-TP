@@ -74,10 +74,10 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
     )
   }
   if (!teams) return <p role="status">Chargement des équipes…</p>
-  const availableTeams = teams.filter((team) => team.id !== currentTeam?.id)
-  if (availableTeams.length === 0) {
-    return currentTeam ? null : <p>Aucune équipe disponible.</p>
-  }
+  const displayedTeams = currentTeam && !teams.some((team) => team.id === currentTeam.id)
+    ? [...teams, currentTeam]
+    : teams
+  if (displayedTeams.length === 0) return <p>Aucune équipe disponible.</p>
 
   return (
     <form onSubmit={handleSubmit}>
@@ -85,11 +85,16 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
         Équipe à rejoindre
         <select value={teamId} onChange={(event) => setSelection(event.target.value)} disabled={disabled}>
           <option value="">Sélectionnez une équipe</option>
-          {availableTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+          {displayedTeams.map((team) => <option key={team.id} value={team.id} disabled={team.id === currentTeam?.id}>
+            {team.name}{team.id === currentTeam?.id ? ' (équipe actuelle)' : ''}
+          </option>)}
         </select>
       </label>
       <button type="submit" disabled={disabled || !teamId}>
         {pending ? 'Choix en cours…' : currentTeam ? 'Changer d’équipe' : 'Rejoindre l’équipe'}
+      </button>
+      <button type="button" disabled={disabled} onClick={() => setAttempt((value) => value + 1)}>
+        Actualiser les équipes
       </button>
       {seconds > 0 && <p role="timer">Changement d’équipe possible dans {seconds} s.</p>}
       {error && <p role="alert">{error}</p>}

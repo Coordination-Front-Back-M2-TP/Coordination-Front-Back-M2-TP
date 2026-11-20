@@ -138,6 +138,9 @@ describe('choix d’équipe avant la première pose', () => {
     fireEvent.change(screen.getByLabelText('Couleur de l’équipe'), { target: { value: '#9333EA' } })
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’équipe' }))
     await waitFor(() => expect(screen.getByText('sam').parentElement.textContent).toContain('Équipe Les Éclairs'))
+    const currentOption = await screen.findByRole('option', { name: 'Les Éclairs (équipe actuelle)' })
+    expect(currentOption.disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Changer d’équipe' }).disabled).toBe(true)
   })
 
   it('laisse lire la toile puis autorise une pose après avoir rejoint une équipe', async () => {
