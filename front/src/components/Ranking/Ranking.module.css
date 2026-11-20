@@ -1,0 +1,17 @@
+.list {
+  list-style: none;
+  padding: 0;
+}
+
+.list li {
+  margin: 0.5rem 0;
+}
+
+.swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+  border: 1px solid currentColor;
+  vertical-align: middle;
+}

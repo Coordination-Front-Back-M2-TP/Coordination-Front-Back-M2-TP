@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { subscribeCanvas } from '../../api/canvas.js'
+import { createRankingFeed } from '../../api/rankings.js'
 import { PixelPlacer } from '../PixelPlacer/PixelPlacer.jsx'
+import { Ranking } from '../Ranking/Ranking.jsx'
 
 const STATUS_MESSAGES = {
   loading: 'Chargement de la toile…',
@@ -13,8 +15,18 @@ const STATUS_MESSAGES = {
 export function LiveCanvas({ user }) {
   const [{ canvas, status }, setConnection] = useState({ canvas: null, status: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  const [rankingState, setRankingState] = useState({ ranking: null, teams: new Map(), status: 'loading' })
+  const rankingFeed = useRef(null)
 
-  useEffect(() => subscribeCanvas(setConnection), [attempt])
+  useEffect(() => {
+    const feed = createRankingFeed(setRankingState)
+    rankingFeed.current = feed
+    const stop = subscribeCanvas((state) => {
+      setConnection(state)
+      feed.setConnection(state.status)
+    }, { onRanking: feed.receive })
+    return () => { stop(); feed.stop() }
+  }, [attempt])
 
   return (
     <section aria-labelledby="canvas-title">
@@ -28,6 +40,9 @@ export function LiveCanvas({ user }) {
       )}
       {canvas && status !== 'live' && <p>Dernier état reçu affiché ; les nouveaux pixels peuvent manquer.</p>}
       {canvas && <PixelPlacer canvas={canvas} user={user} />}
+      <Ranking {...rankingState} onRetry={() => {
+        if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
+      }} />
     </section>
   )
 }

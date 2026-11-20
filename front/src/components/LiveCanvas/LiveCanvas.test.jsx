@@ -6,6 +6,7 @@ import { parseCanvasSnapshot } from '../../api/canvas-state.js'
 import { LiveCanvas } from './LiveCanvas.jsx'
 
 vi.mock('../../api/canvas.js', () => ({ subscribeCanvas: vi.fn() }))
+vi.mock('../Ranking/Ranking.jsx', () => ({ Ranking: () => null }))
 let subscriptions
 let stops
 const canvas = () => parseCanvasSnapshot({ width: 3, height: 3, revision: 0, snapshotAt: '2026-10-27T14:30:00.000Z', pixels: [] })
