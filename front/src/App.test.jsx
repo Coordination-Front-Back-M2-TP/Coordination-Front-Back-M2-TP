@@ -3,8 +3,10 @@ import { StrictMode } from 'react'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
+import { parseCanvasSnapshot } from './api/canvas-state.js'
+import { subscribeCanvas } from './api/canvas.js'
 
-vi.mock('./api/canvas.js', () => ({ subscribeCanvas: () => () => {} }))
+vi.mock('./api/canvas.js', () => ({ subscribeCanvas: vi.fn(() => () => {}) }))
 
 const healthyResponse = () => ({ ok: true, json: async () => ({ status: 'ok', version: 'dev' }) })
 
@@ -122,11 +124,14 @@ describe('session du joueur', () => {
 
 describe('création d’équipe', () => {
   function renderWithTeamApi(response) {
-    const fetch = vi.fn(async (url) => {
+    const fetch = vi.fn(async (url, options) => {
       if (url === '/api/auth/me') {
         return { ok: true, json: async () => ({ user: { pseudo: 'sam', team: null, role: 'player' } }) }
       }
-      if (url === '/api/teams') return response()
+      if (url === '/api/teams' && options?.method === 'POST') return response()
+      if (url === '/api/teams') {
+        return { ok: true, json: async () => ({ teams: [{ id: 'rouge', name: 'Rouge', color: '#D93A3A' }] }) }
+      }
       return healthyResponse()
     })
 
@@ -145,11 +150,13 @@ describe('création d’équipe', () => {
     const team = { id: 'les-eclairs', name: 'Les Éclairs', color: '#9333EA' }
     let finishCreation
     const fetch = renderWithTeamApi(() => new Promise((resolve) => { finishCreation = resolve }))
+    const picker = await screen.findByRole('combobox', { name: 'Équipe à rejoindre' })
     const submit = await fillTeam('  Les Éclairs  ')
     expect(screen.getByLabelText('Couleur de l’équipe').options).toHaveLength(17)
 
     fireEvent.click(submit)
     expect(submit.matches(':disabled')).toBe(true)
+    expect(picker.disabled).toBe(true)
     expect(screen.queryByText(team.name)).toBeNull()
     expect(fetch).toHaveBeenCalledWith('/api/teams', {
       method: 'POST',
@@ -170,7 +177,10 @@ describe('création d’équipe', () => {
 
     expect(screen.getByText('sam').parentElement.textContent).toContain('Équipe Les Éclairs')
     expect(screen.getByText('Vous avez créé et rejoint l’équipe Les Éclairs.')).toBeTruthy()
-    expect(screen.getByText(/Prochain changement d’équipe dans/)).toBeTruthy()
+    expect(screen.getByRole('timer').textContent).toContain('Prochain changement d’équipe dans')
+    expect(picker.disabled).toBe(true)
+    expect(fetch.mock.calls.filter(([url, options]) => url === '/api/teams' && options?.method !== 'POST'))
+      .toHaveLength(2)
     expect(submit.disabled).toBe(true)
   })
 
@@ -179,7 +189,7 @@ describe('création d’équipe', () => {
     fireEvent.click(await fillTeam(name))
 
     expect(screen.getByRole('alert').textContent).toContain('Le nom d’équipe est invalide')
-    expect(fetch).not.toHaveBeenCalledWith('/api/teams', expect.anything())
+    expect(fetch).not.toHaveBeenCalledWith('/api/teams', expect.objectContaining({ method: 'POST' }))
   })
 
   it.each([
@@ -217,5 +227,52 @@ describe('création d’équipe', () => {
     expect(await screen.findByText('Prochain changement d’équipe dans 23 s.')).toBeTruthy()
     expect(submit.disabled).toBe(true)
     expect(screen.getByLabelText('Nom de l’équipe').value).toBe('Les Éclairs')
+  })
+})
+
+describe('choix d’équipe avant la première pose', () => {
+  it('laisse lire la toile puis autorise une pose après avoir rejoint une équipe', async () => {
+    const date = '2026-11-20T12:00:00.000Z'
+    const team = { id: 'rouge', name: 'Rouge', color: '#D93A3A' }
+    const user = { pseudo: 'sam', team: null }
+    const snapshot = parseCanvasSnapshot({ width: 101, height: 101, revision: 0, snapshotAt: date, pixels: [] })
+    vi.mocked(subscribeCanvas).mockImplementationOnce((listener) => {
+      listener({ canvas: snapshot, status: 'live' })
+      return () => {}
+    })
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ clearRect() {}, fillRect() {} })
+    const ok = (payload) => ({ ok: true, status: 200, json: async () => payload })
+    const fetch = vi.fn(async (url) => {
+      switch (url) {
+        case '/api/auth/me': return ok({ user })
+        case '/api/teams': return ok({ teams: [team] })
+        case '/api/auth/me/team': return ok({ user: { ...user, team }, teamChangeAvailableAt: date })
+        case '/api/pixels': return ok({
+          pixel: { x: 0, y: 0, color: '#000000', updatedAt: date, revision: 1 },
+          cooldownEndsAt: date,
+        })
+        default: return healthyResponse()
+      }
+    })
+    vi.stubGlobal('fetch', fetch)
+
+    render(<App />)
+    const teamSelect = await screen.findByRole('combobox', { name: 'Équipe à rejoindre' })
+    expect(screen.getByRole('img')).toBeTruthy()
+    expect(screen.getByText('Choisissez une équipe avant de poser un pixel.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Poser le pixel' })).toBeNull()
+
+    fireEvent.change(teamSelect, { target: { value: team.id } })
+    fireEvent.click(screen.getByRole('button', { name: 'Rejoindre l’équipe' }))
+    const place = await screen.findByRole('button', { name: 'Poser le pixel' })
+    expect(screen.getByText('sam').parentElement.textContent).toContain('Équipe Rouge')
+    expect(fetch).toHaveBeenCalledWith('/api/auth/me/team', expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({ teamId: team.id }),
+    }))
+
+    fireEvent.click(place)
+    expect(await screen.findByText('Pixel noir posé en (0, 0).')).toBeTruthy()
+    expect(fetch).toHaveBeenCalledWith('/api/pixels', expect.objectContaining({ method: 'POST' }))
   })
 })
