@@ -54,15 +54,16 @@ Aucune de ces pages ne publie de règles de design : ce sont des observations, p
 - **Ce qu'elle apporte** : c'est la plus reconnaissable, celle qui ressemble le moins à un modèle tout fait.
 - **Ce qu'elle sacrifie** : le ton « affiche » fait moins jeu. Les titres en police à empattements (serif) demandent une police à choisir, et sur téléphone, il faut faire défiler pour poser.
 
-## Recommandation
+## Choix
 
-La piste **B**, avec le dock de A sur téléphone : la palette, le délai et le bouton Poser restent fixés en bas de l'écran.
+Le 20/11/2026, Lucas a choisi la piste **A**, avec un changement : la toile couvre tout l'écran, et le HUD (logo, joueur, classement, zoom, dock) flotte par-dessus. La maquette A montre cette version. La toile déborde sur le côté le plus court de l'écran : le zoom et le déplacement (#36) permettront d'en voir le reste.
 
-B est la seule qui montre tout le jeu sans fenêtre de plus : le délai, les équipes, le classement et l'agent. Pour la démo, c'est ce qui prouve que le front et le back se parlent en temps réel. On peut aussi y reprendre le délai en cases de C.
+La recommandation de départ était la piste B, pour sa place donnée au classement et à l'agent. Dans A, il faudra donc trouver où mettre l'agent de dessin.
 
 ## Ce qui reste à décider
 
-- La piste, ou un mélange.
+- La taille de la toile. Le code utilise 101 × 101, proposé dans [docs/contrat-api.md](../../contrat-api.md), mais [docs/besoin.md](../../besoin.md) la note encore « À décider ».
+- La place de l'agent de dessin dans le HUD.
 - Les polices : les maquettes utilisent celles du système pour ne rien charger depuis un autre site. Une police à nous devra être servie par notre propre serveur.
 - Le thème clair ou sombre, et s'il faut les deux.
 - Les couleurs de l'interface. La palette du jeu ne change pas : elle est décidée dans [docs/besoin.md](../../besoin.md).

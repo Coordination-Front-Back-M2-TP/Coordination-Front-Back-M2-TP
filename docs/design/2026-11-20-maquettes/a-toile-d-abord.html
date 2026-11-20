@@ -13,6 +13,9 @@
     --trait: #D4D3CE;
     --accent: #2563EB;
     --rayon: 10px;
+    --ecart: 16px;
+    /* Une seule ombre, réservée au HUD : elle le détache d'une toile chargée. */
+    --ombre: 0 1px 2px rgb(0 0 0 / .12), 0 4px 12px rgb(0 0 0 / .08);
     --police: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --chiffres: ui-monospace, "Cascadia Mono", Consolas, monospace;
   }
@@ -20,23 +23,25 @@
   html, body { height: 100% }
   body { background: var(--fond); color: var(--encre); font: 15px/1.4 var(--police); overflow: hidden }
 
-  /* La toile occupe tout l'écran : l'interface flotte autour. */
-  .scene { position: fixed; inset: 0; display: grid; place-items: center }
-  .toile { width: min(86vh, 92vw); aspect-ratio: 1; image-rendering: pixelated; background: #fff; outline: 1px solid var(--trait) }
-  .viseur { position: absolute; width: calc(min(86vh, 92vw) / 101); aspect-ratio: 1; outline: 2px solid var(--encre); outline-offset: 1px;
-    left: calc(50% + 12 * min(86vh, 92vw) / 101 - min(86vh, 92vw) / 202); top: calc(50% + 4 * min(86vh, 92vw) / 101 - min(86vh, 92vw) / 202) }
+  /* La toile couvre tout l'écran, comme si on avait zoomé : elle déborde sur le côté le plus court.
+     Le HUD se pose par-dessus. Le zoom et le déplacement (#36) permettront d'en voir le reste. */
+  .scene { position: fixed; inset: 0; overflow: hidden; display: grid; place-items: center }
+  .plateau { position: relative; width: max(100vw, 100vh); aspect-ratio: 1; flex: none }
+  .toile { width: 100%; height: 100%; display: block; image-rendering: pixelated; background: #fff }
+  .viseur { position: absolute; width: calc(100% / 101); aspect-ratio: 1; left: calc(62 / 101 * 100%); top: calc(54 / 101 * 100%);
+    outline: 2px solid var(--encre); box-shadow: 0 0 0 4px #fff }
 
-  .flottant { position: fixed; background: var(--surface); border: 1px solid var(--trait); border-radius: var(--rayon) }
-  .haut-gauche { top: 16px; left: 16px; padding: 10px 14px; display: flex; gap: 14px; align-items: center }
+  .hud { position: fixed; background: var(--surface); border: 1px solid var(--trait); border-radius: var(--rayon); box-shadow: var(--ombre) }
+  .haut-gauche { top: var(--ecart); left: var(--ecart); padding: 10px 14px; display: flex; gap: 14px; align-items: center }
   .direct { font-size: 13px; color: var(--encre-douce); display: flex; gap: 6px; align-items: center }
   .direct::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #16A34A }
-  .haut-droite { top: 16px; right: 16px; padding: 6px 6px 6px 14px; display: flex; gap: 12px; align-items: center }
+  .haut-droite { top: var(--ecart); right: var(--ecart); padding: 6px 6px 6px 14px; display: flex; gap: 12px; align-items: center }
   .equipe { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--encre-douce) }
   .equipe i { width: 10px; height: 10px; background: var(--accent); display: inline-block }
   .bouton { font: inherit; border: 0; border-radius: 8px; padding: 8px 14px; background: var(--encre); color: #fff; cursor: pointer }
   .bouton.discret { background: transparent; color: var(--encre); border: 1px solid var(--trait) }
 
-  .podium { top: 76px; right: 16px; width: 200px; padding: 12px 14px }
+  .podium { top: 76px; right: var(--ecart); width: 200px; padding: 12px 14px }
   .podium h2 { font-size: 13px; font-weight: 600; margin-bottom: 8px }
   .podium ol { list-style: none; padding: 0; display: grid; gap: 6px; font-size: 13px }
   .podium li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center }
@@ -44,7 +49,7 @@
   .podium b { font: 500 13px var(--chiffres) }
 
   /* Le dock : tout ce qui sert à poser, au même endroit. */
-  .dock { bottom: 16px; left: 50%; translate: -50% 0; padding: 10px; display: flex; gap: 14px; align-items: center }
+  .dock { bottom: var(--ecart); left: 50%; translate: -50% 0; padding: 10px; display: flex; gap: 14px; align-items: center }
   .palette { display: grid; grid-template-columns: repeat(16, 26px); gap: 4px }
   .nuance { width: 26px; height: 26px; border: 1px solid rgb(0 0 0 / .15); border-radius: 5px; background: var(--c); cursor: pointer; padding: 0 }
   .nuance[aria-pressed="true"] { outline: 2px solid var(--encre); outline-offset: 2px }
@@ -53,40 +58,40 @@
   .delai svg { width: 26px; height: 26px; rotate: -90deg }
   .poser { background: var(--encre-douce) }
 
-  .zoom { left: 16px; bottom: 16px; display: grid }
+  .zoom { left: var(--ecart); bottom: var(--ecart); display: grid; overflow: hidden }
   .zoom button { font: 18px var(--police); width: 38px; height: 38px; border: 0; background: none; cursor: pointer }
   .zoom button + button { border-top: 1px solid var(--trait) }
 
   @media (max-width: 760px) {
-    .toile, .viseur { --t: 96vw }
-    .toile { width: 96vw }
-    .viseur { width: calc(96vw / 101); left: calc(50% + 12 * 96vw / 101 - 96vw / 202); top: calc(50% + 4 * 96vw / 101 - 96vw / 202) }
+    :root { --ecart: 8px }
     .direct, .podium, .zoom, .equipe { display: none }
     .haut-gauche { padding: 10px }
-    .dock { left: 8px; right: 8px; bottom: 8px; translate: none; flex-wrap: wrap; justify-content: space-between }
+    .dock { left: var(--ecart); right: var(--ecart); translate: none; flex-wrap: wrap; justify-content: space-between }
     .palette { grid-template-columns: repeat(8, 1fr); width: 100% }
     .nuance { width: 100%; height: 34px }
   }
 </style>
 </head>
 <body>
-  <div class="scene" aria-hidden="true">
-    <canvas class="toile"></canvas>
-    <span class="viseur"></span>
+  <div class="scene">
+    <div class="plateau">
+      <canvas class="toile" aria-label="Toile partagée"></canvas>
+      <span class="viseur" aria-hidden="true"></span>
+    </div>
   </div>
 
-  <header class="flottant haut-gauche">
+  <header class="hud haut-gauche">
     <h1 id="logo"></h1>
     <span class="direct">En direct · 23 joueurs</span>
   </header>
 
-  <div class="flottant haut-droite">
+  <div class="hud haut-droite">
     <span class="equipe"><i></i>Bleue</span>
     <strong>pixelfan</strong>
     <button class="bouton discret" type="button">Changer d'équipe</button>
   </div>
 
-  <aside class="flottant podium" aria-labelledby="podium-titre">
+  <aside class="hud podium" aria-labelledby="podium-titre">
     <h2 id="podium-titre">Classement</h2>
     <ol>
       <li><i style="background:#D93A3A"></i>Rouge<b>1 204</b></li>
@@ -96,9 +101,9 @@
     </ol>
   </aside>
 
-  <div class="flottant zoom"><button type="button" aria-label="Zoomer">+</button><button type="button" aria-label="Dézoomer">−</button></div>
+  <div class="hud zoom"><button type="button" aria-label="Zoomer">+</button><button type="button" aria-label="Dézoomer">−</button></div>
 
-  <div class="flottant dock">
+  <div class="hud dock">
     <div class="palette" data-palette></div>
     <span class="coord">(12, −4)</span>
     <span class="delai" aria-label="Prochain pixel dans 7 secondes">
