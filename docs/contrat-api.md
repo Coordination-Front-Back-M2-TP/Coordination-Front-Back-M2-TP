@@ -153,7 +153,7 @@ Une réponse `429` conserve le format d’erreur commun. Elle inclut l’en-têt
 
 ### `GET /api/placements` — historique des poses par période
 
-**Proposition pour l’issue #54, écrite pour livrer la tâche #58.** Elle reste à relire par le front et le back. Cette route sert le timelapse de la user story [#29 — Revoir la toile en accéléré](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/29). Elle est publique, comme la lecture de la toile.
+**Contrat de l’issue #54, écrit pour livrer la tâche #58** et relu avec la PR qui ferme #54. Cette route sert le timelapse de la user story [#29 — Revoir la toile en accéléré](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/29). Elle est publique, comme la lecture de la toile.
 
 **Paramètres de requête**, tous facultatifs :
 
@@ -209,7 +209,7 @@ Le front envoie la pose par `POST /api/pixels`. Il n’émet pas de commande de 
 
 ### `GET /api/rankings` — classement des équipes
 
-**Proposition pour l’issue #54, écrite pour livrer la tâche #56.** Elle reste à relire par le front et le back. Cette route sert le podium de la user story [#28 — Voir le classement des équipes](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/28). Elle est publique, comme la lecture de la toile, et ne prend aucun paramètre.
+**Contrat de l’issue #54, écrit pour livrer la tâche #56** et relu avec la PR qui ferme #54. Cette route sert le podium de la user story [#28 — Voir le classement des équipes](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/28). Elle est publique, comme la lecture de la toile, et ne prend aucun paramètre.
 
 **Succès — `200 OK`**
 
@@ -234,7 +234,8 @@ Le front envoie la pose par `POST /api/pixels`. Il n’émet pas de commande de 
 
 - Un pixel compte pour l’équipe qui l’a posé en dernier. Une pose remplacée ne compte plus.
 - `teams` est trié par `pixelCount` décroissant. Deux équipes à égalité ont le même `rank` et le rang suivant est sauté ; entre elles, l’ordre suit `teamId`.
-- Une équipe sans pixel n’apparaît pas dans `teams`. Une toile sans pose renvoie `{ "revision": 0, "teams": [] }`. Ce point sera revu avec la liste des équipes (#41).
+- Une équipe sans pixel n’apparaît pas dans `teams`. Une toile sans pose renvoie `{ "revision": 0, "teams": [] }`.
+- Le classement ne donne que `teamId` : le front lit le nom et la couleur de chaque équipe avec `GET /api/teams`. Comme les joueurs créent des équipes, un `teamId` inconnu du front veut dire qu’une équipe est née depuis sa dernière lecture : il relit `GET /api/teams`.
 - Le classement ne contient ni pseudo ni identifiant de compte.
 
 En cas d’erreur inattendue, la route répond `500 INTERNAL_SERVER_ERROR` au format commun.
@@ -289,7 +290,7 @@ Le client remplace l’état local à la coordonnée `(x, y)` seulement si la r�
 
 ### Serveur → client : `ranking:updated`
 
-**Proposition pour l’issue #54.** Après un changement de pixel qui modifie le classement, le serveur émet `ranking:updated` aux clients abonnés à la toile par `canvas:subscribe` : il n’y a pas d’abonnement séparé. Le payload est le classement complet, au format de `GET /api/rankings` :
+**Contrat de l’issue #54.** Après un changement de pixel qui modifie le classement, le serveur émet `ranking:updated` aux clients abonnés à la toile par `canvas:subscribe` : il n’y a pas d’abonnement séparé. Le payload est le classement complet, au format de `GET /api/rankings` :
 
 ```json
 {
@@ -431,7 +432,7 @@ Le front l’appelle au chargement de la page.
 | `name` | chaîne | Nom affiché |
 | `color` | chaîne `#RRGGBB` | Couleur de l’équipe |
 
-> **Changement décidé le 20/11/2026** : le nombre d’équipes n’a plus de limite et les joueurs peuvent créer une équipe ([besoin](besoin.md), section 3). La couleur d’une équipe sert à la reconnaître ; elle ne limite pas les couleurs que ses joueurs posent. La création d’équipe a sa propre user story et son propre contrat, à écrire avant le code. En attendant, le back sert encore les 4 équipes fixes ci-dessous.
+> **Changement décidé le 20/11/2026** : le nombre d’équipes n’a plus de limite et les joueurs peuvent créer une équipe ([besoin](besoin.md), section 3). La couleur d’une équipe sert à la reconnaître ; elle ne limite pas les couleurs que ses joueurs posent. La création d’équipe est décrite plus bas (« Créer une équipe »). Tant que la tâche back #158 n’est pas livrée, le back sert encore les 4 équipes fixes ci-dessous ; elles restent ensuite, comme équipes de départ.
 
 Les 4 équipes servies aujourd’hui, livrées avec la tâche #41 :
 
@@ -497,9 +498,78 @@ Une équipe est obligatoire pour poser un pixel. `POST /api/pixels` répond `403
 - Code des entrées invalides : `INVALID_INPUT`, comme pour la pose. La tâche front #38 suppose `VALIDATION_ERROR` : à aligner d’un côté ou de l’autre.
 - Chemins sous `/api/auth` : ils reprennent ceux de la tâche #38, alors que [GUIDELINES.md](../GUIDELINES.md) (section 3) demande des noms au pluriel. À confirmer.
 - Règles du pseudo et du mot de passe, durée de la session (30 jours).
-- Création d’équipe (décidée le 20/11/2026) : règles du nom, choix de la couleur, et ce que deviennent les 4 équipes actuelles. À fixer dans le contrat de la user story de création d’équipe.
 - Équipe obligatoire pour poser (`403 TEAM_REQUIRED`) : à confirmer avec le front, qui doit proposer le choix d’équipe avant la première pose.
 - Limiter les essais de connexion répétés (protection contre la recherche de mot de passe) : non prévu dans cette proposition.
+
+## Créer une équipe
+
+> **Proposition pour l’issue #157**, à relire par une personne du front et une personne du back avant le code. Elle couvre la user story [#156 — Créer une équipe](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/156), décidée le 20/11/2026 : le nombre d’équipes n’a pas de limite. Elle sert les tâches #158 (back) et #159 (front).
+
+### Règles
+
+- Un joueur connecté crée une équipe avec un nom et une couleur. Il en devient membre aussitôt.
+- Le nombre d’équipes n’a pas de limite. Les 4 équipes actuelles (`rouge`, `bleue`, `verte`, `jaune`) restent, comme équipes de départ. Leur `id` ne change pas : les comptes et l’historique des poses qui les citent restent valides.
+- `name` : de 3 à 20 caractères après suppression des espaces au début et à la fin. Lettres (accents compris), chiffres, espaces, `_` et `-`. Deux équipes ne peuvent pas avoir le même nom, sans tenir compte de la casse ni des accents : `Les Éclairs` et `les eclairs` sont le même nom.
+- `color` : une des 16 couleurs de la palette (section « Palette »). Plusieurs équipes peuvent avoir la même couleur : sans limite d’équipes, la palette ne suffirait pas. Le nom reste ce qui distingue deux équipes.
+- `id` : calculé par le serveur à partir du nom, en minuscules, sans accent, les espaces et les autres caractères remplacés par `-` (`Les Éclairs` donne `les-eclairs`). Il ne change plus ensuite. Deux noms qui donnent le même `id` sont le même nom.
+- Créer une équipe compte comme un changement d’équipe : le délai de `PUT /api/auth/me/team` s’applique. Le premier choix n’attend pas. Pendant le délai, rien n’est créé. Ce délai limite aussi la création d’équipes en série.
+- Un joueur banni ne crée pas d’équipe.
+- Une équipe vide reste : elle n’est ni supprimée ni renommée. Supprimer une équipe, la renommer ou changer sa couleur n’est pas prévu pour l’instant. Changer de couleur parmi celles de la palette pourra venir plus tard.
+- Les 4 équipes de départ gardent leurs couleurs actuelles, même si elles ne sont pas dans la palette (décidé le 20/11/2026).
+- Aucun message temps réel n’annonce une nouvelle équipe, comme pour les comptes. Le front relit `GET /api/teams` quand il rencontre un `teamId` inconnu (voir le classement).
+
+### `POST /api/teams` — créer une équipe
+
+Compte connecté requis.
+
+**Requête — `application/json`**
+
+```json
+{
+  "name": "Les Éclairs",
+  "color": "#9333EA"
+}
+```
+
+**Succès — `201 Created`**
+
+```json
+{
+  "team": {
+    "id": "les-eclairs",
+    "name": "Les Éclairs",
+    "color": "#9333EA"
+  },
+  "user": {
+    "pseudo": "Alex",
+    "team": {
+      "id": "les-eclairs",
+      "name": "Les Éclairs",
+      "color": "#9333EA"
+    }
+  },
+  "teamChangeAvailableAt": "2026-11-20T14:35:00.000Z"
+}
+```
+
+`name` est renvoyé tel qu’il est enregistré, sans les espaces du début et de la fin. `color` est en majuscules. `teamChangeAvailableAt` a le même sens que pour `PUT /api/auth/me/team`.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_INPUT` | `name` ou `color` absent, pas une chaîne, nom hors règles, couleur hors palette |
+| `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
+| `403 Forbidden` | `ACCOUNT_BANNED` | Le compte est banni |
+| `409 Conflict` | `TEAM_NAME_TAKEN` | Une équipe a déjà ce nom |
+| `429 Too Many Requests` | `TEAM_CHANGE_COOLDOWN` | Le délai de changement d’équipe n’est pas écoulé |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
+
+Une réponse `429` inclut l’en-tête `Retry-After`, en secondes. En cas d’erreur, rien n’est créé et l’équipe du joueur ne change pas.
+
+### Ce qui change pour les autres routes
+
+- `GET /api/teams` renvoie toutes les équipes : les 4 de départ d’abord, puis les autres dans l’ordre de création. La liste n’est pas paginée pour l’instant ; une pagination s’ajoutera si elle devient trop longue.
+- `PUT /api/auth/me/team` accepte l’`id` de n’importe quelle équipe, créée ou de départ. Ses erreurs ne changent pas.
+- `GET /api/rankings` et `ranking:updated` ne changent pas : une nouvelle équipe y apparaît dès son premier pixel.
 
 ## Règles de cohérence et de performance
 
@@ -773,7 +843,6 @@ L’agent d’un joueur banni s’arrête de lui-même.
 - Les choix de résolution, d’axe, de taille d’instantané et de forme de `canvas:error` ci-dessus reprennent la proposition pour livrer l’issue #35 ; ils restent modifiables par l’équipe.
 - Confirmer que le payload `canvas:error` reste limité à `code` et `message`, indépendamment des détails et stacks de diagnostic HTTP en développement.
 - Confirmer avec le contrat de l’issue #18 comment la session authentifiée est transmise à `POST /api/pixels`.
-- Faire relire `GET /api/rankings` et `ranking:updated` par une personne du front et une personne du back, avec le contrat de l’EPIC « Suivre la bataille » (#54) : nom des champs, règle des égalités, équipes sans pixel, diffusion aux abonnés de la toile.
 - Faire vérifier la palette par le back : aujourd’hui, il accepte toute couleur `#RRGGBB`.
 - Fixer la durée du délai côté serveur ; 10 secondes est une proposition issue du besoin produit.
 - Faire relire le contrat de pose par une personne du front et une personne du back avant de considérer #42 terminée.
