@@ -13,11 +13,28 @@ Ce document couvre la lecture de la toile et sa mise à jour en direct pour la u
 - La consultation de la toile et l’abonnement temps réel sont publics : aucun compte n’est nécessaire pour regarder.
 - La toile fait 101 × 101 pixels. Avec une origine au centre, les coordonnées vont de `-50` à `50` sur les deux axes ; `(0, 0)` est le pixel central. Cette taille compacte s’affiche sur un écran 800 × 600 avec une marge pour les commandes.
 - `x` augmente vers la droite et `y` augmente vers le bas, pour correspondre aux coordonnées écran. Les deux bornes sont inclusives ; toute coordonnée hors de `-50..50` est invalide.
-- `color` est une couleur hexadécimale `#RRGGBB` appartenant à la palette du jeu. La palette exacte reste à valider.
+- `color` est une couleur hexadécimale `#RRGGBB` appartenant à la palette du jeu (section « Palette » ci-dessous). Tout joueur pose n’importe quelle couleur de la palette : son équipe ne la limite pas.
 - Les dates sont en UTC au format ISO 8601, par exemple `2026-10-27T14:30:00.000Z`.
 - Les données publiques représentent uniquement l’état visuel courant de la toile. Elles ne contiennent ni historique des poses, ni pseudo, ni identifiant de compte, ni autre identité de joueur. L’historique se lit par une route à part, `GET /api/placements`, elle aussi sans identité de joueur.
 - `revision` est un entier strictement croissant pour chaque changement de la toile. Le serveur l’attribue au moment où il persiste l’état ; il permet au client de distinguer les mises à jour nouvelles des événements déjà inclus dans un instantané.
 - Un instantané contient au plus 10 201 pixels (un par case). Il n’y a pas de limite d’octets distincte : la taille est bornée par la résolution de la toile.
+
+## Palette
+
+Décidée le 20/11/2026 : 16 couleurs, ouvertes à tous les joueurs ([besoin](besoin.md), section 3). Les valeurs sont une proposition, reprise de `front/src/api/palette.js`.
+
+| Nom | `color` | Nom | `color` |
+| --- | --- | --- | --- |
+| Noir | `#000000` | Jaune | `#FACC15` |
+| Gris foncé | `#4B5563` | Beige | `#FDE68A` |
+| Gris clair | `#9CA3AF` | Vert | `#22C55E` |
+| Blanc | `#FFFFFF` | Vert foncé | `#166534` |
+| Rouge | `#D93A3A` | Cyan | `#22D3EE` |
+| Rose | `#F472B6` | Bleu | `#2563EB` |
+| Orange | `#F59E0B` | Bleu marine | `#1E3A8A` |
+| Marron | `#92400E` | Violet | `#9333EA` |
+
+Écart connu : le back accepte aujourd’hui toute couleur `#RRGGBB`, sans vérifier qu’elle appartient à la palette.
 
 ## Modèle `Pixel`
 
@@ -102,7 +119,7 @@ En développement, le middleware ajoute `stack` et, si disponibles, `details` da
 }
 ```
 
-`x` et `y` sont des entiers compris entre `-50` et `50`, bornes incluses. `color` doit être au format `#RRGGBB` et appartenir à la palette autorisée. La palette exacte reste à valider.
+`x` et `y` sont des entiers compris entre `-50` et `50`, bornes incluses. `color` doit être au format `#RRGGBB` et appartenir à la palette (section « Palette »).
 
 **Succès — `200 OK`**
 
@@ -414,7 +431,9 @@ Le front l’appelle au chargement de la page.
 | `name` | chaîne | Nom affiché |
 | `color` | chaîne `#RRGGBB` | Couleur de l’équipe |
 
-Il y a 4 équipes de couleur. Proposition retenue pour livrer la tâche #41, à valider par l’équipe :
+> **Changement décidé le 20/11/2026** : le nombre d’équipes n’a plus de limite et les joueurs peuvent créer une équipe ([besoin](besoin.md), section 3). La couleur d’une équipe sert à la reconnaître ; elle ne limite pas les couleurs que ses joueurs posent. La création d’équipe a sa propre user story et son propre contrat, à écrire avant le code. En attendant, le back sert encore les 4 équipes fixes ci-dessous.
+
+Les 4 équipes servies aujourd’hui, livrées avec la tâche #41 :
 
 | `id` | `name` | `color` |
 | --- | --- | --- |
@@ -425,7 +444,7 @@ Il y a 4 équipes de couleur. Proposition retenue pour livrer la tâche #41, à 
 
 ### `GET /api/teams` — lister les équipes
 
-Publique. **Succès — `200 OK`** : `{ "teams": [ … ] }`, les 4 équipes au format du modèle `Team`.
+Publique. **Succès — `200 OK`** : `{ "teams": [ … ] }`, toutes les équipes au format du modèle `Team` (4 aujourd’hui, sans limite une fois la création d’équipe livrée).
 
 ### `PUT /api/auth/me/team` — rejoindre ou changer d’équipe
 
@@ -478,7 +497,7 @@ Une équipe est obligatoire pour poser un pixel. `POST /api/pixels` répond `403
 - Code des entrées invalides : `INVALID_INPUT`, comme pour la pose. La tâche front #38 suppose `VALIDATION_ERROR` : à aligner d’un côté ou de l’autre.
 - Chemins sous `/api/auth` : ils reprennent ceux de la tâche #38, alors que [GUIDELINES.md](../GUIDELINES.md) (section 3) demande des noms au pluriel. À confirmer.
 - Règles du pseudo et du mot de passe, durée de la session (30 jours).
-- Noms et couleurs des 4 équipes : la proposition ci-dessus reste à valider.
+- Création d’équipe (décidée le 20/11/2026) : règles du nom, choix de la couleur, et ce que deviennent les 4 équipes actuelles. À fixer dans le contrat de la user story de création d’équipe.
 - Équipe obligatoire pour poser (`403 TEAM_REQUIRED`) : à confirmer avec le front, qui doit proposer le choix d’équipe avant la première pose.
 - Limiter les essais de connexion répétés (protection contre la recherche de mot de passe) : non prévu dans cette proposition.
 
@@ -749,13 +768,13 @@ L’agent d’un joueur banni s’arrête de lui-même.
 
 ## Points restant à valider avant implémentation
 
-- Le format de couleur `#RRGGBB` est celui du pixel transmis. La palette autorisée reste à fixer dans le contrat de pose de pixel (#21).
 - Le front et le back retiennent une lecture publique limitée à la résolution et à l’état visible courant des pixels, sans historique ni identité du joueur. L’historique et l’identité ne sont pas nécessaires à l’affichage de la toile et restent dans les contrats des fonctionnalités qui en ont besoin.
 - Si la résolution augmente, prévoir pagination ou transfert compact dans un contrat ultérieur.
 - Les choix de résolution, d’axe, de taille d’instantané et de forme de `canvas:error` ci-dessus reprennent la proposition pour livrer l’issue #35 ; ils restent modifiables par l’équipe.
 - Confirmer que le payload `canvas:error` reste limité à `code` et `message`, indépendamment des détails et stacks de diagnostic HTTP en développement.
 - Confirmer avec le contrat de l’issue #18 comment la session authentifiée est transmise à `POST /api/pixels`.
 - Faire relire `GET /api/rankings` et `ranking:updated` par une personne du front et une personne du back, avec le contrat de l’EPIC « Suivre la bataille » (#54) : nom des champs, règle des égalités, équipes sans pixel, diffusion aux abonnés de la toile.
-- Fixer la palette autorisée et la durée du délai côté serveur ; 10 secondes est une proposition issue du besoin produit.
+- Faire vérifier la palette par le back : aujourd’hui, il accepte toute couleur `#RRGGBB`.
+- Fixer la durée du délai côté serveur ; 10 secondes est une proposition issue du besoin produit.
 - Faire relire le contrat de pose par une personne du front et une personne du back avant de considérer #42 terminée.
 - Faire relire la route `GET /api/placements` par une personne du front et une personne du back, avec le contrat de l’EPIC « Suivre la bataille » (#54) : accès public, taille des pages, nom des champs.
