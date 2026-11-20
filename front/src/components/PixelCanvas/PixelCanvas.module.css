@@ -1,33 +1,73 @@
 .figure {
-  width: 42rem;
-  max-width: 100%;
-  margin: 1rem 0;
+  margin: 0;
 }
 
-.canvas {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  height: auto;
-  border: 1px solid #374151;
-  image-rendering: pixelated;
-  background-color: #fff;
-  background-image: conic-gradient(#e5e7eb 25%, #fff 0 50%, #e5e7eb 0 75%, #fff 0);
-  background-size: 20px 20px;
-}
-
-.caption {
-  margin: 0.5rem 0;
-  color: #374151;
-  font-size: 0.875rem;
-}
-
-.pixels {
-  max-height: 16rem;
+/* La zone de la toile couvre tout l'écran, sous le HUD. Elle défile quand la toile déborde. */
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
   overflow: auto;
-  font-variant-numeric: tabular-nums;
+  scrollbar-width: none;
+  /* Le glisser et le pincement sont gérés par useZoomPan, au doigt comme à la souris. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.dragging,
+.dragging .canvas {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.stage:focus-visible {
+  outline-offset: -4px;
+}
+
+/* Taille de la toile : à zoom 1, elle tient entière à l'écran ; --zoom l'agrandit ou la réduit.
+   margin: auto la centre quand elle est plus petite que l'écran, sans la couper quand elle est plus grande. */
+.canvas {
+  flex: none;
+  display: block;
+  width: calc(min(100vw, 100dvh) * var(--zoom, 1));
+  height: auto;
+  aspect-ratio: var(--cols) / var(--rows);
+  margin: auto;
+  image-rendering: pixelated;
+  background-color: var(--color-surface);
+  /* Damier des cases vides : un carreau couvre deux cases sur deux. */
+  background-image: conic-gradient(var(--color-empty-cell) 25%, var(--color-surface) 0 50%, var(--color-empty-cell) 0 75%, var(--color-surface) 0);
+  background-size: calc(200% / var(--cols)) calc(200% / var(--rows));
 }
 
 .selectable {
   cursor: crosshair;
+}
+
+.zoom {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+
+.zoom button {
+  min-width: 2.25rem;
+  padding-inline: var(--space-3);
+}
+
+.details {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.details summary {
+  cursor: pointer;
+}
+
+.pixels {
+  max-height: 40vh;
+  margin-top: var(--space-2);
+  padding-left: var(--space-4);
+  overflow: auto;
+  font: var(--text-sm) var(--font-mono);
 }

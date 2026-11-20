@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette C · Affiche</title>
+<style>
+  :root {
+    --papier: #F3EFE6;
+    --encre: #141414;
+    --encre-douce: #5E5A52;
+    --trait: #141414;
+    --surligne: #FACC15;
+    --police: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --texte: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --chiffres: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0 }
+  body { background: var(--papier); color: var(--encre); font: 15px/1.5 var(--texte); padding: 28px clamp(16px, 4vw, 48px) 40px }
+
+  /* Le logotype en pixels est l'élément signature : grand, noir, sans décor. */
+  header { display: flex; align-items: end; gap: 24px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 3px solid var(--trait) }
+  header p { font: italic 20px/1.3 var(--police); color: var(--encre-douce); max-width: 32ch }
+  header .compte { margin-left: auto; display: flex; gap: 14px; align-items: center }
+
+  .grille { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; margin-top: 28px; align-items: start }
+
+  /* La toile est accrochée comme une oeuvre : un seul cadre épais, une seule ombre dure. */
+  .oeuvre { justify-self: center; width: min(100%, 72vh) }
+  .toile { width: 100%; aspect-ratio: 1; image-rendering: pixelated; display: block; border: 3px solid var(--trait); box-shadow: 8px 8px 0 var(--trait); background: #fff }
+  .cartel { display: flex; justify-content: space-between; margin-top: 18px; font: 13px var(--chiffres); color: var(--encre-douce) }
+
+  .colonne { display: grid; gap: 30px }
+  h2 { font: 600 22px/1.2 var(--police); margin-bottom: 12px }
+  .joueur { font-size: 15px }
+  .joueur .equipe { display: inline-flex; gap: 6px; align-items: center }
+  .joueur .equipe i { width: 12px; height: 12px; background: #2563EB; display: inline-block }
+
+  .palette { display: grid; grid-template-columns: repeat(8, 1fr); gap: 0; border: 3px solid var(--trait) }
+  .nuance { aspect-ratio: 1; border: 0; border-right: 1px solid rgb(0 0 0 / .2); border-bottom: 1px solid rgb(0 0 0 / .2); background: var(--c); cursor: pointer; padding: 0 }
+  .nuance[aria-pressed="true"] { outline: 3px solid var(--encre); outline-offset: -6px; box-shadow: inset 0 0 0 6px #fff }
+  .choix { margin-top: 8px; font: 13px var(--chiffres); color: var(--encre-douce) }
+
+  /* Le délai se compte en pixels : 10 cases pour 10 secondes. */
+  .compte-a-rebours { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px }
+  .compte-a-rebours span { height: 18px; border: 2px solid var(--trait) }
+  .compte-a-rebours span.plein { background: var(--trait) }
+  .delai-texte { margin-top: 8px; font: 13px var(--chiffres) }
+
+  .bouton { font: 600 15px var(--texte); border: 3px solid var(--trait); padding: 10px 16px; background: var(--papier); color: var(--encre); cursor: pointer }
+  .bouton.plein { background: var(--encre); color: var(--papier); width: 100% }
+  .bouton.plein[disabled] { background: transparent; color: var(--encre-douce); border-style: dashed }
+
+  .classement { list-style: none; padding: 0; counter-reset: rang }
+  .classement li { counter-increment: rang; display: grid; grid-template-columns: 28px 14px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgb(0 0 0 / .15) }
+  .classement li::before { content: counter(rang); font: 600 20px var(--police) }
+  .classement li i { width: 14px; height: 14px }
+  .classement b { font: 500 14px var(--chiffres) }
+
+  @media (max-width: 860px) {
+    body { padding-top: 16px }
+    header p { display: none }
+    .grille { grid-template-columns: 1fr; gap: 28px }
+    .toile { box-shadow: 5px 5px 0 var(--trait) }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1 id="logo"></h1>
+    <p>Une toile, des équipes, un pixel toutes les dix secondes.</p>
+    <div class="compte"><span>pixelfan</span><button class="bouton" type="button">Se déconnecter</button></div>
+  </header>
+
+  <div class="grille">
+    <main class="oeuvre">
+      <canvas class="toile" aria-label="Toile partagée"></canvas>
+      <div class="cartel"><span>Toile en direct · 101 × 101</span><span>Case (12, −4)</span></div>
+    </main>
+
+    <div class="colonne">
+      <section class="joueur">
+        <h2>pixelfan</h2>
+        <span class="equipe"><i></i>Équipe Bleue</span> · <a href="#">changer</a>
+      </section>
+      <section>
+        <h2>Ta couleur</h2>
+        <div class="palette" data-palette></div>
+        <p class="choix">Bleu sélectionné</p>
+      </section>
+      <section aria-label="Délai avant le prochain pixel">
+        <h2>Prochain pixel</h2>
+        <div class="compte-a-rebours" aria-hidden="true">
+          <span class="plein"></span><span class="plein"></span><span class="plein"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <p class="delai-texte">Encore 7 secondes</p>
+      </section>
+      <button class="bouton plein" type="button" disabled>Poser le pixel</button>
+      <section>
+        <h2>Classement</h2>
+        <ol class="classement">
+          <li><i style="background:#D93A3A"></i>Rouge<b>1 204</b></li>
+          <li><i style="background:#2563EB"></i>Bleue<b>987</b></li>
+          <li><i style="background:#22C55E"></i>Verte<b>640</b></li>
+          <li><i style="background:#FACC15"></i>Jaune<b>312</b></li>
+        </ol>
+      </section>
+    </div>
+  </div>
+
+  <script src="commun.js"></script>
+  <script>dessinerLogo(document.getElementById('logo'), '#141414', 9)</script>
+</body>
+</html>

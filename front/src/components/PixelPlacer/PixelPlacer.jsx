@@ -33,6 +33,8 @@ export function PixelPlacer({ canvas, user }) {
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [coordinates, setCoordinates] = useState({ x: '0', y: '0' })
+  // Sur téléphone, on pose en touchant la toile : la saisie par coordonnées se replie derrière un bouton.
+  const [showCoordinates, setShowCoordinates] = useState(false)
   const controller = useRef(null)
   const { seconds, startCooldown } = useCooldown()
   const coolingDown = seconds > 0
@@ -43,8 +45,10 @@ export function PixelPlacer({ canvas, user }) {
   if (user === null || user?.team === null) {
     return (
       <>
-        <p>{user === null ? SIGN_IN_MESSAGE : TEAM_REQUIRED_MESSAGE}</p>
         <PixelCanvas canvas={canvas} />
+        <div className={`hud ${styles.dock}`}>
+          <p>{user === null ? SIGN_IN_MESSAGE : TEAM_REQUIRED_MESSAGE}</p>
+        </div>
       </>
     )
   }
@@ -95,47 +99,61 @@ export function PixelPlacer({ canvas, user }) {
     place({ x, y })
   }
 
+  // La toile d'abord, puis le dock : tout ce qui sert à poser, au même endroit, en bas de l'écran.
   return (
     <>
-      <ColorPalette colors={PALETTE} value={color} onChange={setColor} disabled={pending} />
-      <p>Cliquez sur une case de la toile pour y poser la couleur choisie.</p>
       <PixelCanvas canvas={canvas} onSelectCell={placementDisabled ? undefined : place} />
-      <form className={styles.form} onSubmit={handleSubmit} aria-label="Poser un pixel par ses coordonnées">
-        <label>
-          Colonne (x)
-          <input
-            type="number"
-            min={minX}
-            max={maxX}
-            step={1}
-            required
-            value={coordinates.x}
-            onChange={(event) => setCoordinates((value) => ({ ...value, x: event.target.value }))}
-          />
-        </label>
-        <label>
-          Ligne (y)
-          <input
-            type="number"
-            min={minY}
-            max={maxY}
-            step={1}
-            required
-            value={coordinates.y}
-            onChange={(event) => setCoordinates((value) => ({ ...value, y: event.target.value }))}
-          />
-        </label>
-        <button type="submit" disabled={placementDisabled}>{pending ? 'Pose en cours…' : 'Poser le pixel'}</button>
-      </form>
-      {coolingDown && (
-        <p role="timer" aria-live="off">Prochaine pose dans {seconds} s.</p>
-      )}
-      <p aria-live="polite">
-        {coolingDown && 'Délai de pose en cours.'}
-        {seconds === 0 && 'Vous pouvez poser un pixel.'}
-      </p>
-      {/* Zone toujours présente : un lecteur d'écran annonce le résultat de chaque pose. */}
-      <p aria-live="polite" className={feedback?.kind === 'error' ? styles.error : undefined}>{feedback?.text}</p>
+      <div className={`hud ${styles.dock}`}>
+        <ColorPalette colors={PALETTE} value={color} onChange={setColor} disabled={pending} />
+        <p className={styles.hint}>
+          Cliquez sur une case pour y poser la couleur choisie. Glissez pour vous déplacer, molette pour zoomer.
+        </p>
+        <div className={styles.controls}>
+          <button type="button" className={`secondary ${styles.coordinatesToggle}`} aria-expanded={showCoordinates}
+            onClick={() => setShowCoordinates((shown) => !shown)}>
+            {showCoordinates ? 'Masquer les coordonnées' : 'Coordonnées'}
+          </button>
+          <form className={showCoordinates ? styles.form : `${styles.form} ${styles.collapsed}`} onSubmit={handleSubmit} aria-label="Poser un pixel par ses coordonnées">
+            <label>
+              Colonne (x)
+              <input
+                type="number"
+                min={minX}
+                max={maxX}
+                step={1}
+                required
+                value={coordinates.x}
+                onChange={(event) => setCoordinates((value) => ({ ...value, x: event.target.value }))}
+              />
+            </label>
+            <label>
+              Ligne (y)
+              <input
+                type="number"
+                min={minY}
+                max={maxY}
+                step={1}
+                required
+                value={coordinates.y}
+                onChange={(event) => setCoordinates((value) => ({ ...value, y: event.target.value }))}
+              />
+            </label>
+            <button type="submit" disabled={placementDisabled}>{pending ? 'Pose en cours…' : 'Poser le pixel'}</button>
+          </form>
+          {coolingDown && (
+            <p role="timer" aria-live="off" className={styles.timer}>Prochaine pose dans {seconds} s.</p>
+          )}
+        </div>
+        {/* Annonce pour les lecteurs d'écran : à l'écran, le compte à rebours suffit. */}
+        <p aria-live="polite" className="visually-hidden">
+          {coolingDown && 'Délai de pose en cours.'}
+          {seconds === 0 && 'Vous pouvez poser un pixel.'}
+        </p>
+        {/* Zone toujours présente : un lecteur d'écran annonce le résultat de chaque pose. */}
+        <p aria-live="polite" className={feedback?.kind === 'error' ? `${styles.feedback} ${styles.error}` : styles.feedback}>
+          {feedback?.text}
+        </p>
+      </div>
     </>
   )
 }

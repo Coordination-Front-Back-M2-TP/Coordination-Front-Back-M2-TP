@@ -1,0 +1,33 @@
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Point de couleur : vert en direct, gris pendant le chargement ou la reconnexion, rouge en cas d'erreur. */
+.status::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-disabled);
+}
+
+.status[data-status="live"]::before {
+  background: var(--color-live);
+}
+
+.status[data-status="error"]::before {
+  background: var(--color-danger);
+}
+
+.notice {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}

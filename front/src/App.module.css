@@ -1,0 +1,150 @@
+.app {
+  min-height: 100dvh;
+}
+
+/* Haut du HUD : la colonne du logo à gauche, le compte à droite. Le reste laisse passer les clics vers la toile. */
+.top {
+  position: fixed;
+  z-index: 1;
+  inset: var(--hud-gap) var(--hud-gap) auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.top > * {
+  pointer-events: auto;
+}
+
+.column {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  max-width: 20rem;
+}
+
+.slot {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.slot:empty {
+  display: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+
+.logo {
+  font: 800 var(--text-lg) / 1 var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.notice {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* Colonne de droite : le compte, puis le classement. */
+.side {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-2);
+  width: min(22rem, 100%);
+}
+
+.side .slot {
+  justify-items: stretch;
+  width: 100%;
+}
+
+.account {
+  width: 100%;
+  display: grid;
+  gap: var(--space-3);
+  max-width: 22rem;
+  padding: var(--space-3);
+}
+
+.teamDetails summary {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.teamPanel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.teamDetails[open] summary {
+  margin-bottom: var(--space-2);
+}
+
+/* Le bouton Menu ne sert que sur téléphone. */
+.menuButton {
+  display: none;
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+/* Sur téléphone : une ligne en haut (logo, Menu), le reste dans un panneau qui s'ouvre par-dessus la toile. */
+@media (max-width: 760px) {
+  .top {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    max-height: calc(100dvh - 2 * var(--hud-gap));
+    overflow: auto;
+  }
+
+  .top[data-open] {
+    z-index: 2;
+  }
+
+  .column {
+    display: contents;
+  }
+
+  .brand {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .menuButton {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .notice,
+  .slot,
+  .side {
+    grid-column: 1 / -1;
+  }
+
+  .side {
+    width: auto;
+  }
+
+  .column > .slot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  /* Menu fermé : on cache le panneau, sauf les alertes, qui restent visibles. */
+  .top:not([data-open]) .side,
+  .top:not([data-open]) .column > .slot > :not([role="alert"]) {
+    display: none;
+  }
+}
