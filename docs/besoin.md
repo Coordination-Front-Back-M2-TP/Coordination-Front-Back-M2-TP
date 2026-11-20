@@ -8,8 +8,8 @@ Une toile partagée où des équipes s'affrontent pixel par pixel, aidées par d
 
 ## 2. Boucle de jeu
 
-1. Je crée un compte, puis je rejoins une équipe de couleur.
-2. Je pose un pixel, puis j'attends la fin du délai. Le délai est compté par le serveur, pas par le navigateur.
+1. Je crée un compte, puis je rejoins une équipe ou j'en crée une.
+2. Je pose un pixel de la couleur de mon choix, puis j'attends la fin du délai. Le délai est compté par le serveur, pas par le navigateur.
 3. Je demande un modèle à l'IA, par exemple « un dragon rouge ». Jev vérifie la consigne, GPT dessine le modèle, qui s'affiche en transparence sur la toile.
 4. Je pose le modèle moi-même, pixel par pixel, ou je le confie à mon agent de dessin, qui pose un pixel à chaque fin de délai en mon nom.
 5. Un classement des équipes et un timelapse (la toile rejouée en accéléré) montrent qui domine la toile.
@@ -19,17 +19,17 @@ Une toile partagée où des équipes s'affrontent pixel par pixel, aidées par d
 | Règle | Valeur | Statut |
 | --- | --- | --- |
 | Délai entre deux pixels | 10 secondes pour la démo, réglable | Proposé |
-| Palette | Environ 16 couleurs fixes | Proposé |
+| Palette | 16 couleurs fixes, ouvertes à tous les joueurs : l'équipe ne limite pas la couleur posée | Décidé |
 | Taille de la toile | Fixe, à choisir | À décider |
 | Taille d'un modèle IA | 32 × 32 pixels au plus | Proposé |
 | Quota de modèles IA | 5 par compte et par jour | Décidé |
-| Équipes | 4 équipes de couleur | Décidé |
+| Équipes | Pas de limite de nombre : un joueur peut créer une équipe. Chaque équipe a une couleur pour la reconnaître (podium, pseudo) | Décidé |
 | Changement d'équipe | Au plus toutes les 5 minutes, réglable | Décidé |
 | Spectateurs | La toile se regarde sans compte. Poser un pixel demande un compte | Décidé |
 | Modèle actif | Un seul modèle actif par compte | Décidé |
 | Agent hors connexion | L'agent de dessin continue quand le joueur est déconnecté | Décidé |
 
-Les décisions datent du 9 octobre 2026.
+Les décisions datent du 9 octobre 2026, sauf la palette et les équipes, revues le 20 novembre 2026 : la première version limitait le jeu à 4 équipes, et « équipe de couleur » pouvait se lire comme « on ne pose que la couleur de son équipe ». Ce n'est pas la règle.
 
 **Un compte, un délai.** Pendant que l'agent de dessin travaille, il utilise le délai du compte : le joueur ne pose pas de pixel en plus à la main. L'IA aide à dessiner, elle ne donne pas plus de pixels.
 
