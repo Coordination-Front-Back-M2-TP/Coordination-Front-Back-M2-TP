@@ -35,6 +35,7 @@ function readPixel(page, x, y) {
 test('affiche les pixels déjà posés, sans compte', async ({ page }) => {
   await page.goto('/')
   await expect(liveStatus(page)).toBeVisible()
+  await expect(page.getByText('Nettoyer une zone', { exact: true })).toHaveCount(0)
 
   // Les pixels seedés sont dessinés dans le canvas du navigateur.
   for (const pixel of SEED_PIXELS) {
@@ -72,4 +73,49 @@ test('un pixel posé ailleurs apparaît en moins d’une seconde', async ({ page
   contract.placePixel(change)
   await expect.poll(() => readPixel(page, change.x, change.y), { timeout: 1_000 }).toBe(change.color)
   expect(Date.now() - startedAt).toBeLessThan(1_000)
+})
+
+test('seul un admin peut demander un nettoyage, visible en direct par un joueur', async ({ page, context }) => {
+  await page.route('**/api/auth/me', (route) => route.fulfill({ json: { user: { pseudo: 'Lea', role: 'admin', team: null } } }))
+  const observer = await context.newPage()
+  await observer.route('**/api/auth/me', (route) => route.fulfill({ json: { user: { pseudo: 'Sam', role: 'player', team: null } } }))
+  const requests = []
+  await page.route('**/api/moderation/cleanups', (route) => {
+    const zone = route.request().postDataJSON()
+    requests.push(zone)
+    return route.fulfill({ json: contract.cleanZone(zone, 'Lea') })
+  })
+
+  await Promise.all([page.goto('/'), observer.goto('/')])
+  await expect(liveStatus(page)).toBeVisible()
+  await expect(liveStatus(observer)).toBeVisible()
+  await expect(observer.getByText('Sam', { exact: true })).toBeVisible()
+  await expect(observer.getByText('Nettoyer une zone', { exact: true })).toHaveCount(0)
+  await expect.poll(() => readPixel(observer, 0, 0)).toBe('#9333EA')
+
+  await page.getByText('Nettoyer une zone', { exact: true }).click()
+  const topLeft = page.getByRole('group', { name: 'Coin supérieur gauche' })
+  const bottomRight = page.getByRole('group', { name: 'Coin inférieur droit' })
+  await topLeft.getByLabel('X').fill('1')
+  await topLeft.getByLabel('Y').fill('-2')
+  await bottomRight.getByLabel('X').fill('0')
+  await bottomRight.getByLabel('Y').fill('0')
+  await page.getByRole('button', { name: 'Vérifier la zone' }).click()
+  await expect(page.getByText('La zone doit être comprise dans la toile', { exact: false })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Confirmer le nettoyage' })).toHaveCount(0)
+
+  await topLeft.getByLabel('X').fill('-2')
+  await page.getByRole('button', { name: 'Vérifier la zone' }).click()
+  await page.getByRole('button', { name: 'Annuler', exact: true }).click()
+  expect(requests).toHaveLength(0)
+  await page.getByRole('button', { name: 'Vérifier la zone' }).click()
+  await page.getByRole('button', { name: 'Confirmer le nettoyage' }).click()
+
+  await expect(page.getByText(/Pixels retirés\s*: 2\. Action n° 1 inscrite au journal/)).toBeVisible()
+  expect(requests).toEqual([{ fromX: -2, fromY: -2, toX: 0, toY: 0 }])
+  for (const client of [page, observer]) {
+    await expect.poll(() => readPixel(client, -2, -2)).toBeNull()
+    await expect.poll(() => readPixel(client, 0, 0)).toBeNull()
+    await expect.poll(() => readPixel(client, 2, 2)).toBe('#EAB308')
+  }
 })

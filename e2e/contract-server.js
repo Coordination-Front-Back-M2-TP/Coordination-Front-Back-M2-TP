@@ -65,5 +65,18 @@ export function createContractServer() {
       io.emit('pixel:updated', pixel)
       return pixel
     },
+    cleanZone({ fromX, fromY, toX, toY }, admin) {
+      let removedCount = 0
+      for (const [key, { x, y }] of pixels) {
+        if (x < fromX || x > toX || y < fromY || y > toY) continue
+        pixels.delete(key)
+        removedCount += 1
+      }
+      revision += 1
+      const createdAt = new Date().toISOString()
+      const zone = { fromX, fromY, toX, toY, revision }
+      io.emit('canvas:cleared', { ...zone, clearedAt: createdAt })
+      return { action: { id: 1, type: 'zone_cleanup', admin, createdAt, details: { ...zone, removedCount } } }
+    },
   }
 }

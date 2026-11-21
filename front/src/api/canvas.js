@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client'
-import { applyPixelUpdate, parseCanvasSnapshot, parsePixel } from './canvas-state.js'
+import { applyCanvasClear, applyPixelUpdate, parseCanvasClear, parseCanvasSnapshot, parsePixel } from './canvas-state.js'
 
 const SUBSCRIBE_TIMEOUT_MS = 10_000
 
@@ -40,8 +40,8 @@ export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnec
       try {
         let next = parseCanvasSnapshot(snapshot)
         // Un changement peut précéder l’ACK : l’instantané reste le point de départ.
-        for (const pixel of pending.sort((a, b) => a.revision - b.revision)) {
-          next = applyPixelUpdate(next, pixel)
+        for (const { apply, event } of pending.sort((a, b) => a.event.revision - b.event.revision)) {
+          next = apply(next, event)
         }
         canvas = next
         pending = []
@@ -53,13 +53,13 @@ export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnec
     })
   }
 
-  function onPixel(raw) {
+  function receive(raw, parse, apply) {
     if (disposed || !subscribed) return
     try {
       if (awaitingSnapshot) {
-        pending.push(parsePixel(raw))
+        pending.push({ apply, event: parse(raw) })
       } else {
-        const next = applyPixelUpdate(canvas, raw)
+        const next = apply(canvas, raw)
         if (next !== canvas) {
           canvas = next
           publish('live')
@@ -86,7 +86,8 @@ export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnec
     connect: onConnect,
     disconnect: onDisconnect,
     connect_error: onConnectError,
-    'pixel:updated': onPixel,
+    'pixel:updated': (raw) => receive(raw, parsePixel, applyPixelUpdate),
+    'canvas:cleared': (raw) => receive(raw, parseCanvasClear, applyCanvasClear),
     'ranking:updated': (ranking) => { if (!disposed && subscribed) onRanking(ranking) },
     'canvas:error': fail,
   }
