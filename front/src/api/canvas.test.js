@@ -4,6 +4,7 @@ import { subscribeCanvas } from './canvas.js'
 const date = '2026-10-27T14:30:00.000Z'
 const pixel = (overrides = {}) => ({ x: 0, y: 0, color: '#D93A3A', revision: 11, updatedAt: date, ...overrides })
 const snapshot = (overrides = {}) => ({ width: 101, height: 101, revision: 10, snapshotAt: date, pixels: [], ...overrides })
+const cleared = (overrides = {}) => ({ fromX: 0, fromY: 0, toX: 1, toY: 1, revision: 12, clearedAt: date, ...overrides })
 
 function fakeSocket() {
   const listeners = new Map()
@@ -51,6 +52,35 @@ describe('abonnement à la toile', () => {
     transport.receive('pixel:updated', pixel({ revision: 12 }))
     transport.receive('pixel:updated', pixel({ revision: 11, color: '#2563EB' }))
     expect(states.at(-1).canvas.pixels.get('0,0').color).toBe('#D93A3A')
+  })
+
+  it('rejoue un nettoyage et les poses tamponnés après l’instantané', () => {
+    transport.receive('canvas:cleared', cleared({ revision: 10, fromX: -1 }))
+    transport.receive('pixel:updated', pixel({ x: 1, revision: 13 }))
+    transport.receive('canvas:cleared', cleared())
+    transport.receive('pixel:updated', pixel({ revision: 11 }))
+    transport.acknowledgements[0](null, snapshot({ pixels: [pixel({ x: -1, revision: 10 })] }))
+    expect(states.at(-1).status).toBe('live')
+    expect([...states.at(-1).canvas.pixels.keys()]).toEqual(['-1,0', '1,0'])
+  })
+
+  it('conserve les poses récentes et empêche une ancienne pose de réapparaître après un nettoyage', () => {
+    transport.acknowledgements[0](null, snapshot({ pixels: [pixel({ revision: 10 })] }))
+    transport.receive('pixel:updated', pixel({ x: 1, y: 1, revision: 14 }))
+    transport.receive('canvas:cleared', cleared({ revision: 13 }))
+    transport.receive('canvas:cleared', cleared())
+    transport.receive('pixel:updated', pixel({ revision: 12 }))
+    transport.receive('pixel:updated', pixel({ x: 1, revision: 11 }))
+    transport.receive('pixel:updated', pixel({ x: 2, revision: 11 }))
+    expect([...states.at(-1).canvas.pixels.keys()]).toEqual(['1,1', '2,0'])
+    transport.receive('pixel:updated', pixel({ revision: 15 }))
+    expect(states.at(-1).canvas.pixels.get('0,0').revision).toBe(15)
+  })
+
+  it('rejette une zone de nettoyage dont les coins sont hors de la toile', () => {
+    transport.acknowledgements[0](null, snapshot())
+    transport.receive('canvas:cleared', cleared({ toX: Number.MAX_SAFE_INTEGER }))
+    expect(states.at(-1).status).toBe('error')
   })
 
   it('remplace la toile à la reconnexion et abandonne l’ancien tampon', () => {

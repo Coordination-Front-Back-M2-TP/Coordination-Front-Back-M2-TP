@@ -1,0 +1,11 @@
+.corner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  min-inline-size: 0;
+  margin-block: 0.5rem;
+}
+
+.corner input {
+  inline-size: 6ch;
+}
