@@ -325,3 +325,32 @@ test('plusieurs équipes partagent une couleur et un autre joueur rejoint une é
   assert.equal((await result.json()).user.team.name, 'Autre équipe')
   assert.equal((await (await request('/api/teams')).json()).teams.filter((team) => team.color === '#9333EA').length, 3)
 })
+
+test('la création renvoie l’équipe rejointe même si le joueur change ensuite de camp', async (t) => {
+  await register('DoubleEquipe')
+  const account = await prisma.account.findUniqueOrThrow({ where: { pseudoKey: 'doubleequipe' } })
+  const repository = createTeamRepository(prisma)
+  const changedAt = new Date('2026-11-20T10:00:00.000Z')
+  const switchedAt = new Date('2026-11-20T10:00:01.000Z')
+  const createAndJoin = repository.createAndJoin
+
+  t.mock.method(repository, 'createAndJoin', async (args) => {
+    const created = await createAndJoin(args)
+    assert.ok(created)
+    const switched = await repository.changeTeam({
+      accountId: account.id,
+      teamId: 'bleue',
+      changedAt: switchedAt,
+      changedBefore: switchedAt,
+    })
+    assert.ok(switched)
+    return created
+  })
+
+  const service = createTeamService({ repository, now: () => changedAt, cooldownMs: 0 })
+  const result = await service.createTeam(account, { name: 'Équipe Éclair', color: '#FACC15' })
+  assert.deepEqual(result.account.team, result.team)
+  assert.equal(result.account.teamId, result.team.id)
+  assert.equal(result.teamChangeAvailableAt.toISOString(), changedAt.toISOString())
+  assert.equal((await repository.findAccount(account.id)).teamId, 'bleue')
+})

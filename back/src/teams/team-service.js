@@ -40,21 +40,20 @@ export function createTeamService({ repository, now = () => new Date(), cooldown
       if (account.bannedAt) throw forbidden('Ce compte est banni.', 'ACCOUNT_BANNED')
       const team = readTeam(body)
       const changedAt = now()
-      let changed
+      let joined
       try {
-        changed = await repository.createAndJoin({ accountId: account.id, team, changedAt, changedBefore: new Date(changedAt.getTime() - cooldownMs) })
+        joined = await repository.createAndJoin({ accountId: account.id, team, changedAt, changedBefore: new Date(changedAt.getTime() - cooldownMs) })
       } catch (error) {
         if (error?.code === 'P2002') throw conflict('Ce nom d’équipe est déjà pris.', 'TEAM_NAME_TAKEN')
         throw error
       }
+      if (joined) return { team, account: joined, teamChangeAvailableAt: availableAt(joined) }
+
       const current = await repository.findAccount(account.id)
       if (!current) throw unauthorized('Vous n’êtes pas connecté.')
-      if (!changed) {
-        if (current.bannedAt) throw forbidden('Ce compte est banni.', 'ACCOUNT_BANNED')
-        const remainingMs = availableAt(current).getTime() - changedAt.getTime()
-        throw tooManyRequests('Vous devez attendre avant de changer à nouveau d’équipe.', 'TEAM_CHANGE_COOLDOWN', Math.max(1, Math.ceil(remainingMs / 1000)))
-      }
-      return { team, account: current, teamChangeAvailableAt: availableAt(current) }
+      if (current.bannedAt) throw forbidden('Ce compte est banni.', 'ACCOUNT_BANNED')
+      const remainingMs = availableAt(current).getTime() - changedAt.getTime()
+      throw tooManyRequests('Vous devez attendre avant de changer à nouveau d’équipe.', 'TEAM_CHANGE_COOLDOWN', Math.max(1, Math.ceil(remainingMs / 1000)))
     },
 
     // account : le compte de la session. Renvoie { account, teamChangeAvailableAt }, le compte à jour
