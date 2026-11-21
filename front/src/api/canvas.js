@@ -1,6 +1,6 @@
 import { applyCanvasRevert, parseCanvasRevert } from './canvas-revert.js'
 import { io } from 'socket.io-client'
-import { applyPixelUpdate, parseCanvasSnapshot, parsePixel } from './canvas-state.js'
+import { applyCanvasClear, applyPixelUpdate, parseCanvasClear, parseCanvasSnapshot, parsePixel } from './canvas-state.js'
 
 const SUBSCRIBE_TIMEOUT_MS = 10_000
 
@@ -88,6 +88,7 @@ export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnec
     disconnect: onDisconnect,
     connect_error: onConnectError,
     'pixel:updated': (raw) => receive(raw, parsePixel, applyPixelUpdate),
+    'canvas:cleared': (raw) => receive(raw, parseCanvasClear, applyCanvasClear),
     'ranking:updated': (ranking) => { if (!disposed && subscribed) onRanking(ranking) },
     'canvas:error': fail,
     'canvas:reverted': (raw) => receive(raw, parseCanvasRevert, applyCanvasRevert),

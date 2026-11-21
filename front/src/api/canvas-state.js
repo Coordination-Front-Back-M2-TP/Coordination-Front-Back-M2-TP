@@ -50,3 +50,35 @@ export function applyPixelUpdate(canvas, raw) {
   pixels.set(key, pixel)
   return { ...canvas, pixels, revision: Math.max(canvas.revision, pixel.revision) }
 }
+
+export function parseCanvasClear(event) {
+  const { fromX, fromY, toX, toY, revision, clearedAt } = event ?? {}
+  if (![fromX, fromY, toX, toY].every(Number.isSafeInteger)
+    || fromX > toX || fromY > toY || !isRevision(revision) || !isDate(clearedAt)) {
+    throw new Error('Nettoyage invalide')
+  }
+  return { fromX, fromY, toX, toY, revision, clearedAt }
+}
+
+export function applyCanvasClear(canvas, raw) {
+  const { fromX, fromY, toX, toY, revision } = parseCanvasClear(raw)
+  if (!isInside({ x: fromX, y: fromY }, canvas) || !isInside({ x: toX, y: toY }, canvas)) {
+    throw new Error('Zone hors de la toile')
+  }
+  if (revision <= canvas.baseRevision) return canvas
+
+  const clearedRevisions = new Map(canvas.clearedRevisions)
+  const pixels = new Map(canvas.pixels)
+  let changed = false
+  for (let y = fromY; y <= toY; y += 1) {
+    for (let x = fromX; x <= toX; x += 1) {
+      const key = pixelKey({ x, y })
+      if (revision <= (clearedRevisions.get(key) ?? 0)) continue
+      // Une pose plus ancienne peut arriver plus tard, même sur une case déjà vide.
+      clearedRevisions.set(key, revision)
+      if (pixels.get(key)?.revision < revision) pixels.delete(key)
+      changed = true
+    }
+  }
+  return changed ? { ...canvas, pixels, clearedRevisions, revision: Math.max(canvas.revision, revision) } : canvas
+}

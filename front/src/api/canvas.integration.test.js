@@ -93,6 +93,12 @@ it('restaure ou vide les cases au bannissement, en conservant les poses plus ré
   server.emit('pixel:updated', { ...pixel(8), x: 2 })
   await vi.waitFor(() => expect(current.canvas.revision).toBe(8))
   expect([...current.canvas.pixels.values()]).toEqual([restored, newer, { ...pixel(8), x: 2 }])
+
+  server.emit('canvas:cleared', { fromX: -1, fromY: 1, toX: -1, toY: 1, revision: 10, clearedAt: date })
+  server.emit('canvas:reverted', { revision: 9, revertedAt: date, restored: [restored], cleared: [] })
+  server.emit('pixel:updated', { ...pixel(11), x: 3 })
+  await vi.waitFor(() => expect(current.canvas.revision).toBe(11))
+  expect(current.canvas.pixels.has('-1,1')).toBe(false)
 })
 
 it('resynchronise un instantané complet après une vraie coupure de transport', async () => {
