@@ -2,6 +2,8 @@ const isRevision = (value) => Number.isSafeInteger(value) && value >= 0
 const isDate = (value) => typeof value === 'string' && Number.isFinite(Date.parse(value))
 const pixelKey = ({ x, y }) => `${x},${y}`
 
+export { isDate, isInside, isRevision, pixelKey }
+
 export function parsePixel(pixel) {
   if (!pixel || !Number.isSafeInteger(pixel.x) || !Number.isSafeInteger(pixel.y)
     || typeof pixel.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(pixel.color)
@@ -34,7 +36,7 @@ export function parseCanvasSnapshot(snapshot) {
     pixels.set(key, pixel)
   }
   const { width, height, revision, snapshotAt } = snapshot
-  return { width, height, revision, snapshotAt, baseRevision: revision, pixels }
+  return { width, height, revision, snapshotAt, baseRevision: revision, pixels, clearedRevisions: new Map() }
 }
 
 export function applyPixelUpdate(canvas, raw) {
@@ -42,7 +44,8 @@ export function applyPixelUpdate(canvas, raw) {
   if (!isInside(pixel, canvas)) throw new Error('Pixel hors de la toile')
   const key = pixelKey(pixel)
   const previous = canvas.pixels.get(key)
-  if (pixel.revision <= canvas.baseRevision || (previous && pixel.revision <= previous.revision)) return canvas
+  const latest = Math.max(canvas.baseRevision, previous?.revision ?? 0, canvas.clearedRevisions.get(key) ?? 0)
+  if (pixel.revision <= latest) return canvas
   const pixels = new Map(canvas.pixels)
   pixels.set(key, pixel)
   return { ...canvas, pixels, revision: Math.max(canvas.revision, pixel.revision) }

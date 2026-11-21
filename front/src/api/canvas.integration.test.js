@@ -71,6 +71,30 @@ it('ne perd pas un changement reçu avant l’ACK d’un vrai serveur Socket.IO'
   expect(current.canvas.pixels.get('-1,1').revision).toBe(2)
 })
 
+it('restaure ou vide les cases au bannissement, en conservant les poses plus récentes', async () => {
+  const restored = { ...pixel(1), color: '#2563EB' }
+  const cleared = { x: 0, y: 1 }
+  const newer = { ...pixel(7), x: 1 }
+  let current
+  server.on('connection', (socket) => {
+    socket.on('canvas:subscribe', (acknowledge) => {
+      socket.emit('canvas:reverted', { revision: 5, revertedAt: date, restored: [restored], cleared: [cleared] })
+      acknowledge(snapshot(3, [pixel(2), { ...pixel(3), ...cleared }]))
+    })
+  })
+  watch((state) => { current = state })
+  await vi.waitFor(() => expect(current?.status).toBe('live'))
+  expect([...current.canvas.pixels.values()]).toEqual([restored])
+
+  server.emit('pixel:updated', pixel(4))
+  server.emit('pixel:updated', { ...pixel(4), ...cleared })
+  server.emit('pixel:updated', newer)
+  server.emit('canvas:reverted', { revision: 6, revertedAt: date, restored: [], cleared: [newer] })
+  server.emit('pixel:updated', { ...pixel(8), x: 2 })
+  await vi.waitFor(() => expect(current.canvas.revision).toBe(8))
+  expect([...current.canvas.pixels.values()]).toEqual([restored, newer, { ...pixel(8), x: 2 }])
+})
+
 it('resynchronise un instantané complet après une vraie coupure de transport', async () => {
   let current
   let socket
