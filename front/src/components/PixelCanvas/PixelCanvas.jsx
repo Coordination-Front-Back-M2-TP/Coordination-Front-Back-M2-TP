@@ -13,7 +13,7 @@ function cellFromClick(event, { width, height }) {
 }
 
 // Sans onSelectCell, la toile reste en lecture seule : c'est le cas d'un visiteur sans compte.
-export function PixelCanvas({ canvas, onSelectCell }) {
+export function PixelCanvas({ canvas, onSelectCell, preview }) {
   const ref = useRef(null)
   const captionId = useId()
   const [showPixels, setShowPixels] = useState(false)
@@ -30,11 +30,22 @@ export function PixelCanvas({ canvas, onSelectCell }) {
     }
     context.imageSmoothingEnabled = false
     context.clearRect(0, 0, canvas.width, canvas.height)
+    const centerX = Math.floor(canvas.width / 2)
+    const centerY = Math.floor(canvas.height / 2)
     for (const pixel of canvas.pixels.values()) {
       context.fillStyle = pixel.color
-      context.fillRect(pixel.x + Math.floor(canvas.width / 2), pixel.y + Math.floor(canvas.height / 2), 1, 1)
+      context.fillRect(pixel.x + centerX, pixel.y + centerY, 1, 1)
     }
-  }, [canvas])
+    if (preview) {
+      context.save()
+      context.globalAlpha = 0.55
+      for (const pixel of preview.pixels) {
+        context.fillStyle = pixel.color
+        context.fillRect(pixel.x + preview.origin.x + centerX, pixel.y + preview.origin.y + centerY, 1, 1)
+      }
+      context.restore()
+    }
+  }, [canvas, preview])
 
   return (
     <figure className={styles.figure}>

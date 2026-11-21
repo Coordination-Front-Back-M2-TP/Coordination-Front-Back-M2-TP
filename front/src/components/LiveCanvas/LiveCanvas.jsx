@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { subscribeCanvas } from '../../api/canvas.js'
 import { createRankingFeed } from '../../api/rankings.js'
-import { PixelPlacer } from '../PixelPlacer/PixelPlacer.jsx'
+import { CanvasWorkspace } from '../CanvasWorkspace/CanvasWorkspace.jsx'
 import { Ranking } from '../Ranking/Ranking.jsx'
 
 const STATUS_MESSAGES = {
@@ -39,7 +39,7 @@ export function LiveCanvas({ user }) {
         </div>
       )}
       {canvas && status !== 'live' && <p>Dernier état reçu affiché ; les nouveaux pixels peuvent manquer.</p>}
-      {canvas && <PixelPlacer key={user ? 'account:' + user.pseudo : 'visitor'} canvas={canvas} user={user} />}
+      {canvas && <CanvasWorkspace key={user ? 'account:' + user.pseudo : 'visitor'} canvas={canvas} user={user} />}
       <Ranking {...rankingState} onRetry={() => {
         if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
       }} />
