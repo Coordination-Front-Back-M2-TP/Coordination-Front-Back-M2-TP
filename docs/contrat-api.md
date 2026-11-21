@@ -767,7 +767,7 @@ Les erreurs sont celles du nettoyage ; `400 INVALID_INPUT` correspond ici à `li
 
 Les deux routes utilisent le cookie de session existant et renvoient `Cache-Control: no-store`. Le serveur déduit le compte de la session. La génération et le quota se traitent en HTTP.
 
-### `GET /api/models/quota` — consulter le quota
+### `GET /api/models/quota` — consulter le quota et les services de modération
 
 **Succès — `200 OK`**.
 
@@ -777,21 +777,24 @@ Les deux routes utilisent le cookie de session existant et renvoient `Cache-Cont
     "limit": 5,
     "remaining": 3,
     "resetsAt": "2026-10-28T00:00:00.000Z"
-  }
+  },
+  "moderationProviders": ["jev", "openai"]
 }
 ```
 
 `remaining` compte les générations encore disponibles, entre zéro et `limit`. `resetsAt` donne le prochain minuit UTC, au format ISO 8601. Le front lit le quota à l’ouverture du formulaire et l’affiche avant le premier envoi. Il désactive l’envoi si `remaining` vaut zéro et relit le quota à `resetsAt`. Sans session, le serveur répond `401 UNAUTHORIZED`.
+
+`moderationProviders` énumère les services configurés côté serveur. Le formulaire permet au joueur de choisir entre « Jev » (`jev`) et « OpenAI » (`openai`) quand les deux sont proposés. Jev est présélectionné quand il est proposé. Si un seul service est proposé, le formulaire le sélectionne et l’affiche. Une liste vide rend l’envoi indisponible et le formulaire l’indique.
 
 ### `POST /api/models` — générer un modèle
 
 **Requête — `application/json`**.
 
 ```json
-{ "prompt": "Un éclair jaune et un point noir" }
+{ "prompt": "Un éclair jaune et un point noir", "moderationProvider": "openai" }
 ```
 
-`prompt` est une chaîne de 1 à 500 points de code Unicode après retrait des espaces de début et de fin. L’envoi reste désactivé dans le formulaire tant que sa demande est en cours.
+`prompt` est une chaîne de 1 à 500 points de code Unicode après retrait des espaces de début et de fin. `moderationProvider` est obligatoire et vaut `jev` ou `openai`. L’envoi reste désactivé dans le formulaire tant que sa demande est en cours.
 
 **Succès — `200 OK`**, avec le modèle et le quota actualisé au même format que la lecture du quota.
 
@@ -820,22 +823,22 @@ Les deux routes utilisent le cookie de session existant et renvoient `Cache-Cont
 
 ### Vérification de la consigne et décompte
 
-1. Le serveur valide la session et la consigne, puis vérifie que le compte ne soumet qu’une génération à la fois et que son quota le permet. Deux onglets ne peuvent pas utiliser simultanément la dernière génération disponible.
-2. Jev contrôle la consigne. En cas de refus ou d’indisponibilité de Jev, le serveur n’appelle pas GPT. Seule la consigne est transmise comme donnée joueur à Jev et GPT. Les clés restent côté serveur.
+1. Le serveur valide la session, la consigne et le service choisi, puis vérifie que le compte ne soumet qu’une génération à la fois et que son quota le permet. Le même quota s’applique aux deux services.
+2. Le service choisi contrôle la consigne. Pour `jev`, le serveur utilise [Jev de TypeSafe](https://docs.typesafe.ai/cookbooks/llm_guardrails). Pour `openai`, il utilise [l’API de modération OpenAI](https://developers.openai.com/api/docs/guides/moderation). Le serveur appelle GPT pour générer la grille uniquement après une autorisation explicite du service choisi. En cas d’échec ou de refus, il arrête la demande sans appeler l’autre service. Seule la consigne est transmise comme donnée joueur. Les clés restent côté serveur.
 3. GPT propose une grille. Le serveur la valide avant de débiter le quota. Un refus, une erreur fournisseur ou une grille invalide laisse le quota intact et libère la demande en cours.
 4. Un modèle validé compte pour la journée UTC pendant laquelle la demande a été acceptée. Si le résultat arrive après minuit, la réponse expose le quota de la nouvelle journée. Le serveur enregistre le débit avant de répondre.
 
-Les réponses d’erreur reprennent `{ "error": { "code": "…", "message": "…" } }`. Le front affiche un message du jeu, indépendant des réponses brutes de Jev et GPT.
+Les réponses d’erreur reprennent `{ "error": { "code": "…", "message": "…" } }`. Le front affiche un message du jeu, indépendant des réponses brutes des services.
 
 | Statut | Code | Cas |
 | --- | --- | --- |
 | `400 Bad Request` | `INVALID_JSON` | Corps JSON illisible |
-| `400 Bad Request` | `INVALID_INPUT` | Consigne absente ou hors des limites |
+| `400 Bad Request` | `INVALID_INPUT` | Consigne absente ou hors des limites, ou valeur de `moderationProvider` absente ou inconnue |
 | `401 Unauthorized` | `UNAUTHORIZED` | Session absente ou expirée |
 | `409 Conflict` | `MODEL_REQUEST_IN_PROGRESS` | Ce compte a déjà une génération en cours |
-| `422 Unprocessable Content` | `PROMPT_REJECTED` | Jev refuse la consigne. Le quota reste inchangé |
+| `422 Unprocessable Content` | `PROMPT_REJECTED` | Le service choisi refuse la consigne. Le quota reste inchangé |
 | `429 Too Many Requests` | `MODEL_QUOTA_EXHAUSTED` | Le compte a épuisé son quota |
-| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Le contrôle ou la génération échoue, la grille est invalide ou une erreur interne survient |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Le service choisi n’est pas configuré, le contrôle ou la génération échoue, la grille est invalide ou une erreur interne survient |
 
 Sur `429`, l’en-tête `Retry-After` donne le nombre de secondes jusqu’à `resetsAt`, arrondi à l’entier supérieur. Le front relit alors le quota pour synchroniser son affichage. Après une réponse réseau incertaine, il relit le quota avant de réactiver l’envoi.
 
@@ -844,9 +847,11 @@ Sur `429`, l’en-tête `Retry-After` donne le nombre de secondes jusqu’à `re
 | Cas | Résultat attendu |
 | --- | --- |
 | Quota à zéro lors de l’ouverture | Le formulaire affiche le quota épuisé sans envoyer de `POST` |
-| Jev refuse une consigne | Un message explique le refus, GPT n’est pas appelé, le quota est inchangé |
-| Jev ou GPT échoue, ou GPT renvoie une case invalide | Le serveur ne renvoie aucun modèle et conserve le quota |
-| Deux demandes concurrentes sur un compte à une génération restante | Au plus une demande aboutit et le quota ne passe jamais sous zéro |
+| Le joueur choisit l’un des deux services | Le serveur fait contrôler la consigne uniquement par ce service avant d’appeler GPT |
+| Aucun service de modération n’est configuré | Le formulaire indique l’indisponibilité et désactive l’envoi |
+| Jev ou OpenAI refuse une consigne | Un message explique le refus, GPT n’est pas appelé, le quota est inchangé |
+| Le service choisi ou GPT échoue, ou GPT renvoie une case invalide | Le serveur ne renvoie aucun modèle et conserve le quota |
+| Deux demandes concurrentes sur un compte à une génération restante, avec des services différents | Au plus une demande aboutit et le quota ne passe jamais sous zéro |
 | Un modèle valide est reçu | Le quota diminue d’une unité, l’aperçu respecte les cases transparentes et se déplace jusqu’aux bords de la toile |
 | Une demande finit après le changement de jour | Elle est comptée sur le jour de son acceptation et la réponse donne le quota du nouveau jour |
 
