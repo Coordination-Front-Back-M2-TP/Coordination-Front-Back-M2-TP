@@ -834,7 +834,7 @@ L’agent pose un pixel à chaque fin de délai du compte, dans l’ordre du mod
 
 Un compte, un délai : tant que l’agent du compte existe, `POST /api/pixels` répond `409 AGENT_ACTIVE`. Le joueur arrête son agent pour reposer à la main.
 
-L’agent d’un joueur banni s’arrête de lui-même.
+Le bannissement retire l’agent du joueur dans la même transaction. Après la réponse de bannissement, `GET /api/agent` renvoie `{ "agent": null }` pour son compte.
 
 ## Points restant à valider avant implémentation
 

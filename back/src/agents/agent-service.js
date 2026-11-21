@@ -162,8 +162,8 @@ export function createAgentService({
 
     // body : le corps de la requête, { pixels }. Un seul modèle est actif par compte.
     async startAgent(body, account) {
-      if (account.teamId == null) throw forbidden('Choisissez une équipe avant de lancer votre agent.', 'TEAM_REQUIRED')
       if (account.bannedAt) throw forbidden('Ce compte est banni : il ne peut plus lancer d’agent.', 'ACCOUNT_BANNED')
+      if (account.teamId == null) throw forbidden('Choisissez une équipe avant de lancer votre agent.', 'TEAM_REQUIRED')
       const pixels = readModel(body)
 
       const agent = await repository.createAgent({ accountId: account.id, pixels, startedAt: now() })
