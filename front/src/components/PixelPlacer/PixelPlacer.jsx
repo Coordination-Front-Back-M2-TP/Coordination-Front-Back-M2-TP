@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { PALETTE } from '../../api/palette.js'
 import { placePixel } from '../../api/pixels.js'
 import { useCooldown } from '../../hooks/use-cooldown.js'
+import { useDrawingAgent } from '../../hooks/use-drawing-agent.js'
 import { ColorPalette } from '../ColorPalette/ColorPalette.jsx'
+import { DrawingAgentPanel } from '../DrawingAgentPanel/DrawingAgentPanel.jsx'
 import { PixelCanvas } from '../PixelCanvas/PixelCanvas.jsx'
 import styles from './PixelPlacer.module.css'
 
@@ -18,6 +20,8 @@ function errorMessage(error) {
       return TEAM_REQUIRED_MESSAGE
     case 'COOLDOWN_ACTIVE':
       return 'Attendez la fin de votre délai avant de poser un autre pixel.'
+    case 'AGENT_ACTIVE':
+      return 'Arrêtez votre agent pour poser un pixel à la main.'
     case 'INVALID_INPUT':
       return 'Cette case ou cette couleur n’est pas acceptée.'
     default:
@@ -34,9 +38,13 @@ export function PixelPlacer({ canvas, user }) {
   const [feedback, setFeedback] = useState(null)
   const [coordinates, setCoordinates] = useState({ x: '0', y: '0' })
   const controller = useRef(null)
+  const agentEnabled = Boolean(user?.team)
+  const drawingAgent = useDrawingAgent(agentEnabled)
+  const agentActive = agentEnabled && drawingAgent.agent !== null
+  const agentPending = agentEnabled && drawingAgent.pending
   const { seconds, startCooldown } = useCooldown()
   const coolingDown = seconds > 0
-  const placementDisabled = pending || coolingDown
+  const placementDisabled = pending || coolingDown || agentActive || agentPending
 
   useEffect(() => () => controller.current?.abort(), [])
 
@@ -56,7 +64,7 @@ export function PixelPlacer({ canvas, user }) {
 
   async function place({ x, y }) {
     // Une seule pose à la fois : un double clic n'envoie pas deux requêtes, même avant le rendu suivant.
-    if (controller.current || coolingDown) return
+    if (controller.current || placementDisabled) return
     const current = new AbortController()
     controller.current = current
     setPending(true)
@@ -97,8 +105,9 @@ export function PixelPlacer({ canvas, user }) {
 
   return (
     <>
+      {agentEnabled && <DrawingAgentPanel control={drawingAgent} />}
       <ColorPalette colors={PALETTE} value={color} onChange={setColor} disabled={pending} />
-      <p>Cliquez sur une case de la toile pour y poser la couleur choisie.</p>
+      <p>{agentActive ? 'Arrêtez votre agent pour poser un pixel à la main.' : 'Cliquez sur une case de la toile pour y poser la couleur choisie.'}</p>
       <PixelCanvas canvas={canvas} onSelectCell={placementDisabled ? undefined : place} />
       <form className={styles.form} onSubmit={handleSubmit} aria-label="Poser un pixel par ses coordonnées">
         <label>
@@ -132,7 +141,7 @@ export function PixelPlacer({ canvas, user }) {
       )}
       <p aria-live="polite">
         {coolingDown && 'Délai de pose en cours.'}
-        {seconds === 0 && 'Vous pouvez poser un pixel.'}
+        {!coolingDown && !agentActive && !agentPending && 'Vous pouvez poser un pixel.'}
       </p>
       {/* Zone toujours présente : un lecteur d'écran annonce le résultat de chaque pose. */}
       <p aria-live="polite" className={feedback?.kind === 'error' ? styles.error : undefined}>{feedback?.text}</p>
