@@ -16,6 +16,7 @@ Tâche #39, user story [#18 — Créer un compte et se connecter](https://github
 ## Ce que fait le serveur
 
 - **Pseudo unique** : de 3 à 20 caractères parmi les lettres sans accent, les chiffres, `_` et `-`. L'unicité ne tient pas compte de la casse : la colonne `pseudoKey` (le pseudo en minuscules) porte une contrainte d'unicité dans la base. Deux inscriptions simultanées ne peuvent donc pas passer toutes les deux.
+- **Inscription**. Le compte et sa première session sont créés dans la même transaction. Si la session échoue, l'inscription est annulée et le joueur peut réessayer avec le même pseudo.
 - **Mot de passe haché** : de 8 à 128 caractères. Il est haché avec scrypt (module `node:crypto`, sans dépendance) et un sel tiré au hasard pour chaque compte. La base garde `scrypt$coût$bloc$parallélisme$sel$empreinte`, jamais le mot de passe. La comparaison se fait à temps constant.
 - **Connexion** : un pseudo inconnu et un mot de passe faux reçoivent la même réponse `401 INVALID_CREDENTIALS`, dans le même temps de calcul. La réponse ne dit pas si un pseudo existe.
 - **Session** : un jeton de 32 octets tiré au hasard, envoyé dans le cookie `p1x3l_session`. La base n'en garde que l'empreinte SHA-256 : une copie de la base ne permet pas de reprendre une session.

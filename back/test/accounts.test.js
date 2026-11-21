@@ -90,6 +90,32 @@ test('l’inscription crée le compte, connecte le joueur et ne renvoie que son 
   assert.deepEqual(await me.json(), { user: { pseudo: 'Alex', team: null, role: 'player' } })
 })
 
+test('une première session en échec laisse le pseudo disponible pour une nouvelle inscription', async () => {
+  const sessionsBefore = await prisma.session.count()
+  // La base de test simule une panne à l'écriture de la session, après l'insertion du compte.
+  await prisma.$executeRaw`
+    CREATE TRIGGER refuse_first_session BEFORE INSERT ON "Session"
+    WHEN EXISTS (SELECT 1 FROM "Account" WHERE "id" = NEW."accountId" AND "pseudoKey" = 'reprenable')
+    BEGIN SELECT RAISE(ABORT, 'Session indisponible pour le test'); END
+  `
+  try {
+    const response = await request('/api/auth/register', {
+      method: 'POST', body: { pseudo: 'Reprenable', password: PASSWORD },
+    })
+    assert.equal(response.status, 500)
+    assert.equal(sessionCookie(response), null)
+  } finally {
+    await prisma.$executeRaw`DROP TRIGGER refuse_first_session`
+  }
+
+  assert.equal(await prisma.account.count({ where: { pseudoKey: 'reprenable' } }), 0)
+  assert.equal(await prisma.session.count(), sessionsBefore)
+  const { cookie } = await register('Reprenable')
+  const me = await request('/api/auth/me', { cookie: cookie.pair })
+  assert.equal(me.status, 200)
+  assert.equal((await me.json()).user.pseudo, 'Reprenable')
+})
+
 test('le mot de passe est stocké haché avec son sel, jamais en clair', async () => {
   await register('Hache')
   await register('Hache2')
