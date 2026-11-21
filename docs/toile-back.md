@@ -4,7 +4,7 @@ Le back implémente la lecture publique et l’abonnement temps réel prévus pa
 
 ## Persistance
 
-SQLite et Prisma stockent l’état courant, un pixel au plus par coordonnée, ainsi que la révision globale et les dimensions dans `CanvasState`. La migration conserve la résolution existante de 101 × 101. La pose, le lancement de l’agent et le nettoyage vérifient leurs coordonnées à partir des dimensions enregistrées, dans la transaction qui réalise l’écriture. Les pixels absents ne sont pas stockés.
+SQLite et Prisma stockent l’état courant, un pixel au plus par coordonnée, ainsi que la révision globale et les dimensions dans `CanvasState`. La migration agrandit la toile existante à 250 × 250 et conserve les pixels à leurs coordonnées. La pose, le lancement de l’agent et le nettoyage vérifient leurs coordonnées à partir des dimensions enregistrées, dans la transaction qui réalise l’écriture. Les pixels absents ne sont pas stockés.
 
 En local, la base est `back/prisma/dev.db`. Les migrations se lancent avec `npm run db:migrate:deploy --prefix back`. En production, la base `file:/data/p1x3l.db` est conservée dans le volume Docker `canvas-data` ; le conteneur applique les migrations avant de démarrer.
 

@@ -118,8 +118,8 @@ test('refuse en 400 INVALID_INPUT les coordonnées et couleurs hors contrat', as
   const before = await prisma.pixelPlacement.count()
   const invalid = [
     {},
-    { x: 51, y: 0, color: '#123456' },
-    { x: 0, y: -51, color: '#123456' },
+    { x: 125, y: 0, color: '#123456' },
+    { x: 0, y: -126, color: '#123456' },
     { x: 1.5, y: 0, color: '#123456' },
     { x: '1', y: 0, color: '#123456' },
     { x: 0, y: 0, color: 'red' },
@@ -135,7 +135,7 @@ test('refuse en 400 INVALID_INPUT les coordonnées et couleurs hors contrat', as
 })
 
 test('accepte les coins de la toile', async () => {
-  for (const [x, y] of [[-50, -50], [50, 50], [-50, 50], [50, -50]]) {
+  for (const [x, y] of [[-125, -125], [124, 124], [-125, 124], [124, -125]]) {
     assert.equal((await pose({ x, y, color: '#000000' })).status, 200)
   }
 })

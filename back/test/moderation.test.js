@@ -194,12 +194,12 @@ test('une zone vide est quand même notée dans le journal', async () => {
 })
 
 test('une zone peut être une seule case, ou toute la toile', async () => {
-  await pose(-50, 50)
-  await pose(50, -50)
-  const single = await (await clean({ fromX: -50, fromY: 50, toX: -50, toY: 50 })).json()
+  await pose(-125, 124)
+  await pose(124, -125)
+  const single = await (await clean({ fromX: -125, fromY: 124, toX: -125, toY: 124 })).json()
   assert.equal(single.action.details.removedCount, 1)
 
-  const whole = await clean({ fromX: -50, fromY: -50, toX: 50, toY: 50 })
+  const whole = await clean({ fromX: -125, fromY: -125, toX: 124, toY: 124 })
   assert.equal(whole.status, 200)
   assert.deepEqual((await visiblePixels()).cells, [])
 })
@@ -212,8 +212,8 @@ test('refuse en 400 INVALID_INPUT une zone hors contrat, sans rien noter', async
     { fromX: 0, fromY: 0, toX: 1 },
     { fromX: 2, fromY: 0, toX: 1, toY: 1 },
     { fromX: 0, fromY: 2, toX: 1, toY: 1 },
-    { fromX: -51, fromY: 0, toX: 1, toY: 1 },
-    { fromX: 0, fromY: 0, toX: 51, toY: 1 },
+    { fromX: -126, fromY: 0, toX: 1, toY: 1 },
+    { fromX: 0, fromY: 0, toX: 125, toY: 1 },
     { fromX: 0.5, fromY: 0, toX: 1, toY: 1 },
     { fromX: '0', fromY: 0, toX: 1, toY: 1 },
   ]

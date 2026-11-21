@@ -35,6 +35,7 @@ function readPixel(page, x, y) {
 test('affiche les pixels déjà posés, sans compte', async ({ page }) => {
   await page.goto('/')
   await expect(liveStatus(page)).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Toile partagée de 250 par 250 pixels' })).toBeVisible()
 
   // Les pixels seedés sont dessinés dans le canvas du navigateur.
   for (const pixel of SEED_PIXELS) {
@@ -67,7 +68,7 @@ test('un pixel posé ailleurs apparaît en moins d’une seconde', async ({ page
   await page.goto('/')
   await expect(liveStatus(page)).toBeVisible()
 
-  const change = { x: 10, y: -10, color: '#0EA5E9' }
+  const change = { x: 124, y: -125, color: '#0EA5E9' }
   const startedAt = Date.now()
   contract.placePixel(change)
   await expect.poll(() => readPixel(page, change.x, change.y), { timeout: 1_000 }).toBe(change.color)

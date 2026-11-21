@@ -131,7 +131,7 @@ test('le délai porte sur le compte : un autre joueur pose pendant le délai du 
 })
 
 test('une pose invalide ne déclenche pas de délai', async () => {
-  assert.equal((await pose({ x: 99, y: 0, color: '#123456' }, 'carole')).status, 400)
+  assert.equal((await pose({ x: 125, y: 0, color: '#123456' }, 'carole')).status, 400)
   assert.equal((await pose({ x: 6, y: 6, color: '#123456' }, 'carole')).status, 200)
 })
 

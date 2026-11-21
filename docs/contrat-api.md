@@ -11,8 +11,8 @@ Ce document couvre la lecture de la toile et sa mise à jour en direct pour la u
 
 - L’API HTTP est préfixée par `/api`. Les corps HTTP sont en JSON ; les clés sont en `camelCase`.
 - La consultation de la toile et l’abonnement temps réel sont publics : aucun compte n’est nécessaire pour regarder.
-- La toile démarre à 101 × 101 pixels. Ses dimensions en vigueur sont `width` et `height` dans l’instantané.
-- Sur un axe de taille `n`, les coordonnées entières vont de `-Math.floor(n / 2)` à `n - 1 - Math.floor(n / 2)`, bornes incluses. Pour une taille de 101, la plage est de `-50` à `50`. L’origine est au centre, `x` augmente vers la droite et `y` vers le bas.
+- La toile démarre à 250 × 250 pixels. Ses dimensions en vigueur sont `width` et `height` dans l’instantané.
+- Sur un axe de taille `n`, les coordonnées entières vont de `-Math.floor(n / 2)` à `n - 1 - Math.floor(n / 2)`, bornes incluses. Pour une taille de 250, la plage est de `-125` à `124`. L’origine est au centre, `x` augmente vers la droite et `y` vers le bas.
 - `color` est une couleur hexadécimale `#RRGGBB` appartenant à la palette du jeu (section « Palette » ci-dessous). Tout joueur pose n’importe quelle couleur de la palette : son équipe ne la limite pas.
 - Les dates sont en UTC au format ISO 8601, par exemple `2026-10-27T14:30:00.000Z`.
 - Les données publiques représentent uniquement l’état visuel courant de la toile. Elles ne contiennent ni historique des poses, ni pseudo, ni identifiant de compte, ni autre identité de joueur. L’historique se lit par une route à part, `GET /api/placements`, elle aussi sans identité de joueur.
@@ -68,8 +68,8 @@ Renvoie l’état courant de la toile. Cette route est destinée aux consultatio
 
 ```json
 {
-  "width": 101,
-  "height": 101,
+  "width": 250,
+  "height": 250,
   "revision": 184,
   "snapshotAt": "2026-10-27T14:30:00.000Z",
   "pixels": [
@@ -254,8 +254,8 @@ Exemple de valeur de l’ACK :
 
 ```json
 {
-  "width": 101,
-  "height": 101,
+  "width": 250,
+  "height": 250,
   "revision": 184,
   "snapshotAt": "2026-10-27T14:30:00.000Z",
   "pixels": [
