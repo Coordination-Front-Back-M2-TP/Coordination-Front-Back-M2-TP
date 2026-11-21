@@ -23,9 +23,10 @@ export function createTeamRepository(client = prisma) {
           where: { id: accountId, bannedAt: null, OR: [{ teamChangedAt: null }, { teamChangedAt: { lte: changedBefore } }] },
           data: { teamId: team.id, teamChangedAt: changedAt },
         })
-        if (!count) return false
+        if (!count) return null
         await tx.team.create({ data: team })
-        return true
+        const account = await tx.account.findUniqueOrThrow({ where: { id: accountId } })
+        return { ...account, team }
       })
     },
 
