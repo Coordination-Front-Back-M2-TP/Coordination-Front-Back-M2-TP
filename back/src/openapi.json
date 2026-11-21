@@ -446,7 +446,7 @@
                   ],
                   "properties": {
                     "action": {
-                      "$ref": "#/components/schemas/ModerationAction"
+                      "$ref": "#/components/schemas/ZoneCleanupAction"
                     }
                   }
                 }
@@ -454,7 +454,7 @@
             }
           },
           "400": {
-            "description": "Zone invalide (INVALID_INPUT)",
+            "description": "JSON illisible (INVALID_JSON) ou zone invalide (INVALID_INPUT)",
             "content": {
               "application/json": {
                 "schema": {
@@ -641,7 +641,7 @@
                   ],
                   "properties": {
                     "action": {
-                      "$ref": "#/components/schemas/ModerationAction"
+                      "$ref": "#/components/schemas/PlayerBanAction"
                     }
                   }
                 }
@@ -649,7 +649,7 @@
             }
           },
           "400": {
-            "description": "Pseudo absent, vide ou qui n'est pas un texte (INVALID_INPUT)",
+            "description": "JSON illisible (INVALID_JSON) ou pseudo invalide après normalisation (INVALID_INPUT)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1427,6 +1427,49 @@
         }
       },
       "ModerationAction": {
+        "oneOf": [
+          { "$ref": "#/components/schemas/ZoneCleanupAction" },
+          { "$ref": "#/components/schemas/PlayerBanAction" }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "zone_cleanup": "#/components/schemas/ZoneCleanupAction",
+            "player_ban": "#/components/schemas/PlayerBanAction"
+          }
+        }
+      },
+      "ZoneCleanupAction": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ModerationActionBase" },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["zone_cleanup"] },
+              "details": {
+                "type": "object",
+                "required": ["fromX", "fromY", "toX", "toY", "removedCount", "revision"]
+              }
+            }
+          }
+        ]
+      },
+      "PlayerBanAction": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ModerationActionBase" },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["player_ban"] },
+              "details": {
+                "type": "object",
+                "required": ["pseudo", "restoredCount", "clearedCount", "revision"]
+              }
+            }
+          }
+        ]
+      },
+      "ModerationActionBase": {
         "type": "object",
         "required": [
           "id",
