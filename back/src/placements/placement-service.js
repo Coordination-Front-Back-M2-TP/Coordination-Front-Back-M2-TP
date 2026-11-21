@@ -16,6 +16,11 @@ function readDate(value) {
   if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) throw invalidInput()
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) throw invalidInput()
+
+  // Date peut reporter un jour inexistant au mois suivant. Vérifier le jour avant décalage horaire.
+  const day = value.slice(0, 10)
+  if (new Date(day).toISOString().slice(0, 10) !== day) throw invalidInput()
+
   return date
 }
 
