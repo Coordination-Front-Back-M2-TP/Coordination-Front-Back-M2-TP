@@ -68,3 +68,12 @@ it('permet de réessayer et ferme le précédent abonnement', () => {
   unmount()
   expect(stops[1]).toHaveBeenCalledOnce()
 })
+
+it('réserve la modération des joueurs aux administrateurs', () => {
+  const { rerender } = render(<LiveCanvas user={null} />)
+  expect(screen.queryByText('Modérer les joueurs')).toBeNull()
+  rerender(<LiveCanvas user={{ pseudo: 'Sam', role: 'player' }} />)
+  expect(screen.queryByText('Modérer les joueurs')).toBeNull()
+  rerender(<LiveCanvas user={{ pseudo: 'Lea', role: 'admin' }} />)
+  expect(screen.getByText('Modérer les joueurs')).toBeTruthy()
+})
