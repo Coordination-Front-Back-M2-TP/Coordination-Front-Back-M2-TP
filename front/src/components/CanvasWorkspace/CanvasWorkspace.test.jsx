@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { CanvasWorkspace } from './CanvasWorkspace.jsx'
 
@@ -22,7 +22,7 @@ let drawing
 beforeEach(() => {
   request = vi.fn()
   vi.stubGlobal('fetch', request)
-  drawing = { clearRect: vi.fn(), fillRect: vi.fn(), save: vi.fn(), restore: vi.fn() }
+  drawing = { clearRect: () => drawing.fillRect.mockClear(), fillRect: vi.fn(), save: vi.fn(), restore: vi.fn() }
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(drawing)
 })
 
@@ -58,18 +58,19 @@ it('vérifie le quota, choisit OpenAI, puis déplace et valide un aperçu sans �
   expect(request.mock.calls[0][0]).toBe('/api/models/quota')
   expect(request.mock.calls[1][0]).toBe('/api/models')
   expect(JSON.parse(request.mock.calls[1][1].body)).toEqual({ prompt: 'Un éclair', moderationProvider: 'openai' })
-  expect(drawing.globalAlpha).toBe(0.55)
-  expect(drawing.fillRect.mock.calls).toEqual([[1, 1, 1, 1], [2, 2, 1, 1]])
+  await waitFor(() => {
+    expect(drawing.globalAlpha).toBe(0.55)
+    expect(drawing.fillRect.mock.calls).toEqual([[1, 1, 1, 1], [2, 2, 1, 1]])
+  })
   expect(screen.getByRole('button', { name: 'Poser le pixel' }).disabled).toBe(true)
 
   fireEvent.click(screen.getByRole('button', { name: 'Déplacer le modèle vers la gauche' }))
   expect(screen.getByText('Modèle en aperçu en (-2, -1).')).toBeTruthy()
   const board = screen.getByRole('img')
   Object.defineProperties(board, { clientWidth: { value: 50 }, clientHeight: { value: 50 } })
-  drawing.fillRect.mockClear()
   fireEvent.click(board, { clientX: 49, clientY: 49 })
   expect(screen.getByText('Modèle en aperçu en (1, 1).')).toBeTruthy()
-  expect(drawing.fillRect.mock.calls).toEqual([[3, 3, 1, 1], [4, 4, 1, 1]])
+  await waitFor(() => expect(drawing.fillRect.mock.calls).toEqual([[3, 3, 1, 1], [4, 4, 1, 1]]))
 
   fireEvent.click(screen.getByRole('button', { name: 'Valider le placement' }))
   expect(screen.getByText('Modèle placé en (1, 1).')).toBeTruthy()
