@@ -832,7 +832,7 @@ L’agent pose un pixel à chaque fin de délai du compte, dans l’ordre du mod
 
 ### Pose à la main pendant que l’agent travaille
 
-Un compte, un délai : tant que l’agent du compte existe, `POST /api/pixels` répond `409 AGENT_ACTIVE`. Le joueur arrête son agent pour reposer à la main.
+Un compte partage le même délai entre l’agent et la pose manuelle. Pendant la transaction d’écriture, le serveur vérifie si l’agent du compte est actif. Si son lancement est déjà enregistré, une pose manuelle valide reçoit `409 AGENT_ACTIVE`. Le joueur arrête son agent pour reposer à la main.
 
 L’agent d’un joueur banni s’arrête de lui-même.
 

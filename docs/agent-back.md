@@ -26,7 +26,7 @@ L'agent est un programme du serveur, sans IA ([besoin.md](besoin.md)).
 
 L'agent pose par le service de toile, comme `POST /api/pixels`. Chaque pose est donc inscrite dans l'historique avec le compte et son équipe du moment, compte pour le délai du compte et part en `pixel:updated`.
 
-- **Un compte, un délai** : tant que l'agent du compte existe, `POST /api/pixels` répond `409 AGENT_ACTIVE`. L'agent ne donne pas plus de pixels qu'une pose à la main.
+- **Un compte, un délai** : le serveur vérifie dans la transaction de pose si un agent existe. Une pose manuelle valide reçoit `409 AGENT_ACTIVE` si le lancement a déjà été enregistré. L'agent ne donne pas plus de pixels qu'une pose à la main.
 - **Un seul modèle par compte** : un second lancement répond `409 AGENT_ALREADY_ACTIVE`. La base tient la règle : la clé de la table est le compte.
 - **Équipe obligatoire** : sans équipe, le lancement répond `403 TEAM_REQUIRED`.
 - **Joueur banni** : le lancement répond `403 ACCOUNT_BANNED`. L'agent d'un joueur banni s'arrête à son passage suivant, sans rien poser.
@@ -45,7 +45,7 @@ Aucun événement temps réel ne porte la progression. Le front relit la route, 
 
 ## Comment c'est fait
 
-Le code est dans `back/src/agents/` : `agent-routes.js`, `agent-service.js` et `agent-repository.js` ([GUIDELINES.md](../GUIDELINES.md), section 5). Le refus de la pose à la main est dans `back/src/canvas/canvas-routes.js`.
+Le code est dans `back/src/agents/` : `agent-routes.js`, `agent-service.js` et `agent-repository.js` ([GUIDELINES.md](../GUIDELINES.md), section 5). Le contrôle de l’agent lors d’une pose manuelle est dans `back/src/canvas/canvas-repository.js`.
 
 - Le service garde un minuteur par compte. Un passage fait au plus une pose, puis programme le suivant.
 - Le compte est relu à chaque passage : l'équipe est celle du moment, et un compte banni arrête l'agent.

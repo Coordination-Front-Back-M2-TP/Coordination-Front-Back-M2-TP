@@ -1,6 +1,6 @@
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import prismaClient from '@prisma/client'
-import { forbidden, tooManyRequests } from '../errors/app-error.js'
+import { conflict, forbidden, tooManyRequests } from '../errors/app-error.js'
 
 process.env.DATABASE_URL ??= 'file:./prisma/dev.db'
 
@@ -42,8 +42,8 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
       })
     },
 
-    // placement (facultatif) : { accountId, teamId } de la session, inscrit dans l'historique
-    // dans la même transaction que le pixel visible.
+    // placement (facultatif) : compte et équipe de la session, inscrits dans l'historique.
+    // La route de pose manuelle indique source: 'manual' pour contrôler l'agent sous le même verrou.
     // cooldownMs : délai entre deux poses d'un même compte. Une pose envoyée avant la fin du délai
     // est refusée en 429 et la transaction est annulée : ni toile, ni historique, ni révision ne changent.
     // Un compte banni est refusé en 403 ACCOUNT_BANNED, de la même façon.
@@ -59,11 +59,19 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
         // Le bannissement est relu ici, sous le verrou : une pose envoyée pendant un bannissement
         // passe entièrement avant, et elle est annulée, ou entièrement après, et elle est refusée.
         if (placement && ACCOUNT_ID_PATTERN.test(placement.accountId)) {
+          const accountId = Number(placement.accountId)
           const account = await transaction.account.findUnique({
-            where: { id: Number(placement.accountId) },
+            where: { id: accountId },
             select: { bannedAt: true },
           })
           if (account?.bannedAt) throw forbidden('Ce compte est banni : il ne peut plus poser de pixel.', 'ACCOUNT_BANNED')
+          if (placement.source === 'manual') {
+            const agent = await transaction.drawingAgent.findUnique({
+              where: { accountId },
+              select: { accountId: true },
+            })
+            if (agent) throw conflict('Votre agent de dessin travaille : arrêtez-le pour poser à la main.', 'AGENT_ACTIVE')
+          }
         }
         if (placement && cooldownMs > 0) {
           const lastPlacement = await transaction.pixelPlacement.findFirst({

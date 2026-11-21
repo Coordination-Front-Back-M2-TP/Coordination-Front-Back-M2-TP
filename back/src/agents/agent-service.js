@@ -179,13 +179,6 @@ export function createAgentService({
       await stop(account.id)
     },
 
-    // Dit si l'agent du compte travaille : pendant ce temps, le joueur ne pose pas à la main.
-    // Les sessions factices des tests ont des identifiants qui ne sont pas ceux de la base.
-    async isActive(accountId) {
-      const id = Number(accountId)
-      return Number.isSafeInteger(id) ? repository.hasAgent(id) : false
-    },
-
     // Relance les agents enregistrés : appelé au démarrage du serveur.
     async resume() {
       for (const accountId of await repository.listAgentAccountIds()) schedule(accountId, 0)

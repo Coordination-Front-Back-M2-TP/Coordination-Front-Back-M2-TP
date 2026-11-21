@@ -30,10 +30,6 @@ export function createAgentRepository(client = prisma) {
       return agent ? toAgentRecord(agent) : null
     },
 
-    async hasAgent(accountId) {
-      return (await client.drawingAgent.count({ where: { accountId } })) > 0
-    },
-
     async deleteAgent(accountId) {
       await client.drawingAgent.deleteMany({ where: { accountId } })
     },
