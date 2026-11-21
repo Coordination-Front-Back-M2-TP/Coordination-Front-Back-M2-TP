@@ -12,6 +12,7 @@ const healthyResponse = () => ({ ok: true, json: async () => ({ status: 'ok', ve
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -128,7 +129,11 @@ describe('choix d’équipe avant la première pose', () => {
     const ok = (payload) => ({ ok: true, status: 200, json: async () => payload })
     const fetchMock = vi.fn(async (url, options) => {
       if (url === '/api/auth/me') return ok({ user })
-      if (url === '/api/teams' && options?.method === 'POST') return ok({ team, user: { ...user, team } })
+      if (url === '/api/teams' && options?.method === 'POST') {
+        return Response.json({ team, user: { ...user, team }, teamChangeAvailableAt: '2026-11-21T11:05:00.000Z' }, {
+          headers: { Date: 'Sat, 21 Nov 2026 11:00:00 GMT' },
+        })
+      }
       if (url === '/api/teams') return ok({ teams: [team] })
       return healthyResponse()
     })
@@ -140,7 +145,9 @@ describe('choix d’équipe avant la première pose', () => {
     await waitFor(() => expect(screen.getByText('sam').parentElement.textContent).toContain('Équipe Les Éclairs'))
     const currentOption = await screen.findByRole('option', { name: 'Les Éclairs (équipe actuelle)' })
     expect(currentOption.disabled).toBe(true)
+    expect(screen.getByRole('timer').textContent).toContain('300 s')
     expect(screen.getByRole('button', { name: 'Changer d’équipe' }).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Créer l’équipe' }).disabled).toBe(true)
   })
 
   it('laisse lire la toile puis autorise une pose après avoir rejoint une équipe', async () => {
@@ -186,5 +193,35 @@ describe('choix d’équipe avant la première pose', () => {
     fireEvent.click(place)
     expect(await screen.findByText('Pixel noir posé en (0, 0).')).toBeTruthy()
     expect(fetch).toHaveBeenCalledWith('/api/pixels', expect.objectContaining({ method: 'POST' }))
+  })
+
+  it('partage le délai serveur entre les deux formulaires dès que le joueur rejoint son équipe', async () => {
+    vi.useFakeTimers({ toFake: ['Date', 'performance', 'setTimeout', 'clearTimeout'] })
+    vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+    const team = { id: 'rouge', name: 'Rouge', color: '#D93A3A' }
+    const user = { pseudo: 'sam', team: null }
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      if (url === '/api/auth/me') return Response.json({ user })
+      if (url === '/api/teams') return Response.json({ teams: [team] })
+      if (url === '/api/auth/me/team') {
+        return Response.json({ user: { ...user, team }, teamChangeAvailableAt: '2026-11-21T11:00:03.000Z' }, {
+          headers: { Date: 'Sat, 21 Nov 2026 11:00:00 GMT' },
+        })
+      }
+      return healthyResponse()
+    }))
+
+    await act(async () => { render(<App />) })
+    fireEvent.change(screen.getByLabelText('Équipe à rejoindre'), { target: { value: 'rouge' } })
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Rejoindre l’équipe' })))
+
+    expect(screen.getByRole('timer').textContent).toContain('3 s')
+    expect(screen.getByLabelText('Équipe à rejoindre').disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Créer l’équipe' }).disabled).toBe(true)
+
+    await act(() => vi.advanceTimersByTimeAsync(3000))
+    expect(screen.queryByRole('timer')).toBeNull()
+    expect(screen.getByLabelText('Équipe à rejoindre').disabled).toBe(false)
+    expect(screen.getByRole('button', { name: 'Créer l’équipe' }).disabled).toBe(false)
   })
 })
