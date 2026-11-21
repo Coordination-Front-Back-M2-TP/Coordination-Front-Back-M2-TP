@@ -44,3 +44,7 @@ Le back fournit le contrat de lecture et de souscription dans [#35](https://gith
 Le serveur Socket.IO installé en dépendance de développement sert uniquement aux tests d’intégration. Il simule le contrat validé et n’implémente pas la persistance du back.
 
 Après livraison de #35, vérifier le parcours intégré avec deux navigateurs : tous deux chargent les pixels existants sans compte, reçoivent un changement serveur sans recharger, puis retrouvent le nouvel état complet après une coupure et une reconnexion. La validation de la latence en conditions réelles fait partie de cette vérification intégrée.
+
+## Naviguer sur la toile
+
+Utilisez la molette, le pincement à deux doigts ou les boutons au-dessus de la toile pour zoomer. Une fois la toile agrandie, faites-la glisser à la souris ou au doigt. Au clavier, placez le focus sur la toile et déplacez la vue avec les flèches. Le bouton « Vue d’ensemble » rétablit l’affichage initial. Un clic ou un tap sur une case conserve le comportement de pose habituel pour un joueur qui peut poser.
