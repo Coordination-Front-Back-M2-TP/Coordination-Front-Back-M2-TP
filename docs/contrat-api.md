@@ -761,9 +761,100 @@ Compte admin requis.
 
 Les erreurs sont celles du nettoyage ; `400 INVALID_INPUT` correspond ici à `limit` ou `before` hors bornes.
 
+## Dessiner avec l’IA — demander un modèle
+
+> Proposition pour la tâche [#47](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/47), à relire côté front et côté back avant les tâches #48 et #49. Elle couvre l’US [#24 — Demander un modèle à l’IA](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/24). Le quota de cinq modèles par jour est décidé dans le [besoin](besoin.md#3-règles-du-jeu). Les routes, la remise à zéro en UTC et les limites de saisie ci-dessous sont proposées.
+
+Les deux routes utilisent le cookie de session existant et renvoient `Cache-Control: no-store`. Le serveur déduit le compte de la session. La génération et le quota se traitent en HTTP.
+
+### `GET /api/models/quota` — consulter le quota
+
+**Succès — `200 OK`**.
+
+```json
+{
+  "quota": {
+    "limit": 5,
+    "remaining": 3,
+    "resetsAt": "2026-10-28T00:00:00.000Z"
+  }
+}
+```
+
+`remaining` compte les générations encore disponibles, entre zéro et `limit`. `resetsAt` donne le prochain minuit UTC, au format ISO 8601. Le front lit le quota à l’ouverture du formulaire et l’affiche avant le premier envoi. Il désactive l’envoi si `remaining` vaut zéro et relit le quota à `resetsAt`. Sans session, le serveur répond `401 UNAUTHORIZED`.
+
+### `POST /api/models` — générer un modèle
+
+**Requête — `application/json`**.
+
+```json
+{ "prompt": "Un éclair jaune et un point noir" }
+```
+
+`prompt` est une chaîne de 1 à 500 points de code Unicode après retrait des espaces de début et de fin. L’envoi reste désactivé dans le formulaire tant que sa demande est en cours.
+
+**Succès — `200 OK`**, avec le modèle et le quota actualisé au même format que la lecture du quota.
+
+```json
+{
+  "model": {
+    "width": 3,
+    "height": 2,
+    "pixels": [
+      { "x": 1, "y": 0, "color": "#FACC15" },
+      { "x": 0, "y": 1, "color": "#FACC15" },
+      { "x": 2, "y": 1, "color": "#000000" }
+    ]
+  },
+  "quota": {
+    "limit": 5,
+    "remaining": 2,
+    "resetsAt": "2026-10-28T00:00:00.000Z"
+  }
+}
+```
+
+- `width` et `height` sont des entiers compris entre 1 et 32. L’origine `(0, 0)` est le coin supérieur gauche du modèle. `x` augmente à droite et `y` vers le bas.
+- `pixels` contient entre 1 et `width × height` entrées. Les coordonnées sont des entiers à l’intérieur du modèle. Chaque case apparaît au plus une fois, avec une `color` au format `#RRGGBB` issue de la [palette](#palette). Les cases absentes sont transparentes.
+- Le front affiche un aperçu en transparence et permet de déplacer son coin supérieur gauche `(originX, originY)` sur la toile. Il valide le placement quand le rectangle tient entièrement dans les dimensions de l’instantané. Pour une case du modèle, les coordonnées de la toile sont `(originX + x, originY + y)`. La pose manuelle et le lancement de l’agent utilisent leurs routes existantes. La génération et la validation du placement n’émettent aucun événement Socket.IO.
+
+### Vérification de la consigne et décompte
+
+1. Le serveur valide la session et la consigne, puis vérifie que le compte ne soumet qu’une génération à la fois et que son quota le permet. Deux onglets ne peuvent pas utiliser simultanément la dernière génération disponible.
+2. Jev contrôle la consigne. En cas de refus ou d’indisponibilité de Jev, le serveur n’appelle pas GPT. Seule la consigne est transmise comme donnée joueur à Jev et GPT. Les clés restent côté serveur.
+3. GPT propose une grille. Le serveur la valide avant de débiter le quota. Un refus, une erreur fournisseur ou une grille invalide laisse le quota intact et libère la demande en cours.
+4. Un modèle validé compte pour la journée UTC pendant laquelle la demande a été acceptée. Si le résultat arrive après minuit, la réponse expose le quota de la nouvelle journée. Le serveur enregistre le débit avant de répondre.
+
+Les réponses d’erreur reprennent `{ "error": { "code": "…", "message": "…" } }`. Le front affiche un message du jeu, indépendant des réponses brutes de Jev et GPT.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_JSON` | Corps JSON illisible |
+| `400 Bad Request` | `INVALID_INPUT` | Consigne absente ou hors des limites |
+| `401 Unauthorized` | `UNAUTHORIZED` | Session absente ou expirée |
+| `409 Conflict` | `MODEL_REQUEST_IN_PROGRESS` | Ce compte a déjà une génération en cours |
+| `422 Unprocessable Content` | `PROMPT_REJECTED` | Jev refuse la consigne. Le quota reste inchangé |
+| `429 Too Many Requests` | `MODEL_QUOTA_EXHAUSTED` | Le compte a épuisé son quota |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Le contrôle ou la génération échoue, la grille est invalide ou une erreur interne survient |
+
+Sur `429`, l’en-tête `Retry-After` donne le nombre de secondes jusqu’à `resetsAt`, arrondi à l’entier supérieur. Le front relit alors le quota pour synchroniser son affichage. Après une réponse réseau incertaine, il relit le quota avant de réactiver l’envoi.
+
+### Cas à vérifier dans les tâches front et back
+
+| Cas | Résultat attendu |
+| --- | --- |
+| Quota à zéro lors de l’ouverture | Le formulaire affiche le quota épuisé sans envoyer de `POST` |
+| Jev refuse une consigne | Un message explique le refus, GPT n’est pas appelé, le quota est inchangé |
+| Jev ou GPT échoue, ou GPT renvoie une case invalide | Le serveur ne renvoie aucun modèle et conserve le quota |
+| Deux demandes concurrentes sur un compte à une génération restante | Au plus une demande aboutit et le quota ne passe jamais sous zéro |
+| Un modèle valide est reçu | Le quota diminue d’une unité, l’aperçu respecte les cases transparentes et se déplace jusqu’aux bords de la toile |
+| Une demande finit après le changement de jour | Elle est comptée sur le jour de son acceptation et la réponse donne le quota du nouveau jour |
+
+Le modèle GPT, le coût par appel et le protocole d’appel à Jev restent dans les [questions ouvertes](besoin.md#9-questions-ouvertes). Le [mode image](story-map.md#carte) appartient à l’US #26.
+
 ## Dessiner avec l’IA — agent de dessin
 
-> **Proposition pour l’issue #47, écrite pour livrer la tâche #51.** Elle reste à relire par le front et le back. Elle couvre la user story [#25 — Confier le modèle à mon agent](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/25). La demande d’un modèle à l’IA (#24) n’y est pas encore.
+> **Proposition pour l’issue #47, écrite pour livrer la tâche #51.** Elle reste à relire par le front et le back. Elle couvre la user story [#25 — Confier le modèle à mon agent](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/25). Le [contrat de génération](#dessiner-avec-lia--demander-un-modèle) décrit le modèle avant placement.
 
 L’agent de dessin est un programme du serveur, sans IA. Il pose le modèle du joueur au rythme du délai de son compte, même quand le joueur est déconnecté. Les trois routes demandent un compte connecté : l’agent est toujours celui du compte de la session.
 
