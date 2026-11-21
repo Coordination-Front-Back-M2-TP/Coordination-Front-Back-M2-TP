@@ -1,6 +1,7 @@
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import prismaClient from '@prisma/client'
-import { forbidden, tooManyRequests } from '../errors/app-error.js'
+import { badRequest, forbidden, tooManyRequests } from '../errors/app-error.js'
+import { isInsideCanvas } from './canvas-bounds.js'
 
 process.env.DATABASE_URL ??= 'file:./prisma/dev.db'
 
@@ -9,8 +10,6 @@ export const prisma = new PrismaClient({
   adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL }),
 })
 
-const BOARD_WIDTH = 101
-const BOARD_HEIGHT = 101
 // Un identifiant de compte de la base. Les sessions factices des tests en ont d'autres.
 const ACCOUNT_ID_PATTERN = /^\d{1,15}$/
 
@@ -33,8 +32,8 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
         const records = await transaction.pixel.findMany({ orderBy: [{ y: 'asc' }, { x: 'asc' }] })
 
         return {
-          width: BOARD_WIDTH,
-          height: BOARD_HEIGHT,
+          width: state.width,
+          height: state.height,
           revision: state.revision,
           snapshotAt: new Date().toISOString(),
           pixels: records.map(toPixelRecord),
@@ -55,6 +54,9 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
           where: { id: 1 },
           data: { revision: { increment: 1 } },
         })
+        if (!isInsideCanvas(x, y, state)) {
+          throw badRequest('Cette case ou cette couleur n’est pas acceptée.', 'INVALID_INPUT')
+        }
         const updatedAt = now()
         // Le bannissement est relu ici, sous le verrou : une pose envoyée pendant un bannissement
         // passe entièrement avant, et elle est annulée, ou entièrement après, et elle est refusée.

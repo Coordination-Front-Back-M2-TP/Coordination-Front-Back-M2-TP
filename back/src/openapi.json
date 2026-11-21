@@ -411,23 +411,19 @@
                 "properties": {
                   "fromX": {
                     "type": "integer",
-                    "minimum": -50,
-                    "maximum": 50
+                    "description": "Coordonnée selon les dimensions de la toile."
                   },
                   "fromY": {
                     "type": "integer",
-                    "minimum": -50,
-                    "maximum": 50
+                    "description": "Coordonnée selon les dimensions de la toile."
                   },
                   "toX": {
                     "type": "integer",
-                    "minimum": -50,
-                    "maximum": 50
+                    "description": "Coordonnée selon les dimensions de la toile."
                   },
                   "toY": {
                     "type": "integer",
-                    "minimum": -50,
-                    "maximum": 50
+                    "description": "Coordonnée selon les dimensions de la toile."
                   }
                 }
               }
@@ -939,13 +935,11 @@
                 "properties": {
                   "x": {
                     "type": "integer",
-                    "minimum": -50,
-                    "maximum": 50
+                    "description": "Coordonnée selon les dimensions de la toile."
                   },
                   "y": {
                     "type": "integer",
-                    "minimum": -50,
-                    "maximum": 50
+                    "description": "Coordonnée selon les dimensions de la toile."
                   },
                   "color": {
                     "type": "string",
@@ -1464,23 +1458,19 @@
             "properties": {
               "fromX": {
                 "type": "integer",
-                "minimum": -50,
-                "maximum": 50
+                "description": "Coordonnée selon les dimensions de la toile."
               },
               "fromY": {
                 "type": "integer",
-                "minimum": -50,
-                "maximum": 50
+                "description": "Coordonnée selon les dimensions de la toile."
               },
               "toX": {
                 "type": "integer",
-                "minimum": -50,
-                "maximum": 50
+                "description": "Coordonnée selon les dimensions de la toile."
               },
               "toY": {
                 "type": "integer",
-                "minimum": -50,
-                "maximum": 50
+                "description": "Coordonnée selon les dimensions de la toile."
               },
               "removedCount": {
                 "type": "integer",
@@ -1572,7 +1562,7 @@
           },
           "pixels": {
             "type": "array",
-            "maxItems": 10201,
+            "description": "Au plus un pixel par case de la toile.",
             "items": {
               "$ref": "#/components/schemas/Pixel"
             }
@@ -1591,13 +1581,11 @@
         "properties": {
           "x": {
             "type": "integer",
-            "minimum": -50,
-            "maximum": 50
+            "description": "Coordonnée selon les dimensions de la toile."
           },
           "y": {
             "type": "integer",
-            "minimum": -50,
-            "maximum": 50
+            "description": "Coordonnée selon les dimensions de la toile."
           },
           "color": {
             "type": "string",
@@ -1623,13 +1611,11 @@
         "properties": {
           "x": {
             "type": "integer",
-            "minimum": -50,
-            "maximum": 50
+            "description": "Coordonnée selon les dimensions de la toile."
           },
           "y": {
             "type": "integer",
-            "minimum": -50,
-            "maximum": 50
+            "description": "Coordonnée selon les dimensions de la toile."
           },
           "color": {
             "type": "string",
@@ -1715,13 +1701,11 @@
         "properties": {
           "x": {
             "type": "integer",
-            "minimum": -50,
-            "maximum": 50
+            "description": "Coordonnée selon les dimensions de la toile."
           },
           "y": {
             "type": "integer",
-            "minimum": -50,
-            "maximum": 50
+            "description": "Coordonnée selon les dimensions de la toile."
           },
           "color": {
             "type": "string",

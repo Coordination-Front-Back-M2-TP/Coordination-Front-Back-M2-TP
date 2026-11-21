@@ -337,3 +337,45 @@ test('refuse en 400 INVALID_INPUT un modèle hors contrat, sans lancer d’agent
   assert.equal(widest.status, 201)
   assert.equal((await request('/api/agent', { method: 'DELETE', cookie })).status, 204)
 })
+
+test('l’instantané, la pose, l’agent et le nettoyage suivent la taille enregistrée', async (t) => {
+  const admin = await createPlayer('Dimensions')
+  const player = await createPlayer('Bordure')
+  await prisma.account.update({ where: { pseudoKey: 'dimensions' }, data: { role: 'admin' } })
+
+  const where = { id: 1 }
+  const original = await prisma.canvasState.findUniqueOrThrow({ where })
+  assert.equal(original.width, 101)
+  assert.equal(original.height, 101)
+  await prisma.canvasState.update({ where, data: { width: 120, height: 103 } })
+  t.after(async () => {
+    await request('/api/agent', { method: 'DELETE', cookie: player })
+    await prisma.pixel.deleteMany({ where: { x: { in: [-60, 59] } } })
+    await prisma.canvasState.update({ where, data: { width: original.width, height: original.height } })
+  })
+
+  const snapshot = await (await request('/api/pixels')).json()
+  assert.equal(snapshot.width, 120)
+  assert.equal(snapshot.height, 103)
+  assert.equal(snapshot.revision, original.revision)
+
+  const place = (x, y) => request('/api/pixels', { method: 'POST', cookie: admin, body: { x, y, color: '#123456' } })
+  const clean = (fromX, fromY, toX, toY) => request('/api/moderation/cleanups', {
+    method: 'POST', cookie: admin, body: { fromX, fromY, toX, toY },
+  })
+
+  for (const response of [await place(60, 0), await start(player, row(0, 52, 1)), await clean(-61, 0, -60, 0)]) {
+    assert.equal(response.status, 400)
+    assert.equal((await response.json()).error.code, 'INVALID_INPUT')
+  }
+  assert.equal((await prisma.canvasState.findUniqueOrThrow({ where })).revision, original.revision)
+  assert.equal(await agentOf(player), null)
+
+  assert.equal((await place(59, 51)).status, 200)
+  assert.equal((await start(player, row(-60, -51, 1))).status, 201)
+  await finished(player)
+  assert.equal(await colorAt(-60, -51), '#123456')
+
+  assert.equal((await clean(59, 51, 59, 51)).status, 200)
+  assert.equal(await colorAt(59, 51), null)
+})

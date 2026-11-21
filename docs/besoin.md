@@ -20,7 +20,7 @@ Une toile partagée où des équipes s'affrontent pixel par pixel, aidées par d
 | --- | --- | --- |
 | Délai entre deux pixels | 10 secondes pour la démo, réglable | Proposé |
 | Palette | 16 couleurs fixes, ouvertes à tous les joueurs : l'équipe ne limite pas la couleur posée | Décidé |
-| Taille de la toile | Fixe, à choisir | À décider |
+| Taille de la toile | 101 × 101 actuellement, dimensions stockées en base | Nouvelle taille par défaut et maximum à décider dans #170 |
 | Taille d'un modèle IA | 32 × 32 pixels au plus | Proposé |
 | Quota de modèles IA | 5 par compte et par jour | Décidé |
 | Équipes | Pas de limite de nombre : un joueur peut créer une équipe. Chaque équipe a une couleur pour la reconnaître (podium, pseudo) | Décidé |

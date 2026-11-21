@@ -3,7 +3,7 @@
 > La section « découvrir la toile » reprend le contrat de l’issue #33.
 > La section « dessiner à la main » est une proposition pour l’issue #42, à relire par le front et le back avant implémentation.
 > Les routes et événements décrivent le contrat visé ; ils ne sont pas tous implémentés.
-> Pour livrer l’issue #35, l’implémentation reprend la proposition de résolution 101 × 101 ; l’axe Y augmente vers le bas. L’instantané contient au plus les 10 201 pixels de la toile et `canvas:error` expose uniquement un code et un message. Ces choix de livraison restent révisables par l’équipe.
+> La toile a été livrée avec une résolution de 101 × 101 dans l’issue #35. L’instantané contient au plus un pixel par case et `canvas:error` expose uniquement un code et un message.
 
 Ce document couvre la lecture de la toile et sa mise à jour en direct pour la user story [#15 — Voir la toile en direct](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/15), ainsi que la pose manuelle et le délai des user stories [#21 — Poser un pixel](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/21) et [#22 — Voir mon délai](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/22). Les choix signalés comme propositions restent à valider par l’équipe.
 
@@ -11,13 +11,13 @@ Ce document couvre la lecture de la toile et sa mise à jour en direct pour la u
 
 - L’API HTTP est préfixée par `/api`. Les corps HTTP sont en JSON ; les clés sont en `camelCase`.
 - La consultation de la toile et l’abonnement temps réel sont publics : aucun compte n’est nécessaire pour regarder.
-- La toile fait 101 × 101 pixels. Avec une origine au centre, les coordonnées vont de `-50` à `50` sur les deux axes ; `(0, 0)` est le pixel central. Cette taille compacte s’affiche sur un écran 800 × 600 avec une marge pour les commandes.
-- `x` augmente vers la droite et `y` augmente vers le bas, pour correspondre aux coordonnées écran. Les deux bornes sont inclusives ; toute coordonnée hors de `-50..50` est invalide.
+- La toile démarre à 101 × 101 pixels. Ses dimensions en vigueur sont `width` et `height` dans l’instantané.
+- Sur un axe de taille `n`, les coordonnées entières vont de `-Math.floor(n / 2)` à `n - 1 - Math.floor(n / 2)`, bornes incluses. Pour une taille de 101, la plage est de `-50` à `50`. L’origine est au centre, `x` augmente vers la droite et `y` vers le bas.
 - `color` est une couleur hexadécimale `#RRGGBB` appartenant à la palette du jeu (section « Palette » ci-dessous). Tout joueur pose n’importe quelle couleur de la palette : son équipe ne la limite pas.
 - Les dates sont en UTC au format ISO 8601, par exemple `2026-10-27T14:30:00.000Z`.
 - Les données publiques représentent uniquement l’état visuel courant de la toile. Elles ne contiennent ni historique des poses, ni pseudo, ni identifiant de compte, ni autre identité de joueur. L’historique se lit par une route à part, `GET /api/placements`, elle aussi sans identité de joueur.
 - `revision` est un entier strictement croissant pour chaque changement de la toile. Le serveur l’attribue au moment où il persiste l’état ; il permet au client de distinguer les mises à jour nouvelles des événements déjà inclus dans un instantané.
-- Un instantané contient au plus 10 201 pixels (un par case). Il n’y a pas de limite d’octets distincte : la taille est bornée par la résolution de la toile.
+- Un instantané contient au plus `width × height` pixels, un par case. La résolution borne la taille de l’instantané.
 
 ## Palette
 
@@ -50,8 +50,8 @@ Décidée le 20/11/2026 : 16 couleurs, ouvertes à tous les joueurs ([besoin](be
 
 | Champ | Type | Signification |
 | --- | --- | --- |
-| `x` | entier | Coordonnée horizontale, de `-50` à `50`, avec `0` au centre |
-| `y` | entier | Coordonnée verticale, de `-50` à `50`, avec `0` au centre |
+| `x` | entier | Coordonnée horizontale, bornée par `width`, avec `0` au centre |
+| `y` | entier | Coordonnée verticale, bornée par `height`, avec `0` au centre |
 | `color` | chaîne `#RRGGBB` | Couleur actuellement visible |
 | `updatedAt` | date ISO 8601 | Heure à laquelle cet état du pixel a été enregistré côté serveur |
 | `revision` | entier | Révision globale à laquelle cet état a été enregistré |
@@ -85,7 +85,7 @@ Renvoie l’état courant de la toile. Cette route est destinée aux consultatio
 ```
 
 - `snapshotAt` est l’heure serveur de lecture de l’instantané.
-- `width` et `height` sont respectivement `101` et `101` tant que la proposition de résolution n’a pas été modifiée.
+- `width` et `height` sont les dimensions enregistrées pour la toile.
 - `revision` est la dernière révision incluse dans l’instantané ; chaque pixel listé a une révision inférieure ou égale à celle-ci.
 - `pixels` contient au plus un état courant par coordonnée. Une toile vide renvoie `[]`.
 - Le serveur renvoie uniquement les pixels présents (représentation creuse) ; l’absence d’une coordonnée dans `pixels` signifie que cette case est vide.
@@ -119,7 +119,7 @@ En développement, le middleware ajoute `stack` et, si disponibles, `details` da
 }
 ```
 
-`x` et `y` sont des entiers compris entre `-50` et `50`, bornes incluses. `color` doit être au format `#RRGGBB` et appartenir à la palette (section « Palette »).
+`x` et `y` sont des entiers compris dans les dimensions de la toile. `color` doit être au format `#RRGGBB` et appartenir à la palette (section « Palette »).
 
 **Succès — `200 OK`**
 
@@ -605,7 +605,7 @@ Compte admin requis.
 }
 ```
 
-La zone est un rectangle donné par deux coins inclus : `(fromX, fromY)` en haut à gauche, `(toX, toY)` en bas à droite. Les quatre valeurs sont des entiers de `-50` à `50`, avec `fromX ≤ toX` et `fromY ≤ toY`.
+La zone est un rectangle donné par deux coins inclus : `(fromX, fromY)` en haut à gauche, `(toX, toY)` en bas à droite. Les quatre valeurs sont des entiers bornés par les dimensions de la toile, avec `fromX ≤ toX` et `fromY ≤ toY`.
 
 **Succès — `200 OK`**
 
@@ -632,7 +632,7 @@ Les pixels visibles de la zone sont supprimés : leurs cases redeviennent vides.
 
 | Statut | Code | Cas |
 | --- | --- | --- |
-| `400 Bad Request` | `INVALID_INPUT` | Coin absent, hors de `-50..50`, non entier, ou coins inversés |
+| `400 Bad Request` | `INVALID_INPUT` | Coordonnée absente, non entière, hors de la toile, ou coins inversés |
 | `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
 | `403 Forbidden` | `FORBIDDEN` | Le compte n’est pas admin |
 | `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
@@ -807,7 +807,7 @@ L’agent de dessin est un programme du serveur, sans IA. Il pose le modèle du 
 }
 ```
 
-Le modèle est déjà placé : `x` et `y` sont des coordonnées de la toile, de `-50` à `50`. Il contient de 1 à 1 024 pixels, tient dans un carré de 32 × 32 cases, et ne nomme pas deux fois la même case. Une case transparente du modèle ne s’envoie pas.
+Le modèle est déjà placé : `x` et `y` sont des coordonnées à l’intérieur des dimensions de la toile. Il contient de 1 à 1 024 pixels, tient dans un carré de 32 × 32 cases, et ne nomme pas deux fois la même case. Une case transparente du modèle ne s’envoie pas.
 
 **Succès — `201 Created`** : `{ "agent": Agent }`.
 
