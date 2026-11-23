@@ -40,6 +40,26 @@ it('refuse un nom invalide avant l’appel et affiche le conflit serveur', async
   expect((await screen.findByRole('alert')).textContent).toContain('déjà pris')
 })
 
+it.each([
+  [400, 'INVALID_INPUT', '3 à 20'],
+  [401, 'UNAUTHORIZED', 'Reconnectez-vous'],
+  [403, 'ACCOUNT_BANNED', 'ne peut pas créer'],
+  [500, 'INTERNAL_SERVER_ERROR', 'Impossible de créer cette équipe'],
+])('affiche l’erreur %s et conserve le nom et la couleur', async (status, code, message) => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: { code } }, { status })))
+  const onCreated = vi.fn()
+  render(<TeamCreation onCreated={onCreated} />)
+  fillForm()
+  const submit = screen.getByRole('button', { name: 'Créer l’équipe' })
+  fireEvent.click(submit)
+
+  expect((await screen.findByRole('alert')).textContent).toContain(message)
+  expect(screen.getByLabelText('Nom de l’équipe').value).toBe('Les Éclairs')
+  expect(screen.getByLabelText('Couleur de l’équipe').value).toBe('#9333EA')
+  expect(onCreated).not.toHaveBeenCalled()
+  expect(submit.disabled).toBe(false)
+})
+
 it('transmet le délai imposé par le serveur', async () => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
     ok: false, status: 429, headers: new Headers({ 'Retry-After': '30' }),
