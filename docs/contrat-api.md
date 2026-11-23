@@ -138,7 +138,7 @@ En développement, le middleware ajoute `stack` et, si disponibles, `details` da
 
 `pixel` est l’état canonique enregistré par le serveur. `cooldownEndsAt` est l’heure serveur à laquelle le compte pourra poser à nouveau un pixel ; le front s’en sert pour afficher le compte à rebours. La durée proposée pour la démo est de 10 secondes, réglable côté serveur ; sa valeur définitive reste à confirmer.
 
-Chaque pose acceptée crée aussi une entrée d’historique contenant le compte et l’équipe issus de la session, les coordonnées, la couleur et l’heure serveur. L’historique conserve chaque pose, y compris lorsqu’elle remplace un pixel visible ; il n’est pas renvoyé dans cette réponse ni diffusé sur la toile.
+Chaque pose acceptée crée aussi une entrée d’historique contenant le compte identifié par la session, son équipe au moment de l’enregistrement, les coordonnées, la couleur et l’heure serveur. Un changement d’équipe enregistré avant la pose s’applique à cette pose. L’historique conserve chaque pose, y compris lorsqu’elle remplace un pixel visible. Il n’est pas renvoyé dans cette réponse ni diffusé sur la toile.
 
 #### Erreurs
 

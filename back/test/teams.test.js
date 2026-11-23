@@ -26,6 +26,7 @@ const BLEUE = { id: 'bleue', name: 'Bleue', color: '#2F6FDE' }
 let prisma
 let server
 let baseUrl
+let canvasRepository
 
 before(async () => {
   execFileSync(process.execPath, [join(backDirectory, 'scripts', 'prisma.js'), 'migrate', 'deploy'], {
@@ -34,8 +35,9 @@ before(async () => {
     stdio: 'pipe',
   })
   prisma = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: databaseUrl }) })
+  canvasRepository = createCanvasRepository(prisma)
   server = createCanvasServer({
-    repository: createCanvasRepository(prisma),
+    repository: canvasRepository,
     accountRepository: createAccountRepository(prisma),
     teamRepository: createTeamRepository(prisma),
     rankingRepository: createRankingRepository(prisma),
@@ -324,4 +326,38 @@ test('plusieurs équipes partagent une couleur et un autre joueur rejoint une é
   assert.equal(result.status, 200)
   assert.equal((await result.json()).user.team.name, 'Autre équipe')
   assert.equal((await (await request('/api/teams')).json()).teams.filter((team) => team.color === '#9333EA').length, 3)
+})
+
+test('une pose en cours est attribuée à l’équipe effective quand elle est enregistrée', async (t) => {
+  const cookie = await register('CoursePose')
+  assert.equal((await joinTeam(cookie, 'rouge')).status, 200)
+  const first = await request('/api/pixels', {
+    method: 'POST', cookie, body: { x: 34, y: -35, color: '#FACC15' },
+  })
+  assert.equal(first.status, 200)
+  const { pixel: firstPixel } = await first.json()
+  await rewindTeamChange('CoursePose', TEAM_CHANGE_COOLDOWN_MS)
+
+  const savePixel = canvasRepository.savePixel
+  // Le changement d'équipe arrive après la lecture de la session, avant le verrou de la pose.
+  const intercepted = t.mock.method(canvasRepository, 'savePixel', async (pixel, placement, options) => {
+    assert.equal(placement.teamId, 'rouge')
+    assert.equal((await joinTeam(cookie, 'bleue')).status, 200)
+    return savePixel(pixel, placement, options)
+  }, { times: 1 })
+
+  const second = await request('/api/pixels', {
+    method: 'POST', cookie, body: { x: 35, y: -35, color: '#FACC15' },
+  })
+  assert.equal(second.status, 200)
+  assert.equal(intercepted.mock.callCount(), 1)
+  const { pixel: secondPixel } = await second.json()
+  const account = await prisma.account.findUniqueOrThrow({ where: { pseudoKey: 'coursepose' } })
+  const history = await prisma.pixelPlacement.findMany({
+    where: { accountId: String(account.id) }, orderBy: { revision: 'asc' },
+  })
+  assert.deepEqual(history.map(({ teamId, placedAt, revision }) => [teamId, placedAt.toISOString(), revision]), [
+    ['rouge', firstPixel.updatedAt, firstPixel.revision],
+    ['bleue', secondPixel.updatedAt, secondPixel.revision],
+  ])
 })
