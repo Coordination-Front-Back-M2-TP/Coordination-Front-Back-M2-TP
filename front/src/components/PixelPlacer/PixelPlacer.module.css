@@ -1,21 +1,124 @@
+/* Dock : la palette, la pose et le délai, en bas de l'écran, par-dessus la toile. */
+.dock {
+  position: fixed;
+  z-index: 1;
+  bottom: var(--hud-gap);
+  left: 50%;
+  translate: -50% 0;
+  display: grid;
+  gap: var(--space-2);
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--hud-gap));
+  padding: var(--space-3);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+
 .form {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 1rem;
-  margin: 0.5rem 0;
+  gap: var(--space-2);
 }
 
 .form label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: grid;
+  gap: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
 .form input {
-  width: 5rem;
+  width: 4.5rem;
+  font-family: var(--font-mono);
+}
+
+/* Le bouton qui replie les coordonnées ne sert que sur téléphone. */
+.coordinatesToggle {
+  display: none;
+}
+
+.timer {
+  align-self: center;
+  font: 500 var(--text-base) var(--font-mono);
+}
+
+/* Vide, la zone d'annonce reste dans le DOM (sinon un lecteur d'écran raterait l'annonce) : on annule seulement son écart. */
+.feedback:empty {
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.feedback {
+  font-size: var(--text-sm);
 }
 
 .error {
-  color: #b91c1c;
+  color: var(--color-danger);
+}
+
+@media (max-width: 760px) {
+  .dock {
+    left: var(--hud-gap);
+    right: var(--hud-gap);
+    width: auto;
+    translate: none;
+  }
+
+  .hint {
+    display: none;
+  }
+
+  .coordinatesToggle {
+    display: block;
+  }
+
+  .collapsed {
+    display: none;
+  }
+}
+
+/* Agent de dessin : carte du HUD dans la colonne de droite. */
+.agent {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.agent h3 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.agent p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.agent form,
+.agent label {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.agent input[type="file"] {
+  max-width: 100%;
+  font-size: var(--text-sm);
+}
+
+.agent progress {
+  width: 100%;
 }

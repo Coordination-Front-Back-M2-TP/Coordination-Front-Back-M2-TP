@@ -135,7 +135,9 @@ test('navigue à la souris et au clavier en 800 × 600 sans poser pendant un gli
 
   await page.getByRole('button', { name: 'Vue d’ensemble' }).click()
   await expect.poll(() => viewportScroll(viewport)).toEqual([0, 0])
-  await expect(page.getByRole('button', { name: 'Dézoomer' })).toBeDisabled()
+  // À la vue d'ensemble, on peut encore dézoomer pour voir la toile de plus loin.
+  await expect(page.getByRole('button', { name: 'Vue d’ensemble' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Dézoomer' })).toBeEnabled()
 })
 
 test.describe('sur un écran tactile', () => {
@@ -144,7 +146,8 @@ test.describe('sur un écran tactile', () => {
   test('zoome par pincement et parcourt la toile avec un doigt', async ({ page, context }) => {
     const placements = await mockPlayerPlacements(page)
     await page.goto('/')
-    await expect(page.getByRole('button', { name: 'Poser le pixel' })).toBeEnabled()
+    // Sur téléphone, la saisie par coordonnées est repliée : la palette prête signale que la pose est possible.
+    await expect(page.getByRole('radio', { name: 'Noir' })).toBeEnabled()
     const viewport = navigation(page)
     await viewport.scrollIntoViewIfNeeded()
     const frame = await viewport.boundingBox()
@@ -153,10 +156,13 @@ test.describe('sur un écran tactile', () => {
     const touch = await context.newCDPSession(page)
     const send = (type, touchPoints) => touch.send('Input.dispatchTouchEvent', { type, touchPoints })
 
+    // Sur téléphone, les boutons de zoom sont dans le menu : on vérifie le pincement par la taille de la toile.
+    const boardWidth = async () => (await viewport.getByRole('img').boundingBox()).width
+    const widthBeforePinch = await boardWidth()
     await send('touchStart', [{ id: 1, x: x - 35, y }, { id: 2, x: x + 35, y }])
     await send('touchMove', [{ id: 1, x: x - 80, y }, { id: 2, x: x + 80, y }])
     await send('touchEnd', [])
-    await expect(page.getByRole('button', { name: 'Dézoomer' })).toBeEnabled()
+    await expect.poll(boardWidth).toBeGreaterThan(widthBeforePinch)
 
     const beforeDrag = await viewportScroll(viewport)
     await send('touchStart', [{ id: 1, x, y }])

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette B · Salle de contrôle</title>
+<style>
+  :root {
+    --fond: #0F1012;
+    --panneau: #17181B;
+    --trait: #2A2C31;
+    --encre: #ECECEE;
+    --encre-douce: #9A9CA3;
+    --accent: #5B8CFF;
+    --police: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --chiffres: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0 }
+  body { background: var(--fond); color: var(--encre); font: 14px/1.45 var(--police); min-height: 100vh;
+    display: grid; grid-template: "haut haut haut" auto "gauche centre droite" 1fr / 260px 1fr 260px }
+
+  header { grid-area: haut; display: flex; align-items: center; gap: 20px; padding: 14px 20px; border-bottom: 1px solid var(--trait) }
+  .etat { font: 12px var(--chiffres); color: var(--encre-douce) }
+  .etat b { color: #4ADE80; font-weight: 500 }
+  header .compte { margin-left: auto; display: flex; gap: 10px; align-items: center }
+
+  aside { padding: 20px; display: grid; align-content: start; gap: 24px }
+  .gauche { grid-area: gauche; border-right: 1px solid var(--trait) }
+  .droite { grid-area: droite; border-left: 1px solid var(--trait) }
+  h2 { font-size: 12px; font-weight: 500; color: var(--encre-douce); margin-bottom: 10px }
+
+  .joueur { display: grid; gap: 4px }
+  .joueur strong { font-size: 16px }
+  .equipe { display: inline-flex; gap: 6px; align-items: center; color: var(--encre-douce) }
+  .equipe i { width: 10px; height: 10px; background: #2563EB }
+
+  /* Le délai est le chiffre que le joueur regarde le plus : il est le plus gros de l'écran. */
+  .delai { font: 500 44px/1 var(--chiffres); letter-spacing: -1px }
+  .delai small { font-size: 16px; color: var(--encre-douce) }
+  .barre { height: 4px; background: var(--trait); margin-top: 10px }
+  .barre span { display: block; height: 100%; width: 30%; background: var(--accent) }
+
+  .palette { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px }
+  .nuance { aspect-ratio: 1; border: 1px solid rgb(255 255 255 / .12); background: var(--c); cursor: pointer; padding: 0 }
+  .nuance[aria-pressed="true"] { outline: 2px solid var(--encre); outline-offset: 2px }
+  .choix { margin-top: 10px; font: 12px var(--chiffres); color: var(--encre-douce) }
+
+  .bouton { font: inherit; border: 1px solid var(--trait); border-radius: 6px; padding: 8px 12px; background: var(--panneau); color: var(--encre); cursor: pointer }
+  .bouton.plein { background: var(--accent); border-color: var(--accent); color: #0B1020; font-weight: 600; width: 100% }
+  .bouton.plein[disabled] { background: var(--trait); border-color: var(--trait); color: var(--encre-douce) }
+
+  /* Signature : des règles graduées autour de la toile, origine (0, 0) au centre. */
+  .centre { grid-area: centre; display: grid; place-items: center; padding: 24px }
+  .cadre { --t: min(70vh, 100%); position: relative; width: var(--t); display: grid; grid-template: 22px 1fr / 22px 1fr }
+  .regle { font: 10px var(--chiffres); color: var(--encre-douce); display: flex; justify-content: space-between }
+  .regle.h { grid-column: 2; padding: 0 0 6px }
+  .regle.v { grid-row: 2; flex-direction: column; align-items: end; padding: 0 6px 0 0 }
+  .toile { grid-area: 2 / 2; width: 100%; aspect-ratio: 1; image-rendering: pixelated; display: block }
+  .viseur { grid-area: 2 / 2; position: relative; pointer-events: none }
+  .viseur::before, .viseur::after { content: ""; position: absolute; background: rgb(91 140 255 / .55) }
+  .viseur::before { left: calc((50 + 12) / 101 * 100% + 100% / 202); top: 0; bottom: 0; width: 1px }
+  .viseur::after { top: calc((50 + 4) / 101 * 100% + 100% / 202); left: 0; right: 0; height: 1px }
+
+  .classement { list-style: none; padding: 0; display: grid; gap: 12px }
+  .classement li { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; font-size: 13px }
+  .classement b { font: 500 13px var(--chiffres) }
+  .classement .jauge { grid-column: 1 / -1; height: 6px; background: var(--trait) }
+  .classement .jauge span { display: block; height: 100% }
+  .agent { padding: 12px; border: 1px dashed var(--trait); color: var(--encre-douce); font-size: 13px; display: grid; gap: 10px }
+
+  @media (max-width: 900px) {
+    body { grid-template: "haut" auto "centre" auto "gauche" auto "droite" auto / 1fr }
+    .gauche, .droite { border: 0; border-top: 1px solid var(--trait) }
+    .centre { padding: 12px }
+    .cadre { --t: 100% }
+    header .etat { display: none }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1 id="logo"></h1>
+    <span class="etat"><b>●</b> en direct · 23 joueurs · toile 101 × 101</span>
+    <div class="compte"><button class="bouton" type="button">Se déconnecter</button></div>
+  </header>
+
+  <aside class="gauche">
+    <section class="joueur">
+      <h2>Joueur</h2>
+      <strong>pixelfan</strong>
+      <span class="equipe"><i></i>Équipe Bleue</span>
+    </section>
+    <section aria-label="Délai avant le prochain pixel">
+      <h2>Prochain pixel</h2>
+      <p class="delai">07<small> s</small></p>
+      <div class="barre"><span></span></div>
+    </section>
+    <section>
+      <h2>Couleur</h2>
+      <div class="palette" data-palette></div>
+      <p class="choix">Bleu · case (12, −4)</p>
+    </section>
+    <button class="bouton plein" type="button" disabled>Poser le pixel</button>
+  </aside>
+
+  <main class="centre">
+    <div class="cadre">
+      <div class="regle h" aria-hidden="true"><span>−50</span><span>−25</span><span>0</span><span>25</span><span>50</span></div>
+      <div class="regle v" aria-hidden="true"><span>−50</span><span>−25</span><span>0</span><span>25</span><span>50</span></div>
+      <canvas class="toile" aria-label="Toile partagée"></canvas>
+      <div class="viseur" aria-hidden="true"></div>
+    </div>
+  </main>
+
+  <aside class="droite">
+    <section>
+      <h2>Classement en direct</h2>
+      <ol class="classement">
+        <li>Rouge<b>1 204</b><span class="jauge"><span style="width:100%;background:#D93A3A"></span></span></li>
+        <li>Bleue<b>987</b><span class="jauge"><span style="width:82%;background:#2563EB"></span></span></li>
+        <li>Verte<b>640</b><span class="jauge"><span style="width:53%;background:#22C55E"></span></span></li>
+        <li>Jaune<b>312</b><span class="jauge"><span style="width:26%;background:#FACC15"></span></span></li>
+      </ol>
+    </section>
+    <section>
+      <h2>Agent de dessin</h2>
+      <div class="agent">Aucun modèle actif. Décris un dessin et l'IA en fera un modèle que ton agent posera pour toi.<button class="bouton" type="button">Créer un modèle</button></div>
+    </section>
+  </aside>
+
+  <script src="commun.js"></script>
+  <script>dessinerLogo(document.getElementById('logo'), '#ECECEE', 4)</script>
+</body>
+</html>

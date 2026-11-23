@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { AuthError, login, register } from '../../api/auth.js'
+import styles from './AuthForm.module.css'
 
 // Messages fixes : le texte renvoyé par le serveur n'est jamais affiché tel quel.
 const MESSAGES = {
@@ -43,24 +44,26 @@ export function AuthForm({ onAuthenticated }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} aria-labelledby={`${id}-titre`}>
-      <h2 id={`${id}-titre`}>{isRegister ? 'Créer un compte' : 'Se connecter'}</h2>
-      <p>
-        <label htmlFor={`${id}-pseudo`}>Pseudo</label>{' '}
+    <form className={styles.form} onSubmit={handleSubmit} aria-labelledby={`${id}-titre`}>
+      <h2 id={`${id}-titre`} className={styles.title}>{isRegister ? 'Créer un compte' : 'Se connecter'}</h2>
+      <p className={styles.field}>
+        <label htmlFor={`${id}-pseudo`}>Pseudo</label>
         <input id={`${id}-pseudo`} name="pseudo" autoComplete="username" required disabled={pending} value={pseudo}
           onChange={(e) => setPseudo(e.target.value)} />
       </p>
-      <p>
-        <label htmlFor={`${id}-mdp`}>Mot de passe</label>{' '}
+      <p className={styles.field}>
+        <label htmlFor={`${id}-mdp`}>Mot de passe</label>
         <input id={`${id}-mdp`} name="password" type="password" required disabled={pending} value={password}
           autoComplete={isRegister ? 'new-password' : 'current-password'}
           onChange={(e) => setPassword(e.target.value)} />
       </p>
       {error && <p role="alert">{error}</p>}
-      <button type="submit" disabled={pending}>{isRegister ? "S'inscrire" : 'Se connecter'}</button>{' '}
-      <button type="button" disabled={pending} onClick={switchMode}>
-        {isRegister ? 'J’ai déjà un compte' : 'Créer un compte'}
-      </button>
+      <div className={styles.actions}>
+        <button type="submit" disabled={pending}>{isRegister ? "S'inscrire" : 'Se connecter'}</button>
+        <button type="button" className="secondary" disabled={pending} onClick={switchMode}>
+          {isRegister ? 'J’ai déjà un compte' : 'Créer un compte'}
+        </button>
+      </div>
     </form>
   )
 }

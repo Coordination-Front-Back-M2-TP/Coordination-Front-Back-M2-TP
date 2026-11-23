@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { PALETTE } from '../../api/palette.js'
 import { createTeam } from '../../api/team-membership.js'
+import styles from './TeamCreation.module.css'
 
 const MESSAGES = {
   INVALID_INPUT: 'Utilisez un nom de 3 à 20 caractères : lettres, chiffres, espaces, _ ou -.',
@@ -55,21 +56,21 @@ export function TeamCreation({ cooldownActive = false, onCooldown, onCreated }) 
   }
 
   return (
-    <form onSubmit={handleSubmit} aria-labelledby="create-team-title">
-      <h2 id="create-team-title">Créer une équipe</h2>
-      <p>Créer une équipe vous y fait entrer et applique le délai de changement d’équipe.</p>
-      <p>
-        <label htmlFor="team-name">Nom de l’équipe</label>{' '}
+    <form className={styles.form} onSubmit={handleSubmit} aria-labelledby="create-team-title">
+      <h2 id="create-team-title" className={styles.title}>Créer une équipe</h2>
+      <p className={styles.hint}>Créer une équipe vous y fait entrer et applique le délai de changement d’équipe.</p>
+      <p className={styles.field}>
+        <label htmlFor="team-name">Nom de l’équipe</label>
         <input id="team-name" value={name} onChange={(event) => setName(event.target.value)} required disabled={disabled} />
       </p>
-      <p>
-        <label htmlFor="team-color">Couleur de l’équipe</label>{' '}
+      <p className={styles.field}>
+        <label htmlFor="team-color">Couleur de l’équipe</label>
         <select id="team-color" value={color} onChange={(event) => setColor(event.target.value)} required disabled={disabled}>
           <option value="">Sélectionnez une couleur</option>
           {PALETTE.map((entry) => <option key={entry.color} value={entry.color}>{entry.name}</option>)}
         </select>
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert" className={styles.hint}>{error}</p>}
       <button type="submit" disabled={disabled}>{pending ? 'Création en cours…' : 'Créer l’équipe'}</button>
     </form>
   )

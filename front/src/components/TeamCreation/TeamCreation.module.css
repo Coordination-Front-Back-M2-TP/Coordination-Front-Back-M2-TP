@@ -1,0 +1,31 @@
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.field input,
+.field select {
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+
+.form button {
+  justify-self: start;
+}

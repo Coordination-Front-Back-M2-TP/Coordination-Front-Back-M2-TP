@@ -1,17 +1,95 @@
-.list {
-  list-style: none;
-  padding: 0;
+/* Carte du HUD, à droite sous le compte (maquette A, « Classement »). */
+.card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
 }
 
-.list li {
-  margin: 0.5rem 0;
+.title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Point de couleur : vert en direct, gris pendant le chargement, rouge en cas d'erreur. */
+.status::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-disabled);
+}
+
+.status[data-status="live"]::before {
+  background: var(--color-live);
+}
+
+.status[data-status="error"]::before {
+  background: var(--color-danger);
+}
+
+.notice,
+.empty {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-1);
+  max-height: 14rem;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1.25rem 0.75rem minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--text-sm);
+}
+
+.rank {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  text-align: right;
 }
 
 .swatch {
-  display: inline-block;
-  width: 1rem;
-  height: 1rem;
-  margin-right: 0.5rem;
-  border: 1px solid currentColor;
-  vertical-align: middle;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 1px solid rgb(0 0 0 / 0.15);
+  background: var(--color-border);
+}
+
+.name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  font: 500 var(--text-sm) var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Sur téléphone, le classement montre environ trois lignes et défile pour le reste. */
+@media (max-width: 760px) {
+  .list {
+    max-height: 4.5rem;
+  }
 }

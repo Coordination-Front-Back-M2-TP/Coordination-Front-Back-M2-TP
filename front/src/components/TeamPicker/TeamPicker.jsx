@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { joinTeam, listTeams } from '../../api/team-membership.js'
+import styles from './TeamPicker.module.css'
 
 const ERROR_MESSAGES = {
   TEAM_CHANGE_COOLDOWN: 'Attendez la fin du délai avant de changer d’équipe.',
@@ -78,8 +79,8 @@ export function TeamPicker({ currentTeam, cooldownActive = false, onCooldown, on
   if (displayedTeams.length === 0) return <p>Aucune équipe disponible.</p>
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>
+    <form className={styles.form} onSubmit={handleSubmit}>
+      <label className={styles.field}>
         Équipe à rejoindre
         <select value={teamId} onChange={(event) => setSelection(event.target.value)} disabled={disabled}>
           <option value="">Sélectionnez une équipe</option>
@@ -91,10 +92,10 @@ export function TeamPicker({ currentTeam, cooldownActive = false, onCooldown, on
       <button type="submit" disabled={disabled || !teamId}>
         {pending ? 'Choix en cours…' : currentTeam ? 'Changer d’équipe' : 'Rejoindre l’équipe'}
       </button>
-      <button type="button" disabled={pending} onClick={() => setAttempt((value) => value + 1)}>
+      <button type="button" className="secondary" disabled={pending} onClick={() => setAttempt((value) => value + 1)}>
         Actualiser les équipes
       </button>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert" className={styles.note}>{error}</p>}
     </form>
   )
 }

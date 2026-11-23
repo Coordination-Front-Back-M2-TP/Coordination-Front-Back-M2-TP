@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette A · Toile d'abord</title>
+<style>
+  :root {
+    --fond: #E9E8E4;
+    --surface: #FFFFFF;
+    --encre: #18181B;
+    --encre-douce: #57575E;
+    --trait: #D4D3CE;
+    --accent: #2563EB;
+    --rayon: 10px;
+    --ecart: 16px;
+    /* Une seule ombre, réservée au HUD : elle le détache d'une toile chargée. */
+    --ombre: 0 1px 2px rgb(0 0 0 / .12), 0 4px 12px rgb(0 0 0 / .08);
+    --police: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --chiffres: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0 }
+  html, body { height: 100% }
+  body { background: var(--fond); color: var(--encre); font: 15px/1.4 var(--police); overflow: hidden }
+
+  /* Au départ, la toile couvre tout l'écran et déborde sur le côté le plus court ; la zone défile.
+     Le HUD se pose par-dessus. Zoom 1 (« Vue d'ensemble ») : toute la toile tient à l'écran. */
+  .scene { position: fixed; inset: 0; overflow: auto; display: flex; scrollbar-width: none; cursor: grab }
+  .scene.glisse { cursor: grabbing; user-select: none }
+  .plateau { position: relative; width: calc(min(100vw, 100vh) * var(--zoom, 1)); aspect-ratio: 1; flex: none; margin: auto }
+  .toile { width: 100%; height: 100%; display: block; image-rendering: pixelated; background: #fff }
+  .viseur { position: absolute; width: calc(100% / 101); aspect-ratio: 1; left: calc(62 / 101 * 100%); top: calc(54 / 101 * 100%);
+    outline: 2px solid var(--encre); box-shadow: 0 0 0 4px #fff }
+
+  .hud { position: fixed; background: var(--surface); border: 1px solid var(--trait); border-radius: var(--rayon); box-shadow: var(--ombre) }
+  .haut-gauche { top: var(--ecart); left: var(--ecart); padding: 10px 14px; display: flex; gap: 14px; align-items: center }
+  .direct { font-size: 13px; color: var(--encre-douce); display: flex; gap: 6px; align-items: center }
+  .direct::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #16A34A }
+  .haut-droite { top: var(--ecart); right: var(--ecart); padding: 6px 6px 6px 14px; display: flex; gap: 12px; align-items: center }
+  .equipe { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--encre-douce) }
+  .equipe i { width: 10px; height: 10px; background: var(--accent); display: inline-block }
+  .bouton { font: inherit; border: 0; border-radius: 8px; padding: 8px 14px; background: var(--encre); color: #fff; cursor: pointer }
+  .bouton.discret { background: transparent; color: var(--encre); border: 1px solid var(--trait) }
+
+  .podium { top: 76px; right: var(--ecart); width: 200px; padding: 12px 14px }
+  .podium h2 { font-size: 13px; font-weight: 600; margin-bottom: 8px }
+  .podium ol { list-style: none; padding: 0; display: grid; gap: 6px; font-size: 13px }
+  .podium li { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center }
+  .podium li i { width: 10px; height: 10px }
+  .podium b { font: 500 13px var(--chiffres) }
+
+  /* Le dock : tout ce qui sert à poser, au même endroit. */
+  .dock { bottom: var(--ecart); left: 50%; translate: -50% 0; padding: 10px; display: flex; gap: 14px; align-items: center }
+  .palette { display: grid; grid-template-columns: repeat(16, 26px); gap: 4px }
+  .nuance { width: 26px; height: 26px; border: 1px solid rgb(0 0 0 / .15); border-radius: 5px; background: var(--c); cursor: pointer; padding: 0 }
+  .nuance[aria-pressed="true"] { outline: 2px solid var(--encre); outline-offset: 2px }
+  .coord { font: 13px var(--chiffres); color: var(--encre-douce); white-space: nowrap }
+  .delai { display: flex; gap: 8px; align-items: center; font: 500 14px var(--chiffres); white-space: nowrap }
+  .delai svg { width: 26px; height: 26px; rotate: -90deg }
+  .poser { background: var(--encre-douce) }
+
+  .zoom { left: var(--ecart); top: 76px; display: flex; gap: 4px; padding: 4px }
+  .zoom button { font: inherit; min-width: 36px; height: 36px; padding: 0 12px; border: 1px solid var(--trait); border-radius: 8px; background: none; color: var(--encre); cursor: pointer }
+  .zoom button:disabled { color: #8E8E94; cursor: not-allowed }
+
+  @media (max-width: 760px) {
+    :root { --ecart: 8px }
+    .direct, .podium, .equipe { display: none }
+    .zoom { top: 64px }
+    .haut-gauche { padding: 10px }
+    .dock { left: var(--ecart); right: var(--ecart); translate: none; flex-wrap: wrap; justify-content: space-between }
+    .palette { grid-template-columns: repeat(8, 1fr); width: 100% }
+    .nuance { width: 100%; height: 34px }
+  }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="plateau">
+      <canvas class="toile" aria-label="Toile partagée"></canvas>
+      <span class="viseur" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <header class="hud haut-gauche">
+    <h1 id="logo"></h1>
+    <span class="direct">En direct · 23 joueurs</span>
+  </header>
+
+  <div class="hud haut-droite">
+    <span class="equipe"><i></i>Bleue</span>
+    <strong>pixelfan</strong>
+    <button class="bouton discret" type="button">Changer d'équipe</button>
+  </div>
+
+  <aside class="hud podium" aria-labelledby="podium-titre">
+    <h2 id="podium-titre">Classement</h2>
+    <ol>
+      <li><i style="background:#D93A3A"></i>Rouge<b>1 204</b></li>
+      <li><i style="background:#2563EB"></i>Bleue<b>987</b></li>
+      <li><i style="background:#22C55E"></i>Verte<b>640</b></li>
+      <li><i style="background:#FACC15"></i>Jaune<b>312</b></li>
+    </ol>
+  </aside>
+
+  <div class="hud zoom" role="group" aria-label="Zoom de la toile">
+    <button type="button" id="zoomer" aria-label="Zoomer">+</button>
+    <button type="button" id="dezoomer" aria-label="Dézoomer">−</button>
+    <button type="button" id="ensemble">Vue d'ensemble</button>
+  </div>
+
+  <div class="hud dock">
+    <div class="palette" data-palette></div>
+    <span class="coord">(12, −4)</span>
+    <span class="delai" aria-label="Prochain pixel dans 7 secondes">
+      <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="#D4D3CE" stroke-width="4"/><circle cx="18" cy="18" r="15" fill="none" stroke="#18181B" stroke-width="4" stroke-dasharray="94.2" stroke-dashoffset="65.9"/></svg>
+      7 s
+    </span>
+    <button class="bouton poser" type="button" disabled>Poser</button>
+  </div>
+
+  <script src="commun.js"></script>
+  <script>
+    dessinerLogo(document.getElementById('logo'), '#18181B', 4)
+
+    // Zoom 1 : toute la toile tient à l'écran (« Vue d'ensemble »). En dessous, elle rapetisse encore ;
+    // au-dessus, elle déborde et se déplace. Au départ, elle couvre l'écran.
+    const ZOOM_MIN = 0.25
+    const ZOOM_MAX = 8
+    const scene = document.querySelector('.scene')
+    const plateau = document.querySelector('.plateau')
+    const boutons = { zoomer: document.getElementById('zoomer'), dezoomer: document.getElementById('dezoomer'), ensemble: document.getElementById('ensemble') }
+    let zoom = Math.min(ZOOM_MAX, Math.max(innerWidth, innerHeight) / Math.min(innerWidth, innerHeight))
+
+    // Zoome en gardant fixe le point de la toile qui est sous (cx, cy), en pixels de l'écran.
+    function appliquer(suivant, cx = scene.clientWidth / 2, cy = scene.clientHeight / 2) {
+      const avant = plateau.getBoundingClientRect()
+      const fx = (cx - avant.left) / avant.width
+      const fy = (cy - avant.top) / avant.height
+      zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, suivant))
+      plateau.style.setProperty('--zoom', zoom)
+      const apres = plateau.getBoundingClientRect()
+      scene.scrollLeft += apres.left + fx * apres.width - cx
+      scene.scrollTop += apres.top + fy * apres.height - cy
+      boutons.zoomer.disabled = zoom >= ZOOM_MAX
+      boutons.dezoomer.disabled = zoom <= ZOOM_MIN
+    }
+
+    boutons.zoomer.addEventListener('click', () => appliquer(zoom * 1.5))
+    boutons.dezoomer.addEventListener('click', () => appliquer(zoom / 1.5))
+    boutons.ensemble.addEventListener('click', () => appliquer(1))
+
+    // Molette : zoom autour du curseur.
+    scene.addEventListener('wheel', (event) => {
+      event.preventDefault()
+      appliquer(zoom * Math.exp(-event.deltaY * 0.0015), event.clientX, event.clientY)
+    }, { passive: false })
+
+    // Glisser à la souris : déplace la toile. Un simple clic resterait un clic de pose.
+    let glisse = null
+    scene.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0) return
+      glisse = { x: event.clientX, y: event.clientY, left: scene.scrollLeft, top: scene.scrollTop, bouge: false }
+    })
+    addEventListener('pointermove', (event) => {
+      if (!glisse) return
+      const dx = event.clientX - glisse.x
+      const dy = event.clientY - glisse.y
+      if (!glisse.bouge && Math.hypot(dx, dy) < 4) return
+      glisse.bouge = true
+      scene.classList.add('glisse')
+      scene.scrollLeft = glisse.left - dx
+      scene.scrollTop = glisse.top - dy
+    })
+    addEventListener('pointerup', () => {
+      glisse = null
+      scene.classList.remove('glisse')
+    })
+
+    appliquer(zoom)
+    scene.scrollLeft = (scene.scrollWidth - scene.clientWidth) / 2
+    scene.scrollTop = (scene.scrollHeight - scene.clientHeight) / 2
+  </script>
+</body>
+</html>

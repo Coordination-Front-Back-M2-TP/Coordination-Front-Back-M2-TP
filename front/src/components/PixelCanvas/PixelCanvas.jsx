@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { HudPortal } from '../HudPortal/HudPortal.jsx'
 import { useCanvasNavigation } from './use-canvas-navigation.js'
 import styles from './PixelCanvas.module.css'
 
@@ -13,13 +14,14 @@ function cellFromPoint(event, element, { width, height }) {
 }
 
 // Sans onSelectCell, la toile reste en lecture seule : c'est le cas d'un visiteur sans compte.
+// La toile couvre l'écran ; le zoom et la liste des pixels en texte vont dans le HUD (HudPortal).
 export function PixelCanvas({ canvas, onSelectCell }) {
   const ref = useRef(null)
   const captionId = useId()
   const [showPixels, setShowPixels] = useState(false)
   const [canDraw, setCanDraw] = useState(true)
   const navigationId = useId()
-  const { canZoomIn, canZoomOut, zoomIn, zoomOut, reset, viewportProps } = useCanvasNavigation(canDraw, selectCell)
+  const { zoom, isOverview, canZoomIn, canZoomOut, zoomIn, zoomOut, reset, viewportProps } = useCanvasNavigation(canDraw, selectCell)
   const count = canvas.pixels.size
 
   function selectCell(event) {
@@ -27,7 +29,6 @@ export function PixelCanvas({ canvas, onSelectCell }) {
     const cell = cellFromPoint(event, ref.current, canvas)
     if (cell) onSelectCell(cell)
   }
-
 
   useEffect(() => {
     if (!ref.current) return
@@ -49,13 +50,9 @@ export function PixelCanvas({ canvas, onSelectCell }) {
     <figure className={styles.figure}>
       {canDraw ? (
         <>
-          <div className={styles.controls} role="group" aria-label="Zoom de la toile">
-            <button type="button" onClick={zoomOut} disabled={!canZoomOut}>Dézoomer</button>
-            <button type="button" onClick={zoomIn} disabled={!canZoomIn}>Zoomer</button>
-            <button type="button" onClick={reset}>Vue d’ensemble</button>
-          </div>
-          <p id={navigationId} className={styles.caption}>
-            Zoomez à la molette ou en pinçant. Déplacez la toile en la faisant glisser ou avec les flèches du clavier.
+          <p id={navigationId} className="visually-hidden">
+            Zoomez à la molette, en pinçant ou avec les touches + et -, et revenez à la vue d’ensemble avec 0.
+            Déplacez la toile en la faisant glisser ou avec les flèches du clavier.
           </p>
           <div
             {...viewportProps}
@@ -64,13 +61,14 @@ export function PixelCanvas({ canvas, onSelectCell }) {
             aria-label="Navigation sur la toile"
             aria-describedby={navigationId}
             tabIndex={0}
-            style={{ aspectRatio: `${canvas.width} / ${canvas.height}` }}
+            style={{ '--canvas-zoom': zoom }}
           >
             <canvas
               ref={ref}
               width={canvas.width}
               height={canvas.height}
               className={onSelectCell ? `${styles.canvas} ${styles.selectable}` : styles.canvas}
+              style={{ '--cols': canvas.width, '--rows': canvas.height }}
               onClick={onSelectCell ? selectCell : undefined}
               role="img"
               aria-label={`Toile partagée de ${canvas.width} par ${canvas.height} pixels`}
@@ -81,20 +79,30 @@ export function PixelCanvas({ canvas, onSelectCell }) {
           </div>
         </>
       ) : <p role="alert">L’affichage graphique est indisponible. Consultez les pixels en texte ci-dessous.</p>}
-      <figcaption id={captionId} className={styles.caption}>
+      <figcaption id={captionId} className="visually-hidden">
         {count === 0 ? 'Aucun pixel posé.' : `${count} pixel${count > 1 ? 's' : ''} coloré${count > 1 ? 's' : ''}.`}
         {' '}Le damier représente les cases vides. L’origine (0, 0) est au centre.
       </figcaption>
-      <details open={!canDraw || undefined} onToggle={(event) => setShowPixels(event.currentTarget.open || !canDraw)}>
-        <summary>Consulter les pixels en texte</summary>
-        {showPixels && (
-          <ul className={styles.pixels} tabIndex={0} aria-label="Coordonnées et couleurs des pixels">
-            {Array.from(canvas.pixels.values(), (pixel) => (
-              <li key={`${pixel.x},${pixel.y}`}>({pixel.x}, {pixel.y}) : {pixel.color}</li>
-            ))}
-          </ul>
+      <HudPortal>
+        {canDraw && (
+          <div className={`hud ${styles.controls}`} role="group" aria-label="Zoom de la toile">
+            <button type="button" className="secondary" onClick={zoomIn} disabled={!canZoomIn} aria-label="Zoomer">+</button>
+            <button type="button" className="secondary" onClick={zoomOut} disabled={!canZoomOut} aria-label="Dézoomer">−</button>
+            <button type="button" className="secondary" onClick={reset} disabled={isOverview}>Vue d’ensemble</button>
+          </div>
         )}
-      </details>
+        <details className={`hud ${styles.details}`} open={!canDraw || undefined}
+          onToggle={(event) => setShowPixels(event.currentTarget.open || !canDraw)}>
+          <summary>Consulter les pixels en texte</summary>
+          {showPixels && (
+            <ul className={styles.pixels} tabIndex={0} aria-label="Coordonnées et couleurs des pixels">
+              {Array.from(canvas.pixels.values(), (pixel) => (
+                <li key={`${pixel.x},${pixel.y}`}>({pixel.x}, {pixel.y}) : {pixel.color}</li>
+              ))}
+            </ul>
+          )}
+        </details>
+      </HudPortal>
     </figure>
   )
 }
