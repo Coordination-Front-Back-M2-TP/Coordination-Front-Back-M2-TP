@@ -1,4 +1,5 @@
 import { prisma } from '../canvas/canvas-repository.js'
+import { forbidden, unauthorized } from '../errors/app-error.js'
 
 // Un agent tel que le service le lit : pixels redevient un tableau.
 function toAgentRecord(agent) {
@@ -15,10 +16,22 @@ export function createAgentRepository(client = prisma) {
     // deux lancements simultanés du même compte ne peuvent pas passer tous les deux.
     async createAgent({ accountId, pixels, startedAt }) {
       try {
-        const agent = await client.drawingAgent.create({
-          data: { accountId, pixels: JSON.stringify(pixels), startedAt },
+        return await client.$transaction(async (transaction) => {
+          // L'insertion prend le verrou d'écriture avant la lecture du compte, comme pour une pose.
+          // Si le bannissement a déjà eu lieu, l'erreur annule l'insertion.
+          const agent = await transaction.drawingAgent.create({
+            data: { accountId, pixels: JSON.stringify(pixels), startedAt },
+          })
+          const account = await transaction.account.findUnique({
+            where: { id: accountId },
+            select: { bannedAt: true },
+          })
+          if (!account) throw unauthorized('Connectez-vous pour utiliser votre agent de dessin.')
+          if (account.bannedAt) {
+            throw forbidden('Ce compte est banni : il ne peut plus lancer d’agent.', 'ACCOUNT_BANNED')
+          }
+          return toAgentRecord(agent)
         })
-        return toAgentRecord(agent)
       } catch (error) {
         if (error?.code === 'P2002') return null
         throw error

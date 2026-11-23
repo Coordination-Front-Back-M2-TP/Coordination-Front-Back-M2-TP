@@ -21,6 +21,7 @@ Les deux routes demandent un compte admin : `401` sans session, `403` avec un co
 
 - **Compte** : le bannissement écrit l'heure dans la colonne `bannedAt` du compte. Le compte et ses sessions restent : le joueur peut encore se connecter et regarder la toile.
 - **Pose refusée** : `POST /api/pixels` répond `403 ACCOUNT_BANNED`. Rien n'est écrit : ni toile, ni historique, ni révision.
+- **Agent arrêté** : le bannissement supprime l’agent dans la même transaction. Un lancement concurrent relit le bannissement sous le verrou d’écriture avant de valider la création de l’agent. Voir [agent-back.md](agent-back.md).
 - **Un compte admin ne se bannit pas** (`409 ADMIN_NOT_BANNABLE`), donc une admin ne peut pas se bannir elle-même. Il faut d'abord retirer le rôle.
 - **Un refus ne change rien** : ni le compte, ni la toile, ni le journal.
 
@@ -55,7 +56,6 @@ La migration `add_account_ban` ajoute la colonne `bannedAt` au compte et un inde
 
 ## Points en attente
 
-- **Agent** : un joueur banni ne peut plus lancer d'agent, et son agent s'arrête. C'est fait par la tâche #51 : voir [agent-back.md](agent-back.md).
 - **Lever un bannissement** : aucune route ne le fait, la user story ne le demande pas. Un bannissement fait par erreur se corrige dans la base, et les pixels annulés ne reviennent pas.
 - **Pixels sans historique** : un pixel posé avant l'arrivée de l'historique n'a pas de ligne dans `PixelPlacement`. Si le joueur banni a posé dessus, la case redevient vide.
 - **Timelapse** (#58) : `GET /api/placements` rend encore les poses du joueur banni.

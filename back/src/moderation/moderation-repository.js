@@ -52,7 +52,7 @@ export function createModerationRepository(client = prisma, { now = () => new Da
       })
     },
 
-    // Bannit le compte, annule ses poses encore visibles et note l'action, dans une seule transaction.
+    // Bannit le compte, retire son agent, annule ses poses visibles et note l'action dans une transaction.
     // Chaque case qui montre un pixel du joueur reprend le pixel d'avant lui, d'après l'historique ;
     // sans pixel d'avant, elle redevient vide. L'historique des poses n'est pas touché.
     // Renvoie { action, restored, cleared } : les pixels remis et les cases vidées.
@@ -71,6 +71,7 @@ export function createModerationRepository(client = prisma, { now = () => new Da
 
         const bannedAt = now()
         await transaction.account.update({ where: { id: account.id }, data: { bannedAt } })
+        await transaction.drawingAgent.deleteMany({ where: { accountId: account.id } })
 
         // Le pixel d'avant ne vient jamais d'un compte banni, celui-ci compris.
         const bannedAccounts = await transaction.account.findMany({

@@ -29,7 +29,7 @@ L'agent pose par le service de toile, comme `POST /api/pixels`. Chaque pose est 
 - **Un compte, un délai** : tant que l'agent du compte existe, `POST /api/pixels` répond `409 AGENT_ACTIVE`. L'agent ne donne pas plus de pixels qu'une pose à la main.
 - **Un seul modèle par compte** : un second lancement répond `409 AGENT_ALREADY_ACTIVE`. La base tient la règle : la clé de la table est le compte.
 - **Équipe obligatoire** : sans équipe, le lancement répond `403 TEAM_REQUIRED`.
-- **Joueur banni** : le lancement répond `403 ACCOUNT_BANNED`. L'agent d'un joueur banni s'arrête à son passage suivant, sans rien poser.
+- **Joueur banni** : le lancement répond `403 ACCOUNT_BANNED`, même si la session a été lue avant le bannissement. La transaction de bannissement retire l’agent enregistré.
 
 ## Modèle
 

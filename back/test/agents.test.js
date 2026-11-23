@@ -337,3 +337,38 @@ test('refuse en 400 INVALID_INPUT un modèle hors contrat, sans lancer d’agent
   assert.equal(widest.status, 201)
   assert.equal((await request('/api/agent', { method: 'DELETE', cookie })).status, 204)
 })
+
+test('le lancement est refusé si le bannissement arrive après la lecture de la session', async (t) => {
+  const admin = await register('AdminCourse')
+  await prisma.account.update({ where: { pseudoKey: 'admincourse' }, data: { role: 'admin' } })
+  const cookie = await createPlayer('CompteCourse')
+  const startAgent = server.agentService.startAgent
+  t.mock.method(server.agentService, 'startAgent', async (body, account) => {
+    assert.equal(account.bannedAt, null)
+    const ban = await request('/api/moderation/bans', { method: 'POST', cookie: admin, body: { pseudo: 'CompteCourse' } })
+    assert.equal(ban.status, 200)
+    return startAgent(body, account)
+  }, { times: 1 })
+
+  const response = await start(cookie, row(0, 47, 1))
+  assert.equal(response.status, 403)
+  assert.equal((await response.json()).error.code, 'ACCOUNT_BANNED')
+  assert.equal(await agentOf(cookie), null)
+})
+
+test('le bannissement retire l’agent enregistré avant le retour de la réponse', async () => {
+  const admin = await register('AdminArret')
+  await prisma.account.update({ where: { pseudoKey: 'adminarret' }, data: { role: 'admin' } })
+  const cookie = await createPlayer('CompteArret')
+  const account = await prisma.account.findUniqueOrThrow({ where: { pseudoKey: 'comptearret' } })
+  // Un agent en base sans minuteur reproduit le délai entre deux passages de l’agent.
+  await prisma.drawingAgent.create({
+    data: { accountId: account.id, pixels: JSON.stringify(row(0, 48, 1)), startedAt: new Date() },
+  })
+  assert.equal((await agentOf(cookie)).status, 'running')
+
+  const ban = await request('/api/moderation/bans', { method: 'POST', cookie: admin, body: { pseudo: 'CompteArret' } })
+  assert.equal(ban.status, 200)
+  assert.equal(await agentOf(cookie), null)
+  assert.equal(await prisma.drawingAgent.count({ where: { accountId: account.id } }), 0)
+})
