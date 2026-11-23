@@ -1,3 +1,4 @@
+import { applyCanvasRevert, parseCanvasRevert } from './canvas-revert.js'
 import { io } from 'socket.io-client'
 import { applyCanvasClear, applyPixelUpdate, parseCanvasClear, parseCanvasSnapshot, parsePixel } from './canvas-state.js'
 
@@ -90,6 +91,7 @@ export function subscribeCanvas(onChange, { createSocket = () => io({ autoConnec
     'canvas:cleared': (raw) => receive(raw, parseCanvasClear, applyCanvasClear),
     'ranking:updated': (ranking) => { if (!disposed && subscribed) onRanking(ranking) },
     'canvas:error': fail,
+    'canvas:reverted': (raw) => receive(raw, parseCanvasRevert, applyCanvasRevert),
   }
   for (const [event, handler] of Object.entries(listeners)) socket.on(event, handler)
   publish('loading')

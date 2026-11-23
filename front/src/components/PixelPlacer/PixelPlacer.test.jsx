@@ -141,6 +141,15 @@ it('affiche le délai du serveur et rétablit la pose à son échéance', async 
   expect(placePixel).toHaveBeenCalledTimes(2)
 })
 
+it('explique le bannissement et conserve la toile en consultation', async () => {
+  vi.mocked(placePixel).mockRejectedValueOnce(new PlacePixelError('ACCOUNT_BANNED'))
+  render(<PixelPlacer canvas={canvas} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Poser le pixel' }))
+  expect((await screen.findByRole('alert')).textContent).toContain('Votre compte est banni')
+  expect(screen.queryByRole('button', { name: 'Poser le pixel' })).toBeNull()
+  expect(screen.getByRole('img')).toBeTruthy()
+})
+
 it('relance le compte à rebours avec Retry-After après un refus du serveur', async () => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] })
   vi.mocked(placePixel).mockRejectedValueOnce(new PlacePixelError('COOLDOWN_ACTIVE', { retryAfterSeconds: 7 }))

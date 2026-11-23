@@ -14,7 +14,7 @@ Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réu
 
 - Toile partagée en temps réel, avec un délai entre deux pixels.
 - Comptes et équipes, créées par les joueurs.
-- Modèles de pixels générés par une IA (GPT) à partir d'une consigne, vérifiée par Jev.
+- Modèles de pixels générés par GPT à partir d'une consigne vérifiée par Jev ou OpenAI, au choix du joueur.
 - Agent de dessin qui pose le modèle à la place du joueur, au même rythme que lui.
 - Classement des équipes et timelapse de la toile.
 
@@ -25,7 +25,7 @@ Le besoin complet (règles du jeu, rôle de l'IA, périmètre, critères de réu
 | Front | React avec Vite (version fixée au démarrage du code) |
 | Back | Node.js avec Express et Socket.IO (versions fixées au démarrage du code) |
 | Données | SQLite avec Prisma |
-| IA | GPT (OpenAI) pour les modèles, Jev pour la modération des consignes |
+| IA | GPT (OpenAI) pour les modèles, Jev ou OpenAI pour la modération des consignes |
 
 ## Installation
 

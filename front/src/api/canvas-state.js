@@ -2,6 +2,8 @@ const isRevision = (value) => Number.isSafeInteger(value) && value >= 0
 const isDate = (value) => typeof value === 'string' && Number.isFinite(Date.parse(value))
 const pixelKey = ({ x, y }) => `${x},${y}`
 
+export { isDate, isInside, isRevision, pixelKey }
+
 export function parsePixel(pixel) {
   if (!pixel || !Number.isSafeInteger(pixel.x) || !Number.isSafeInteger(pixel.y)
     || typeof pixel.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(pixel.color)

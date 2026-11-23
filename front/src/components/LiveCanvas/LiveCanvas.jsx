@@ -4,6 +4,7 @@ import { createRankingFeed } from '../../api/rankings.js'
 import { ZoneCleanup } from '../ZoneCleanup/ZoneCleanup.jsx'
 import { PixelPlacer } from '../PixelPlacer/PixelPlacer.jsx'
 import { Ranking } from '../Ranking/Ranking.jsx'
+import { PlayerModeration } from '../PlayerModeration/PlayerModeration.jsx'
 
 const STATUS_MESSAGES = {
   loading: 'Chargement de la toile…',
@@ -42,11 +43,12 @@ export function LiveCanvas({ user }) {
       {canvas && status !== 'live' && <p>Dernier état reçu affiché ; les nouveaux pixels peuvent manquer.</p>}
       {canvas && <PixelPlacer key={user ? 'account:' + user.pseudo : 'visitor'} canvas={canvas} user={user} />}
       {canvas && user?.role === 'admin' && (
-        <ZoneCleanup key={user.pseudo} width={canvas.width} height={canvas.height} live={status === 'live'} />
+        <ZoneCleanup key={`cleanup:${user.pseudo}`} width={canvas.width} height={canvas.height} live={status === 'live'} />
       )}
       <Ranking {...rankingState} onRetry={() => {
         if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
       }} />
+      {user?.role === 'admin' && <PlayerModeration key={user.pseudo} />}
     </section>
   )
 }
