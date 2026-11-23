@@ -9,6 +9,8 @@ datasource db {
 model CanvasState {
   id       Int @id @default(1)
   revision Int @default(0)
+  width    Int @default(250)
+  height   Int @default(250)
 }
 
 // L'ordre de création reste stable, y compris pour les quatre équipes de départ.

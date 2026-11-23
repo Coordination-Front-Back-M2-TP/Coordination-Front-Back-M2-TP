@@ -73,16 +73,16 @@ test('la lecture publique et la souscription renvoient l’instantané courant',
     revision: httpSnapshot.revision,
     pixels: httpSnapshot.pixels,
   }, {
-    width: 101,
-    height: 101,
+    width: 250,
+    height: 250,
     revision: 0,
     pixels: [],
   })
   assert.equal(Number.isFinite(Date.parse(httpSnapshot.snapshotAt)), true)
 
   const snapshot = await subscribe(socket)
-  assert.equal(snapshot.width, 101)
-  assert.equal(snapshot.height, 101)
+  assert.equal(snapshot.width, 250)
+  assert.equal(snapshot.height, 250)
   assert.equal(snapshot.revision, 0)
   assert.deepEqual(snapshot.pixels, [])
 })
@@ -129,7 +129,7 @@ test('persiste une pose avant de la diffuser et la conserve après reconnexion',
 test('refuse les coordonnées ou couleurs hors contrat sans modifier la toile', async () => {
   await assert.rejects(server.canvasService.savePixel(null), { code: 'INVALID_INPUT', statusCode: 400 })
   await assert.rejects(
-    server.canvasService.savePixel({ x: 51, y: 0, color: '#123456' }),
+    server.canvasService.savePixel({ x: 125, y: 0, color: '#123456' }),
     { code: 'INVALID_INPUT', statusCode: 400 },
   )
   await assert.rejects(

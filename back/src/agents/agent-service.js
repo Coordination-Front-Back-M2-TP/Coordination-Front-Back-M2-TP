@@ -2,8 +2,6 @@ import { readCooldownMs } from '../canvas/canvas-service.js'
 import { badRequest, conflict, forbidden } from '../errors/app-error.js'
 import { logger } from '../utils/logger.js'
 
-const MIN_COORDINATE = -50
-const MAX_COORDINATE = 50
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i
 // Taille d'un modèle : 32 × 32 pixels au plus (docs/besoin.md).
 export const MAX_MODEL_SIZE = 32
@@ -11,10 +9,6 @@ export const MAX_MODEL_SIZE = 32
 const DEFAULT_IDLE_CHECK_MS = 1000
 // Attente avant de réessayer quand la pose est refusée pour un délai encore actif.
 const COOLDOWN_RETRY_MS = 250
-
-function isCoordinate(value) {
-  return Number.isSafeInteger(value) && value >= MIN_COORDINATE && value <= MAX_COORDINATE
-}
 
 function cellKey({ x, y }) {
   return `${x},${y}`
@@ -37,7 +31,7 @@ function readModel(body) {
   const cells = new Set()
   const model = pixels.map((pixel) => {
     if (!pixel || typeof pixel !== 'object'
-      || !isCoordinate(pixel.x) || !isCoordinate(pixel.y)
+      || !Number.isSafeInteger(pixel.x) || !Number.isSafeInteger(pixel.y)
       || typeof pixel.color !== 'string' || !COLOR_PATTERN.test(pixel.color)
       || cells.has(cellKey(pixel))) {
       throw invalid()

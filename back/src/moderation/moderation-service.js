@@ -1,17 +1,11 @@
 import { ADMIN_ROLE, PLAYER_ROLE } from '../accounts/account-service.js'
 import { badRequest } from '../errors/app-error.js'
 
-const MIN_COORDINATE = -50
-const MAX_COORDINATE = 50
 export const DEFAULT_PAGE_SIZE = 50
 export const MAX_PAGE_SIZE = 200
 const INTEGER_PATTERN = /^\d{1,9}$/
 // Plus large que la règle d'inscription : il suffit d'écarter les valeurs qui ne sont pas un pseudo.
 const MAX_PSEUDO_LENGTH = 64
-
-function isCoordinate(value) {
-  return Number.isSafeInteger(value) && value >= MIN_COORDINATE && value <= MAX_COORDINATE
-}
 
 // Un paramètre de requête absent donne fallback. Un paramètre répété arrive en tableau : il est refusé.
 function readInteger(value, { min, max = Number.MAX_SAFE_INTEGER, fallback }) {
@@ -61,7 +55,7 @@ export function createModerationService({ repository, publishCleanup = () => {},
     // admin : le compte admin de la session. zone : le corps de la requête, deux coins inclus.
     async cleanZone(zone, admin) {
       if (!zone || typeof zone !== 'object'
-        || ![zone.fromX, zone.fromY, zone.toX, zone.toY].every(isCoordinate)
+        || ![zone.fromX, zone.fromY, zone.toX, zone.toY].every(Number.isSafeInteger)
         || zone.fromX > zone.toX || zone.fromY > zone.toY) {
         throw badRequest('Cette zone n’est pas acceptée.', 'INVALID_INPUT')
       }

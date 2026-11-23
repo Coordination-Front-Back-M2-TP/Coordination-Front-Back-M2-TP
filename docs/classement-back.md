@@ -15,7 +15,7 @@ Tâche #56, user story [#28 — Voir le classement des équipes](https://github.
 
 Le code est dans `back/src/rankings/`, avec les trois couches de [GUIDELINES.md](../GUIDELINES.md) (section 5).
 
-Le classement n'a pas de table à lui. Il se lit dans ce qui existe : la révision d'un pixel visible (`Pixel`) est celle de la pose qui l'a écrit en dernier (`PixelPlacement`). Une jointure sur `revision` garde donc une pose par case, la plus récente, et le compte se fait par `teamId`. La toile a au plus 10 201 cases : le calcul reste court.
+Le classement n'a pas de table à lui. Il se lit dans ce qui existe : la révision d'un pixel visible (`Pixel`) est celle de la pose qui l'a écrit en dernier (`PixelPlacement`). Une jointure sur `revision` garde donc une pose par case, la plus récente, et le compte se fait par `teamId`. Le nombre de cases est borné par les dimensions enregistrées de la toile.
 
 La diffusion part de `server.js` après une pose, un nettoyage qui retire des pixels ou un bannissement qui modifie la toile. Deux calculs lancés coup sur coup peuvent finir dans le désordre. Le serveur ignore les résultats plus anciens que le dernier classement diffusé. Un calcul en échec est journalisé et la modification de la toile reste enregistrée.
 

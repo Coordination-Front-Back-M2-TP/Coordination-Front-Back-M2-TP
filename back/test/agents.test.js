@@ -315,7 +315,7 @@ test('refuse en 400 INVALID_INPUT un modèle hors contrat, sans lancer d’agent
     { pixels: 'dragon' },
     { pixels: [] },
     { pixels: [null] },
-    { pixels: [{ ...pixel, x: 51 }] },
+    { pixels: [{ ...pixel, x: 125 }] },
     { pixels: [{ ...pixel, y: 1.5 }] },
     { pixels: [{ ...pixel, color: 'rouge' }] },
     { pixels: [{ x: 0, y: 0 }] },
@@ -336,4 +336,46 @@ test('refuse en 400 INVALID_INPUT un modèle hors contrat, sans lancer d’agent
   const widest = await start(cookie, [pixel, { ...pixel, x: 31 }])
   assert.equal(widest.status, 201)
   assert.equal((await request('/api/agent', { method: 'DELETE', cookie })).status, 204)
+})
+
+test('l’instantané, la pose, l’agent et le nettoyage suivent la taille enregistrée', async (t) => {
+  const admin = await createPlayer('Dimensions')
+  const player = await createPlayer('Bordure')
+  await prisma.account.update({ where: { pseudoKey: 'dimensions' }, data: { role: 'admin' } })
+
+  const where = { id: 1 }
+  const original = await prisma.canvasState.findUniqueOrThrow({ where })
+  assert.equal(original.width, 250)
+  assert.equal(original.height, 250)
+  await prisma.canvasState.update({ where, data: { width: 280, height: 253 } })
+  t.after(async () => {
+    await request('/api/agent', { method: 'DELETE', cookie: player })
+    await prisma.pixel.deleteMany({ where: { x: { in: [-140, 139] } } })
+    await prisma.canvasState.update({ where, data: { width: original.width, height: original.height } })
+  })
+
+  const snapshot = await (await request('/api/pixels')).json()
+  assert.equal(snapshot.width, 280)
+  assert.equal(snapshot.height, 253)
+  assert.equal(snapshot.revision, original.revision)
+
+  const place = (x, y) => request('/api/pixels', { method: 'POST', cookie: admin, body: { x, y, color: '#123456' } })
+  const clean = (fromX, fromY, toX, toY) => request('/api/moderation/cleanups', {
+    method: 'POST', cookie: admin, body: { fromX, fromY, toX, toY },
+  })
+
+  for (const response of [await place(140, 0), await start(player, row(0, 127, 1)), await clean(-141, 0, -140, 0)]) {
+    assert.equal(response.status, 400)
+    assert.equal((await response.json()).error.code, 'INVALID_INPUT')
+  }
+  assert.equal((await prisma.canvasState.findUniqueOrThrow({ where })).revision, original.revision)
+  assert.equal(await agentOf(player), null)
+
+  assert.equal((await place(139, 126)).status, 200)
+  assert.equal((await start(player, row(-140, -126, 1))).status, 201)
+  await finished(player)
+  assert.equal(await colorAt(-140, -126), '#123456')
+
+  assert.equal((await clean(139, 126, 139, 126)).status, 200)
+  assert.equal(await colorAt(139, 126), null)
 })

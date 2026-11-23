@@ -1,6 +1,7 @@
 import { ADMIN_ROLE } from '../accounts/account-service.js'
+import { isInsideCanvas } from '../canvas/canvas-bounds.js'
 import { prisma } from '../canvas/canvas-repository.js'
-import { conflict, notFound } from '../errors/app-error.js'
+import { badRequest, conflict, notFound } from '../errors/app-error.js'
 
 export const ZONE_CLEANUP = 'zone_cleanup'
 export const PLAYER_BAN = 'player_ban'
@@ -36,6 +37,9 @@ export function createModerationRepository(client = prisma, { now = () => new Da
           where: { id: 1 },
           data: { revision: { increment: 1 } },
         })
+        if (!isInsideCanvas(fromX, fromY, state) || !isInsideCanvas(toX, toY, state)) {
+          throw badRequest('Cette zone n’est pas acceptée.', 'INVALID_INPUT')
+        }
         const { count } = await transaction.pixel.deleteMany({
           where: { x: { gte: fromX, lte: toX }, y: { gte: fromY, lte: toY } },
         })

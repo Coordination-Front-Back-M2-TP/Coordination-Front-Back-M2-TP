@@ -1,14 +1,8 @@
 import { badRequest } from '../errors/app-error.js'
 
-const MIN_COORDINATE = -50
-const MAX_COORDINATE = 50
 const COLOR_PATTERN = /^#[0-9a-f]{6}$/i
 // Durée proposée par le contrat pour la démo ; sa valeur définitive reste à confirmer par l'équipe.
 const DEFAULT_COOLDOWN_SECONDS = 10
-
-function isCoordinate(value) {
-  return Number.isSafeInteger(value) && value >= MIN_COORDINATE && value <= MAX_COORDINATE
-}
 
 // Lit le délai entre deux poses dans PIXEL_COOLDOWN_SECONDS. Une valeur absente, vide,
 // négative ou illisible donne le délai par défaut ; 0 désactive le délai.
@@ -22,7 +16,7 @@ export function createCanvasService({ repository, publish = () => {}, cooldownMs
   // placement : { accountId, teamId } issus de la session, pour l'historique et le délai.
   async function savePixel(pixel, placement = null) {
     if (!pixel || typeof pixel !== 'object'
-      || !isCoordinate(pixel.x) || !isCoordinate(pixel.y)
+      || !Number.isSafeInteger(pixel.x) || !Number.isSafeInteger(pixel.y)
       || typeof pixel.color !== 'string' || !COLOR_PATTERN.test(pixel.color)) {
       throw badRequest('Cette case ou cette couleur n’est pas acceptée.', 'INVALID_INPUT')
     }

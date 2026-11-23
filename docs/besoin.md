@@ -20,7 +20,7 @@ Une toile partagée où des équipes s'affrontent pixel par pixel, aidées par d
 | --- | --- | --- |
 | Délai entre deux pixels | 10 secondes pour la démo, réglable | Proposé |
 | Palette | 16 couleurs fixes, ouvertes à tous les joueurs : l'équipe ne limite pas la couleur posée | Décidé |
-| Taille de la toile | Fixe, à choisir | À décider |
+| Taille de la toile | 250 × 250 par défaut, dimensions stockées en base | Taille maximale et comportement en cas de rétrécissement à décider dans #170 |
 | Taille d'un modèle IA | 32 × 32 pixels au plus | Proposé |
 | Quota de modèles IA | 5 par compte et par jour | Décidé |
 | Équipes | Pas de limite de nombre : un joueur peut créer une équipe. Chaque équipe a une couleur pour la reconnaître (podium, pseudo) | Décidé |
@@ -90,7 +90,7 @@ Jusqu'à l'EPIC 6, la modération s’applique aux consignes envoyées à l'IA. 
 
 ## 9. Questions ouvertes
 
-- Taille de la toile et délai définitif.
+- Taille maximale de la toile, comportement en cas de rétrécissement et délai définitif.
 - Modèle GPT utilisé et son coût par appel.
 - Comment appeler Jev : adresse, format de la réponse, temps de réponse.
 - Ce que les personas changent aux user stories.

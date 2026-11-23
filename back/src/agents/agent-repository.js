@@ -1,4 +1,6 @@
+import { isInsideCanvas } from '../canvas/canvas-bounds.js'
 import { prisma } from '../canvas/canvas-repository.js'
+import { badRequest } from '../errors/app-error.js'
 
 // Un agent tel que le service le lit : pixels redevient un tableau.
 function toAgentRecord(agent) {
@@ -15,10 +17,19 @@ export function createAgentRepository(client = prisma) {
     // deux lancements simultanés du même compte ne peuvent pas passer tous les deux.
     async createAgent({ accountId, pixels, startedAt }) {
       try {
-        const agent = await client.drawingAgent.create({
-          data: { accountId, pixels: JSON.stringify(pixels), startedAt },
+        return await client.$transaction(async (transaction) => {
+          const dimensions = await transaction.canvasState.findUniqueOrThrow({
+            where: { id: 1 },
+            select: { width: true, height: true },
+          })
+          if (pixels.some(({ x, y }) => !isInsideCanvas(x, y, dimensions))) {
+            throw badRequest('Ce modèle n’est pas accepté.', 'INVALID_INPUT')
+          }
+          const agent = await transaction.drawingAgent.create({
+            data: { accountId, pixels: JSON.stringify(pixels), startedAt },
+          })
+          return toAgentRecord(agent)
         })
-        return toAgentRecord(agent)
       } catch (error) {
         if (error?.code === 'P2002') return null
         throw error

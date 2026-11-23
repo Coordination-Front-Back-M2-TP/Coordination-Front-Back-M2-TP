@@ -1,8 +1,7 @@
 import { createServer } from 'node:http'
 import { Server } from 'socket.io'
 
-const CANVAS_WIDTH = 101
-const CANVAS_HEIGHT = 101
+const CANVAS_SIZE = 250
 
 // Pixels seedés : couleurs distinctes autour de l'origine, connues des tests.
 export const SEED_PIXELS = [
@@ -26,8 +25,8 @@ export function createContractServer() {
   const handshakes = []
 
   const snapshot = () => ({
-    width: CANVAS_WIDTH,
-    height: CANVAS_HEIGHT,
+    width: CANVAS_SIZE,
+    height: CANVAS_SIZE,
     revision,
     snapshotAt: new Date().toISOString(),
     pixels: [...pixels.values()],

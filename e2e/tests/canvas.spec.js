@@ -35,6 +35,7 @@ function readPixel(page, x, y) {
 test('affiche les pixels déjà posés, sans compte', async ({ page }) => {
   await page.goto('/')
   await expect(liveStatus(page)).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Toile partagée de 250 par 250 pixels' })).toBeVisible()
 
   // Les pixels seedés sont dessinés dans le canvas du navigateur.
   for (const pixel of SEED_PIXELS) {
@@ -67,7 +68,7 @@ test('un pixel posé ailleurs apparaît en moins d’une seconde', async ({ page
   await page.goto('/')
   await expect(liveStatus(page)).toBeVisible()
 
-  const change = { x: 10, y: -10, color: '#0EA5E9' }
+  const change = { x: 124, y: -125, color: '#0EA5E9' }
   const startedAt = Date.now()
   contract.placePixel(change)
   await expect.poll(() => readPixel(page, change.x, change.y), { timeout: 1_000 }).toBe(change.color)
@@ -76,6 +77,15 @@ test('un pixel posé ailleurs apparaît en moins d’une seconde', async ({ page
 
 const navigation = (page) => page.getByRole('region', { name: 'Navigation sur la toile' })
 const viewportScroll = (viewport) => viewport.evaluate(({ scrollLeft, scrollTop }) => [scrollLeft, scrollTop])
+
+async function cellCenter(board, x, y) {
+  const box = await board.boundingBox()
+  const { width, height } = await board.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }))
+  return {
+    x: box.x + box.width * (x + Math.floor(width / 2) + 0.5) / width,
+    y: box.y + box.height * (y + Math.floor(height / 2) + 0.5) / height,
+  }
+}
 
 async function mockPlayerPlacements(page) {
   const placements = []
@@ -129,7 +139,8 @@ test('navigue à la souris et au clavier en 800 × 600 sans poser pendant un gli
   const zoomed = await board.boundingBox()
   expect(zoomed.width).toBeGreaterThan(frame.width)
   // Clique sur une case connue après le zoom et le déplacement.
-  await page.mouse.click(zoomed.x + zoomed.width * 47.5 / 101, zoomed.y + zoomed.height * 52.5 / 101)
+  const target = await cellCenter(board, -3, 2)
+  await page.mouse.click(target.x, target.y)
   await expect(page.getByText(/Pixel .* posé en \(-3, 2\)/)).toBeVisible()
   expect(placements.map(({ x, y }) => [x, y])).toEqual([[-3, 2]])
 
@@ -165,10 +176,8 @@ test.describe('sur un écran tactile', () => {
     await expect.poll(() => viewportScroll(viewport)).toEqual([beforeDrag[0] + 32, beforeDrag[1] + 22])
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
 
-    const board = await viewport.getByRole('img').boundingBox()
-    const targetX = board.x + board.width * 53.5 / 101
-    const targetY = board.y + board.height * 52.5 / 101
-    await send('touchStart', [{ id: 1, x: Math.round(targetX), y: Math.round(targetY) }])
+    const target = await cellCenter(viewport.getByRole('img'), 3, 2)
+    await send('touchStart', [{ id: 1, x: Math.round(target.x), y: Math.round(target.y) }])
     await send('touchEnd', [])
     await expect(page.getByText(/Pixel .* posé en \(3, 2\)/)).toBeVisible()
     expect(placements.map(({ x, y }) => [x, y])).toEqual([[3, 2]])
