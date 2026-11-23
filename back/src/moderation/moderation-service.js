@@ -1,6 +1,5 @@
 import { ADMIN_ROLE, PLAYER_ROLE } from '../accounts/account-service.js'
 import { badRequest } from '../errors/app-error.js'
-import { findTeam } from '../teams/team-catalog.js'
 
 const MIN_COORDINATE = -50
 const MAX_COORDINATE = 50
@@ -48,14 +47,14 @@ function toAction(record) {
 function toPlayer(account) {
   return {
     pseudo: account.pseudo,
-    team: findTeam(account.teamId),
+    team: account.team ?? null,
     role: account.role === ADMIN_ROLE ? ADMIN_ROLE : PLAYER_ROLE,
     banned: account.bannedAt !== null,
     bannedAt: account.bannedAt ? account.bannedAt.toISOString() : null,
   }
 }
 
-// publishCleanup : diffuse la zone nettoyée aux abonnés de la toile.
+// publishCleanup : diffuse la zone nettoyée et signale au serveur combien de pixels ont été retirés.
 // publishRevert : diffuse les cases changées par un bannissement. Sans temps réel, ils ne font rien.
 export function createModerationService({ repository, publishCleanup = () => {}, publishRevert = () => {} }) {
   return {
@@ -72,9 +71,9 @@ export function createModerationService({ repository, publishCleanup = () => {},
         { fromX: zone.fromX, fromY: zone.fromY, toX: zone.toX, toY: zone.toY },
         admin,
       )
-      const { fromX, fromY, toX, toY, revision } = record.details
+      const { fromX, fromY, toX, toY, revision, removedCount } = record.details
       // La diffusion vient après la transaction : elle n'annonce jamais un nettoyage qui a échoué.
-      publishCleanup({ fromX, fromY, toX, toY, revision, clearedAt: record.createdAt })
+      publishCleanup({ fromX, fromY, toX, toY, revision, clearedAt: record.createdAt }, removedCount)
       return { action: toAction(record) }
     },
 

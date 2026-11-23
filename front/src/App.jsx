@@ -4,7 +4,7 @@ import { getCurrentUser } from './api/auth.js'
 import { AccountBar } from './components/AccountBar/AccountBar.jsx'
 import { AuthForm } from './components/AuthForm/AuthForm.jsx'
 import { LiveCanvas } from './components/LiveCanvas/LiveCanvas.jsx'
-import { TeamControls } from './components/TeamControls/TeamControls.jsx'
+import { TeamMembership } from './components/TeamMembership/TeamMembership.jsx'
 import { ServerStatus } from './components/ServerStatus/ServerStatus.jsx'
 
 // Page de départ : elle montre si le front joint le back, ce qui valide l'installation (INSTALL.md, section 6).
@@ -58,15 +58,7 @@ function App() {
         setUser(current)
       }} />}
       {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
-      {user && (
-        <TeamControls
-          key={user.pseudo}
-          currentTeam={user.team}
-          onTeamChanged={(team) => setUser((current) => (
-            current === user ? { ...current, team } : current
-          ))}
-        />
-      )}
+      {user && <TeamMembership key={user.pseudo} user={user} onTeamChanged={setUser} />}
       <LiveCanvas user={user ?? null} />
     </main>
   )

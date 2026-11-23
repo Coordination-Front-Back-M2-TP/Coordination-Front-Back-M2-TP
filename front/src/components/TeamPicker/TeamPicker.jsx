@@ -7,26 +7,26 @@ const ERROR_MESSAGES = {
   UNAUTHORIZED: 'Reconnectez-vous pour choisir une équipe.',
 }
 
-export function TeamPicker({ currentTeam, listRevision, disabled, pending, onPendingChange, onCooldown, onTeamJoined }) {
+export function TeamPicker({ currentTeam, cooldownActive = false, onCooldown, onTeamJoined }) {
   const [teams, setTeams] = useState(null)
   const [loadFailed, setLoadFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [selection, setSelection] = useState('')
+  const [pending, setPending] = useState(false)
   const [error, setError] = useState(null)
   const submission = useRef(null)
+  const disabled = pending || cooldownActive
   const teamId = selection === currentTeam?.id ? '' : selection
 
   useEffect(() => {
     const controller = new AbortController()
     listTeams(controller.signal).then((result) => {
-      if (controller.signal.aborted) return
-      setTeams(result)
-      setLoadFailed(false)
+      if (!controller.signal.aborted) setTeams(result)
     }).catch(() => {
       if (!controller.signal.aborted) setLoadFailed(true)
     })
     return () => controller.abort()
-  }, [attempt, listRevision])
+  }, [attempt])
 
   useEffect(() => () => submission.current?.abort(), [])
 
@@ -35,13 +35,13 @@ export function TeamPicker({ currentTeam, listRevision, disabled, pending, onPen
     if (disabled || !teamId || submission.current) return
     const controller = new AbortController()
     submission.current = controller
-    onPendingChange(true)
+    setPending(true)
     setError(null)
     try {
-      const { user, availableAt } = await joinTeam(teamId, controller.signal)
+      const result = await joinTeam(teamId, controller.signal)
       if (controller.signal.aborted) return
       setSelection('')
-      onTeamJoined(user.team, availableAt)
+      onTeamJoined(result)
     } catch (failure) {
       if (controller.signal.aborted) return
       if (failure.code === 'TEAM_CHANGE_COOLDOWN' && failure.retryAfterMs) {
@@ -55,7 +55,7 @@ export function TeamPicker({ currentTeam, listRevision, disabled, pending, onPen
     } finally {
       if (!controller.signal.aborted) {
         submission.current = null
-        onPendingChange(false)
+        setPending(false)
       }
     }
   }
@@ -72,10 +72,10 @@ export function TeamPicker({ currentTeam, listRevision, disabled, pending, onPen
     )
   }
   if (!teams) return <p role="status">Chargement des équipes…</p>
-  const availableTeams = teams.filter((team) => team.id !== currentTeam?.id)
-  if (availableTeams.length === 0) {
-    return currentTeam ? null : <p>Aucune équipe disponible.</p>
-  }
+  const displayedTeams = currentTeam && !teams.some((team) => team.id === currentTeam.id)
+    ? [...teams, currentTeam]
+    : teams
+  if (displayedTeams.length === 0) return <p>Aucune équipe disponible.</p>
 
   return (
     <form onSubmit={handleSubmit}>
@@ -83,11 +83,16 @@ export function TeamPicker({ currentTeam, listRevision, disabled, pending, onPen
         Équipe à rejoindre
         <select value={teamId} onChange={(event) => setSelection(event.target.value)} disabled={disabled}>
           <option value="">Sélectionnez une équipe</option>
-          {availableTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+          {displayedTeams.map((team) => <option key={team.id} value={team.id} disabled={team.id === currentTeam?.id}>
+            {team.name}{team.id === currentTeam?.id ? ' (équipe actuelle)' : ''}
+          </option>)}
         </select>
       </label>
       <button type="submit" disabled={disabled || !teamId}>
         {pending ? 'Choix en cours…' : currentTeam ? 'Changer d’équipe' : 'Rejoindre l’équipe'}
+      </button>
+      <button type="button" disabled={pending} onClick={() => setAttempt((value) => value + 1)}>
+        Actualiser les équipes
       </button>
       {error && <p role="alert">{error}</p>}
     </form>

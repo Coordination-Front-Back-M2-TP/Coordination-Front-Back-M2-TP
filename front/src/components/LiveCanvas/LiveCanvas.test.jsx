@@ -6,6 +6,7 @@ import { parseCanvasSnapshot } from '../../api/canvas-state.js'
 import { LiveCanvas } from './LiveCanvas.jsx'
 
 vi.mock('../../api/canvas.js', () => ({ subscribeCanvas: vi.fn() }))
+vi.mock('../Ranking/Ranking.jsx', () => ({ Ranking: () => null }))
 let subscriptions
 let stops
 const canvas = () => parseCanvasSnapshot({ width: 3, height: 3, revision: 0, snapshotAt: '2026-10-27T14:30:00.000Z', pixels: [] })
@@ -66,4 +67,13 @@ it('permet de réessayer et ferme le précédent abonnement', () => {
   expect(screen.queryByRole('alert')).toBeNull()
   unmount()
   expect(stops[1]).toHaveBeenCalledOnce()
+})
+
+it('réserve la modération des joueurs aux administrateurs', () => {
+  const { rerender } = render(<LiveCanvas user={null} />)
+  expect(screen.queryByText('Modérer les joueurs')).toBeNull()
+  rerender(<LiveCanvas user={{ pseudo: 'Sam', role: 'player' }} />)
+  expect(screen.queryByText('Modérer les joueurs')).toBeNull()
+  rerender(<LiveCanvas user={{ pseudo: 'Lea', role: 'admin' }} />)
+  expect(screen.getByText('Modérer les joueurs')).toBeTruthy()
 })

@@ -1,6 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { badRequest, conflict, unauthorized } from '../errors/app-error.js'
-import { findTeam } from '../teams/team-catalog.js'
 import { hashPassword, UNKNOWN_ACCOUNT_HASH, verifyPassword } from './password.js'
 
 export const ADMIN_ROLE = 'admin'
@@ -47,18 +46,25 @@ function readCredentials(body) {
 export function toUser(account) {
   return {
     pseudo: account.pseudo,
-    team: findTeam(account.teamId),
+    team: account.team ?? null,
     role: account.role === ADMIN_ROLE ? ADMIN_ROLE : PLAYER_ROLE,
   }
 }
 
 export function createAccountService({ repository, now = () => new Date(), sessionTtlMs = readSessionTtlMs() }) {
-  async function openSession(account) {
+  function prepareSession(createdAt = now()) {
     const token = randomBytes(32).toString('base64url')
-    const createdAt = now()
     const expiresAt = new Date(createdAt.getTime() + sessionTtlMs)
-    await repository.createSession({ tokenHash: hashToken(token), accountId: account.id, createdAt, expiresAt })
-    return { user: toUser(account), session: { token, expiresAt } }
+    return {
+      session: { token, expiresAt },
+      record: { tokenHash: hashToken(token), createdAt, expiresAt },
+    }
+  }
+
+  async function openSession(account) {
+    const { session, record } = prepareSession()
+    await repository.createSession({ ...record, accountId: account.id })
+    return { user: toUser(account), session }
   }
 
   return {
@@ -70,14 +76,15 @@ export function createAccountService({ repository, now = () => new Date(), sessi
         throw invalidInput()
       }
 
-      const account = await repository.createAccount({
-        pseudo,
-        pseudoKey: pseudo.toLowerCase(),
-        passwordHash: await hashPassword(password),
-        createdAt: now(),
-      })
+      const passwordHash = await hashPassword(password)
+      const createdAt = now()
+      const { session, record } = prepareSession(createdAt)
+      const account = await repository.createAccountWithSession(
+        { pseudo, pseudoKey: pseudo.toLowerCase(), passwordHash, createdAt },
+        record,
+      )
       if (!account) throw conflict('Ce pseudo est déjà pris.', 'PSEUDO_TAKEN')
-      return openSession(account)
+      return { user: toUser(account), session }
     },
 
     async login(body) {

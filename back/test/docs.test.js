@@ -16,8 +16,22 @@ test('GET /api/openapi.json renvoie la spécification OpenAPI valide', async (t)
   assert.equal(spec.info.title, 'API P1X3L')
   assert.ok(spec.paths['/api/auth/register'])
   assert.ok(spec.paths['/api/teams'])
-  assert.ok(spec.paths['/api/moderation/cleanups'])
-  assert.ok(spec.paths['/api/moderation/bans'])
+  assert.ok(spec.paths['/api/teams'].post)
+  assert.equal(spec.paths['/api/teams'].get.responses['200'].content['application/json'].schema.properties.teams.maxItems, undefined)
+  const responseSchema = (route, method) => spec.paths[`/api/moderation/${route}`][method].responses['200'].content['application/json'].schema
+  assert.equal(responseSchema('cleanups', 'post').properties.action.$ref, '#/components/schemas/ZoneCleanupAction')
+  assert.equal(responseSchema('bans', 'post').properties.action.$ref, '#/components/schemas/PlayerBanAction')
+  assert.equal(responseSchema('actions', 'get').properties.actions.items.$ref, '#/components/schemas/ModerationAction')
+  const { ModerationAction, ZoneCleanupAction, PlayerBanAction } = spec.components.schemas
+  assert.deepEqual(ModerationAction.discriminator, {
+    propertyName: 'type',
+    mapping: {
+      zone_cleanup: '#/components/schemas/ZoneCleanupAction',
+      player_ban: '#/components/schemas/PlayerBanAction',
+    },
+  })
+  assert.deepEqual(ZoneCleanupAction.allOf[1].properties.details.required, ['fromX', 'fromY', 'toX', 'toY', 'removedCount', 'revision'])
+  assert.deepEqual(PlayerBanAction.allOf[1].properties.details.required, ['pseudo', 'restoredCount', 'clearedCount', 'revision'])
   assert.ok(spec.paths['/api/agent'])
   assert.ok(spec.paths['/api/health'])
   assert.ok(spec.paths['/api/rankings'])

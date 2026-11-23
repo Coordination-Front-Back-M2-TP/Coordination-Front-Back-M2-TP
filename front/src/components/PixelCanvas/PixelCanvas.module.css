@@ -1,15 +1,38 @@
 .figure {
-  width: 42rem;
+  width: min(42rem, max(16rem, 60svh));
   max-width: 100%;
   margin: 1rem 0;
 }
 
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.controls button {
+  min-height: 2rem;
+}
+
+.viewport {
+  overflow: hidden;
+  touch-action: none;
+  border: 1px solid #374151;
+  box-sizing: content-box;
+  width: calc(100% - 2px);
+  cursor: grab;
+  user-select: none;
+}
+
+.viewport:active,
+.viewport:active .canvas {
+  cursor: grabbing;
+}
+
 .canvas {
   display: block;
-  box-sizing: border-box;
-  width: 100%;
+  width: calc(100% * var(--canvas-zoom, 1));
   height: auto;
-  border: 1px solid #374151;
   image-rendering: pixelated;
   background-color: #fff;
   background-image: conic-gradient(#e5e7eb 25%, #fff 0 50%, #e5e7eb 0 75%, #fff 0);
