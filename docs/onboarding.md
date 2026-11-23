@@ -23,40 +23,39 @@ Avant le premier jour ou dès l'arrivée, s'assurer d'avoir :
 
 | Élément | Rôle | Action |
 | --- | --- | --- |
-| Dépôt GitHub | Lire le dépôt et proposer une contribution depuis un fork | Accepter l'invitation en lecture au dépôt amont (public depuis le 20/11/2026), puis créer un fork dans son compte personnel. Aucun droit d'écriture sur l'amont n'est nécessaire. |
+| Dépôt GitHub | Lire le dépôt, pousser ses branches, ouvrir ses PR | Accepter l'invitation au dépôt avec le rôle Write. |
 | Board GitHub | Lire tout le board, déplacer ses cartes et remplir leurs champs | Accepter l'accès en écriture (rôle Write) au board. L'accès au dépôt ne donne pas automatiquement accès au board : le tuteur l'ajoute à part. |
 | Discord de l'équipe | Communication quotidienne, questions, alertes | Rejoindre le serveur Discord de l'équipe 3L1K0PT3R |
 | Outils locaux | Git, Node.js (>= 22.12), GitHub CLI (`gh` >= 2.94) | Vérifier avec `git --version`, `node --version`, `gh --version` |
 
-Le dépôt étant public, son fork l'est aussi et ne dépend d'aucun réglage de l'organisation. Ne jamais demander de droit d'écriture sur le dépôt amont : `main` est protégée par un ruleset, et tout passe par une PR relue ([gestion de projet](gestion-de-projet.md), section 6).
+Le rôle Write permet de pousser des branches, pas de modifier `main` directement : tant que le dépôt est public, le ruleset « Protéger main » impose une PR, l'approbation d'un autre membre et une CI verte ([gestion de projet](gestion-de-projet.md), section 6).
 
 ### Ce que fait le tuteur à l'arrivée
 
-Le stagiaire est en lecture seule sur le dépôt et en écriture sur le board : il lit tout, il fait avancer ses cartes, et il contribue au code par des PR depuis son fork. Le rôle Write sur le board vient du [retour de stage](retour-de-stage.md) : en Read, il ne pouvait pas faire avancer ses tickets. Le seul risque est l'archivage d'une carte, qui se rattrape. Le prof lui demande d'essayer de casser le projet s'il en a les droits : ces réglages sont la limite de son périmètre.
+Le stagiaire a le rôle Write sur le dépôt et sur le board : il pousse ses branches sur le dépôt de l'équipe, ouvre ses PR et fait avancer ses cartes, comme les autres membres. Le rôle Write sur le board vient du [retour de stage](retour-de-stage.md) : en Read, le stagiaire précédent ne pouvait pas faire avancer ses tickets. Le rôle Write sur le dépôt date du 20/11/2026 : en Read, le stagiaire ne pouvait pousser aucune branche et devait passer par un fork. La consigne du prof « essayer de casser le projet » visait le stagiaire précédent.
 
-1. **Dépôt** : dans le dépôt, Settings, Collaborators and teams, Add people, rôle **Read**. Il devient collaborateur extérieur de ce seul dépôt. Ne pas l'inviter dans l'organisation : un membre hérite du rôle de base des membres sur le board et peut créer des dépôts et des équipes. Ne pas lui donner Triage non plus : ce rôle permet déjà de fermer n'importe quelle issue.
+1. **Dépôt** : dans le dépôt, Settings, Collaborators and teams, Add people, rôle **Write**. Il devient collaborateur extérieur de ce seul dépôt. Ne pas l'inviter dans l'organisation : un membre hérite du rôle de base des membres sur le board et peut créer des dépôts et des équipes.
 2. **Board**, une fois l'invitation au dépôt acceptée : dans le board, menu `…`, Settings, Manage access, ajouter son compte avec le rôle **Write**. GitHub n'accepte un collaborateur extérieur sur le board que s'il a déjà accès à un dépôt de l'organisation.
-3. **Tickets** : lui assigner son issue d'onboarding (#161) et les tickets qu'elle liste. En lecture seule sur le dépôt, il ne peut pas se les assigner.
-4. **Vérifier** : `gh api repos/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/collaborators/<compte>/permission --jq .role_name` doit répondre `read`, et Manage access doit afficher le rôle Write pour son compte sur le board.
+3. **Tickets** : lui assigner son issue d'onboarding (#161) et les tickets qu'elle liste.
+4. **Vérifier** : `gh api repos/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/collaborators/<compte>/permission --jq .role_name` doit répondre `write`, et Manage access doit afficher le rôle Write pour son compte sur le board.
 
 ### Installation locale
 
 Suivre scrupuleusement le guide pas à pas dans [INSTALL.md](../INSTALL.md) :
 
-1. Créer le fork du dépôt amont `Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP` dans son compte GitHub personnel.
-2. Cloner son fork dans un chemin sans caractère « & » :
+1. Cloner le dépôt de l'équipe dans un chemin sans caractère « & » :
 
    ```bash
-   git clone https://github.com/<compte-github-du-stagiaire>/Coordination-Front-Back-M2-TP.git
+   git clone https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP.git
    cd Coordination-Front-Back-M2-TP
-   git remote add upstream https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP.git
-   git fetch upstream
    ```
 
-3. Installer les dépendances de la racine (`npm ci`, qui installe le hook Git des messages de commit), du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
-4. Lancer le back dans un terminal (`npm run dev --prefix back`, écoute sur `http://localhost:3000`).
-5. Lancer le front dans un autre terminal (`npm run dev --prefix front`, ouvre `http://localhost:5173`).
-6. Vérifier que la page d'accueil affiche « P1X3L » et « Back : ok ».
+   Un stagiaire qui a déjà cloné son fork le rebranche sur le dépôt de l'équipe : `git remote set-url origin https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP.git`.
+
+2. Installer les dépendances de la racine (`npm ci`, qui installe le hook Git des messages de commit), du back (`npm ci --prefix back`) et du front (`npm ci --prefix front`).
+3. Lancer le back dans un terminal (`npm run dev --prefix back`, écoute sur `http://localhost:3000`).
+4. Lancer le front dans un autre terminal (`npm run dev --prefix front`, ouvre `http://localhost:5173`).
+5. Vérifier que la page d'accueil affiche « P1X3L » et « Back : ok ».
 
 ---
 
@@ -113,11 +112,11 @@ Le tuteur lui assigne ses tickets (section 2). Le stagiaire passe lui-même sa c
 
 | Le stagiaire fait seul | Il demande à son tuteur |
 | --- | --- |
-| Lire tout le dépôt et tout le board | Lui assigner un ticket |
-| Déplacer ses cartes et remplir leurs champs sur le board | Poser ou retirer un label (`statut: bloqué`) |
-| Créer ses branches, commiter, pousser sur son fork | Fermer ou rouvrir une issue |
-| Ouvrir ses PR et répondre aux relectures | Merger une PR |
-| Commenter les issues et les PR | Changer la CI ou les droits |
+| Lire tout le dépôt et tout le board | Prendre un ticket hors de sa liste |
+| Déplacer ses cartes et remplir leurs champs sur le board | Fermer ou rouvrir une issue |
+| Créer ses branches, commiter, pousser sur le dépôt de l'équipe | Merger une PR : une autre personne l'approuve |
+| Ouvrir ses PR et répondre aux relectures | Changer la CI ou les droits |
+| Commenter les issues et les PR, poser le label `statut: bloqué` | |
 
 ---
 
@@ -127,14 +126,14 @@ Tout le flux de travail est décrit dans [CONTRIBUTING.md](../CONTRIBUTING.md). 
 
 ### Créer une branche
 
-Le stagiaire travaille dans son fork : il ne pousse jamais sur le dépôt amont. Pour partir de la dernière version de `main`, après avoir configuré `origin` sur son fork et `upstream` sur le dépôt de l'équipe :
+Le stagiaire pousse ses branches sur le dépôt de l'équipe, comme les autres membres. Pour partir de la dernière version de `main` :
 
 ```bash
-git fetch upstream
-git switch -c <type>/<numéro>-<description-courte> upstream/main
+git fetch origin
+git switch -c <type>/<numéro>-<description-courte> origin/main
 ```
 
-Exemple : `feat/21-poser-un-pixel`. Après les commits, il pousse la branche sur son fork (`origin`) et ouvre une PR vers `main` du dépôt amont. Le détail est dans [CONTRIBUTING.md](../CONTRIBUTING.md).
+Exemple : `feat/21-poser-un-pixel`. Après les commits, il pousse la branche (`git push -u origin <nom-de-branche>`) et ouvre une PR vers `main`. Le détail est dans [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ### Commits réguliers et atomiques
 
@@ -149,7 +148,7 @@ Types autorisés : `feat`, `fix`, `docs`, `ci`, `chore`, `refactor`, `test`, `st
 ### Communiquer en cas de question ou de blocage
 
 - Une question technique ou fonctionnelle se pose directement dans le ticket GitHub concerné ou sur le salon Discord de l'équipe.
-- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : expliquer le blocage en commentaire sur l'issue et prévenir son tuteur. En lecture seule, le stagiaire ne peut pas poser de label : c'est le tuteur qui ajoute `statut: bloqué`.
+- Si le ticket ne peut plus avancer (dépendance non livrée, décision en attente) : expliquer le blocage en commentaire sur l'issue et prévenir son tuteur, puis poser le label `statut: bloqué`.
 
 ---
 
