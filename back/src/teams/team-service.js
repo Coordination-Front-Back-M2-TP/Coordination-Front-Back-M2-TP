@@ -1,6 +1,7 @@
+import { PALETTE_COLORS } from '../canvas/palette.js'
 import { badRequest, conflict, forbidden, notFound, tooManyRequests, unauthorized } from '../errors/app-error.js'
 
-const PALETTE = new Set(['#000000', '#4B5563', '#9CA3AF', '#FFFFFF', '#D93A3A', '#F472B6', '#F59E0B', '#92400E', '#FACC15', '#FDE68A', '#22C55E', '#166534', '#22D3EE', '#2563EB', '#1E3A8A', '#9333EA'])
+const PALETTE = new Set(PALETTE_COLORS)
 
 function readTeam(body) {
   if (!body || typeof body.name !== 'string' || typeof body.color !== 'string') {

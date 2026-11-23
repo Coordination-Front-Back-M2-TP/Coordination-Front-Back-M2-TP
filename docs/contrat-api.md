@@ -7,6 +7,8 @@
 
 Ce document couvre la lecture de la toile et sa mise à jour en direct pour la user story [#15 — Voir la toile en direct](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/15), ainsi que la pose manuelle et le délai des user stories [#21 — Poser un pixel](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/21) et [#22 — Voir mon délai](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/22). Les choix signalés comme propositions restent à valider par l’équipe.
 
+La [génération de modèles côté serveur](modeles-back.md) décrit les routes de l’US #24, leur configuration et le décompte du quota.
+
 ## Conventions
 
 - L’API HTTP est préfixée par `/api`. Les corps HTTP sont en JSON ; les clés sont en `camelCase`.
