@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { joinTeam, listTeams } from '../../api/team-membership.js'
-import { useCooldown } from '../../hooks/use-cooldown.js'
 
 const ERROR_MESSAGES = {
   TEAM_CHANGE_COOLDOWN: 'Attendez la fin du délai avant de changer d’équipe.',
@@ -8,7 +7,7 @@ const ERROR_MESSAGES = {
   UNAUTHORIZED: 'Reconnectez-vous pour choisir une équipe.',
 }
 
-export function TeamPicker({ currentTeam, onTeamJoined }) {
+export function TeamPicker({ currentTeam, cooldownActive = false, onCooldown, onTeamJoined }) {
   const [teams, setTeams] = useState(null)
   const [loadFailed, setLoadFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
@@ -16,8 +15,7 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(null)
   const submission = useRef(null)
-  const { seconds, startCooldown } = useCooldown()
-  const disabled = pending || seconds > 0
+  const disabled = pending || cooldownActive
   const teamId = selection === currentTeam?.id ? '' : selection
 
   useEffect(() => {
@@ -40,14 +38,14 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
     setPending(true)
     setError(null)
     try {
-      const user = await joinTeam(teamId, controller.signal)
+      const result = await joinTeam(teamId, controller.signal)
       if (controller.signal.aborted) return
       setSelection('')
-      onTeamJoined(user)
+      onTeamJoined(result)
     } catch (failure) {
       if (controller.signal.aborted) return
       if (failure.code === 'TEAM_CHANGE_COOLDOWN' && failure.retryAfterMs) {
-        startCooldown(failure.retryAfterMs)
+        onCooldown(failure.retryAfterMs)
       } else {
         const message = Object.hasOwn(ERROR_MESSAGES, failure.code)
           ? ERROR_MESSAGES[failure.code]
@@ -93,10 +91,9 @@ export function TeamPicker({ currentTeam, onTeamJoined }) {
       <button type="submit" disabled={disabled || !teamId}>
         {pending ? 'Choix en cours…' : currentTeam ? 'Changer d’équipe' : 'Rejoindre l’équipe'}
       </button>
-      <button type="button" disabled={disabled} onClick={() => setAttempt((value) => value + 1)}>
+      <button type="button" disabled={pending} onClick={() => setAttempt((value) => value + 1)}>
         Actualiser les équipes
       </button>
-      {seconds > 0 && <p role="timer">Changement d’équipe possible dans {seconds} s.</p>}
       {error && <p role="alert">{error}</p>}
     </form>
   )
