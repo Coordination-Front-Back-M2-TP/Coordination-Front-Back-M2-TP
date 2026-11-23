@@ -22,6 +22,8 @@ La réponse de création reflète l'équipe et le délai enregistrés dans cette
 
 Le code est dans `back/src/teams/`, avec les accès aux équipes des comptes et de la modération dans leurs dépôts respectifs. `TEAM_CHANGE_COOLDOWN_SECONDS` règle le délai en secondes : `300` par défaut, `0` pour le désactiver. Une valeur absente, vide, négative ou illisible utilise la valeur par défaut.
 
+Sur la page de jeu, le choix et la création d’équipe partagent un décompte. Il démarre à partir de `teamChangeAvailableAt` après une réussite, ou de `Retry-After` si le serveur refuse une demande. Après un rechargement, le serveur continue d’appliquer le délai et la première demande refusée rétablit le décompte.
+
 ## Vérifications
 
 `npm test --prefix back` couvre notamment les équipes de départ, la création et le classement, le délai, les validations, le bannissement, les conflits et les créations simultanées.

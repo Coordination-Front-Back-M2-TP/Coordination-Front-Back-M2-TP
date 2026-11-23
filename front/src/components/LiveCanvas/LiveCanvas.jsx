@@ -3,6 +3,7 @@ import { subscribeCanvas } from '../../api/canvas.js'
 import { createRankingFeed } from '../../api/rankings.js'
 import { PixelPlacer } from '../PixelPlacer/PixelPlacer.jsx'
 import { Ranking } from '../Ranking/Ranking.jsx'
+import { PlayerModeration } from '../PlayerModeration/PlayerModeration.jsx'
 
 const STATUS_MESSAGES = {
   loading: 'Chargement de la toile…',
@@ -43,6 +44,7 @@ export function LiveCanvas({ user }) {
       <Ranking {...rankingState} onRetry={() => {
         if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
       }} />
+      {user?.role === 'admin' && <PlayerModeration key={user.pseudo} />}
     </section>
   )
 }

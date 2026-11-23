@@ -32,6 +32,12 @@ Socket.IO client est une dépendance du front, fixée dans `package-lock.json`. 
 
 Le back fournit le contrat de lecture et de souscription dans [#35](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/35). Il persiste l’état courant dans SQLite et renvoie un instantané public ; la méthode interne qui diffuse une pose après persistance sera appelée par le futur parcours de pose de l’issue #21.
 
+## Bannir un joueur
+
+Un compte admin peut ouvrir « Modérer les joueurs », parcourir la liste et confirmer un bannissement. La liste indique les admins et les comptes déjà bannis. Après confirmation, le serveur donne le nombre de pixels restaurés, le nombre de cases vidées et le numéro de l’action inscrite au journal.
+
+L’événement `canvas:reverted` met à jour la toile de tous les abonnés. Une case retrouve son pixel précédent ou redevient vide. Les poses postérieures au bannissement restent visibles. Un joueur banni garde la consultation de la toile.
+
 ## Vérifications
 
 `npm test --prefix front` couvre :
@@ -44,3 +50,7 @@ Le back fournit le contrat de lecture et de souscription dans [#35](https://gith
 Le serveur Socket.IO installé en dépendance de développement sert uniquement aux tests d’intégration. Il simule le contrat validé et n’implémente pas la persistance du back.
 
 Après livraison de #35, vérifier le parcours intégré avec deux navigateurs : tous deux chargent les pixels existants sans compte, reçoivent un changement serveur sans recharger, puis retrouvent le nouvel état complet après une coupure et une reconnexion. La validation de la latence en conditions réelles fait partie de cette vérification intégrée.
+
+## Naviguer sur la toile
+
+Utilisez la molette, le pincement à deux doigts ou les boutons au-dessus de la toile pour zoomer. Une fois la toile agrandie, faites-la glisser à la souris ou au doigt. Au clavier, placez le focus sur la toile et déplacez la vue avec les flèches. Le bouton « Vue d’ensemble » rétablit l’affichage initial. Un clic ou un tap sur une case conserve le comportement de pose habituel pour un joueur qui peut poser.

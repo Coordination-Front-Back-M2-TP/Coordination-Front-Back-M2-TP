@@ -446,7 +446,7 @@
                   ],
                   "properties": {
                     "action": {
-                      "$ref": "#/components/schemas/ModerationAction"
+                      "$ref": "#/components/schemas/ZoneCleanupAction"
                     }
                   }
                 }
@@ -454,7 +454,7 @@
             }
           },
           "400": {
-            "description": "Zone invalide (INVALID_INPUT)",
+            "description": "JSON illisible (INVALID_JSON) ou zone invalide (INVALID_INPUT)",
             "content": {
               "application/json": {
                 "schema": {
@@ -641,7 +641,7 @@
                   ],
                   "properties": {
                     "action": {
-                      "$ref": "#/components/schemas/ModerationAction"
+                      "$ref": "#/components/schemas/PlayerBanAction"
                     }
                   }
                 }
@@ -649,7 +649,7 @@
             }
           },
           "400": {
-            "description": "Pseudo absent, vide ou qui n'est pas un texte (INVALID_INPUT)",
+            "description": "JSON illisible (INVALID_JSON) ou pseudo invalide après normalisation (INVALID_INPUT)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1058,6 +1058,82 @@
         ]
       }
     },
+    "/api/models/quota": {
+      "get": {
+        "summary": "Consulter le quota de modèles et les services de modération disponibles",
+        "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "200": {
+            "description": "Quota et services disponibles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["quota", "moderationProviders"],
+                  "properties": {
+                    "quota": { "$ref": "#/components/schemas/ModelQuota" },
+                    "moderationProviders": {
+                      "type": "array",
+                      "items": { "type": "string", "enum": ["jev", "openai"] }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Session absente ou expirée" },
+          "500": { "description": "Erreur inattendue" }
+        }
+      }
+    },
+    "/api/models": {
+      "post": {
+        "summary": "Générer un modèle à partir d’une consigne",
+        "description": "Le service choisi vérifie la consigne avant la génération. Un seul modèle en cours par compte.",
+        "security": [{ "sessionCookie": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["prompt", "moderationProvider"],
+                "properties": {
+                  "prompt": { "type": "string", "minLength": 1, "maxLength": 500 },
+                  "moderationProvider": { "type": "string", "enum": ["jev", "openai"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Modèle généré et quota actualisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["model", "quota"],
+                  "properties": {
+                    "model": { "$ref": "#/components/schemas/GeneratedModel" },
+                    "quota": { "$ref": "#/components/schemas/ModelQuota" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "INVALID_JSON ou INVALID_INPUT" },
+          "401": { "description": "UNAUTHORIZED" },
+          "409": { "description": "MODEL_REQUEST_IN_PROGRESS" },
+          "422": { "description": "PROMPT_REJECTED" },
+          "429": {
+            "description": "MODEL_QUOTA_EXHAUSTED",
+            "headers": { "Retry-After": { "schema": { "type": "integer" }, "description": "Secondes avant la remise à zéro" } }
+          },
+          "500": { "description": "INTERNAL_SERVER_ERROR" }
+        }
+      }
+    },
     "/api/agent": {
       "get": {
         "summary": "Suivre la progression de l'agent de dessin",
@@ -1427,6 +1503,49 @@
         }
       },
       "ModerationAction": {
+        "oneOf": [
+          { "$ref": "#/components/schemas/ZoneCleanupAction" },
+          { "$ref": "#/components/schemas/PlayerBanAction" }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "zone_cleanup": "#/components/schemas/ZoneCleanupAction",
+            "player_ban": "#/components/schemas/PlayerBanAction"
+          }
+        }
+      },
+      "ZoneCleanupAction": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ModerationActionBase" },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["zone_cleanup"] },
+              "details": {
+                "type": "object",
+                "required": ["fromX", "fromY", "toX", "toY", "removedCount", "revision"]
+              }
+            }
+          }
+        ]
+      },
+      "PlayerBanAction": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ModerationActionBase" },
+          {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["player_ban"] },
+              "details": {
+                "type": "object",
+                "required": ["pseudo", "restoredCount", "clearedCount", "revision"]
+              }
+            }
+          }
+        ]
+      },
+      "ModerationActionBase": {
         "type": "object",
         "required": [
           "id",
@@ -1610,6 +1729,38 @@
           "revision": {
             "type": "integer",
             "minimum": 1
+          }
+        }
+      },
+      "ModelQuota": {
+        "type": "object",
+        "required": ["limit", "remaining", "resetsAt"],
+        "properties": {
+          "limit": { "type": "integer", "example": 5 },
+          "remaining": { "type": "integer", "minimum": 0 },
+          "resetsAt": { "type": "string", "format": "date-time", "description": "Prochain minuit UTC" }
+        }
+      },
+      "GeneratedModel": {
+        "type": "object",
+        "required": ["width", "height", "pixels"],
+        "properties": {
+          "width": { "type": "integer", "minimum": 1, "maximum": 32 },
+          "height": { "type": "integer", "minimum": 1, "maximum": 32 },
+          "pixels": {
+            "type": "array",
+            "description": "Cases colorées, d’origine en haut à gauche. Les cases absentes sont transparentes.",
+            "minItems": 1,
+            "maxItems": 1024,
+            "items": {
+              "type": "object",
+              "required": ["x", "y", "color"],
+              "properties": {
+                "x": { "type": "integer", "minimum": 0, "maximum": 31 },
+                "y": { "type": "integer", "minimum": 0, "maximum": 31 },
+                "color": { "type": "string", "pattern": "^#[0-9A-F]{6}$" }
+              }
+            }
           }
         }
       },
