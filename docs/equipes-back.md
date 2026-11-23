@@ -18,6 +18,8 @@ La migration `create_teams` crée la table `Team` et y inscrit les quatre équip
 
 La création et le changement d'équipe du compte sont réalisés dans une transaction. La condition de délai et l'absence de bannissement sont vérifiées lors de l'écriture ; une collision de nom annule la transaction. La contrainte unique sur l'identifiant départage les créations simultanées. La couleur d'équipe ne restreint pas la couleur d'un pixel. Le classement utilise toujours l'équipe enregistrée au moment de la pose, et une équipe apparaît dès son premier pixel visible.
 
+La réponse de création reflète l'équipe et le délai enregistrés dans cette transaction, même si le joueur change d'équipe juste après avec un délai désactivé.
+
 Le code est dans `back/src/teams/`, avec les accès aux équipes des comptes et de la modération dans leurs dépôts respectifs. `TEAM_CHANGE_COOLDOWN_SECONDS` règle le délai en secondes : `300` par défaut, `0` pour le désactiver. Une valeur absente, vide, négative ou illisible utilise la valeur par défaut.
 
 Sur la page de jeu, le choix et la création d’équipe partagent un décompte. Il démarre à partir de `teamChangeAvailableAt` après une réussite, ou de `Retry-After` si le serveur refuse une demande. Après un rechargement, le serveur continue d’appliquer le délai et la première demande refusée rétablit le décompte.
