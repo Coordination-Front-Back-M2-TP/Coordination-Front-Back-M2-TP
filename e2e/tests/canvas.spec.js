@@ -74,6 +74,44 @@ test('un pixel posé ailleurs apparaît en moins d’une seconde', async ({ page
   expect(Date.now() - startedAt).toBeLessThan(1_000)
 })
 
+test('génère un modèle et place son aperçu transparent sur la toile', async ({ page }) => {
+  const quota = { limit: 5, remaining: 2, resetsAt: new Date(Date.now() + 60_000).toISOString() }
+  await page.route('**/api/auth/me', (route) => route.fulfill({ json: {
+    user: { pseudo: 'Artiste', team: { id: 'rouge', name: 'Rouge', color: '#D93A3A' } },
+  } }))
+  await page.route('**/api/models/quota', (route) => route.fulfill({ json: {
+    quota, moderationProviders: ['jev', 'openai'],
+  } }))
+  await page.route('**/api/models', (route) => {
+    expect(route.request().postDataJSON()).toEqual({ prompt: 'Un éclair', moderationProvider: 'openai' })
+    return route.fulfill({ json: {
+      model: { width: 2, height: 2, pixels: [{ x: 0, y: 0, color: '#FACC15' }] },
+      quota: { ...quota, remaining: 1 },
+    } })
+  })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Demander un modèle à l’IA' }).click()
+  await expect(page.getByText('Modèles disponibles aujourd’hui : 2 sur 5.')).toBeVisible()
+  await page.getByRole('textbox', { name: 'Consigne du modèle' }).fill('Un éclair')
+  await page.getByRole('combobox', { name: 'Vérification de la consigne' }).selectOption('openai')
+  await page.getByRole('button', { name: 'Générer le modèle' }).click()
+  await page.getByRole('button', { name: 'Déplacer le modèle vers la droite' }).click()
+  await page.getByRole('button', { name: 'Valider le placement' }).click()
+  await expect(page.getByText('Modèle placé en (0, -1).')).toBeVisible()
+  await expect(page.getByText('Modèles disponibles aujourd’hui : 1 sur 5.')).toBeVisible()
+
+  const opacity = await page.locator('canvas').evaluate((element) => {
+    const center = Math.floor(element.width / 2)
+    const top = Math.floor(element.height / 2) - 1
+    const { data } = element.getContext('2d').getImageData(center, top, 2, 1)
+    return [data[3], data[7]]
+  })
+  expect(opacity[0]).toBeGreaterThan(0)
+  expect(opacity[0]).toBeLessThan(255)
+  expect(opacity[1]).toBe(0)
+})
+
 const navigation = (page) => page.getByRole('region', { name: 'Navigation sur la toile' })
 const viewportScroll = (viewport) => viewport.evaluate(({ scrollLeft, scrollTop }) => [scrollLeft, scrollTop])
 

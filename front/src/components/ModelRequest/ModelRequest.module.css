@@ -1,0 +1,26 @@
+.form {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.form p {
+  margin: 0;
+}
+
+.form label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.prompt {
+  width: min(100%, 32rem);
+}
+
+.prompt textarea {
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+  resize: vertical;
+}

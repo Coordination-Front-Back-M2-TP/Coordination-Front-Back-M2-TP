@@ -33,7 +33,7 @@ function errorMessage(error) {
 const colorName = (color) => PALETTE.find((entry) => entry.color === color)?.name ?? color
 
 // user : undefined tant que la session n'est pas connue (le serveur tranche), null pour un visiteur, objet pour un joueur.
-export function PixelPlacer({ canvas, user }) {
+export function PixelPlacer({ canvas, user, preview, onMovePreview }) {
   const [color, setColor] = useState(PALETTE[0].color)
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState(null)
@@ -56,7 +56,8 @@ export function PixelPlacer({ canvas, user }) {
         {banned
           ? <p role="alert">{BANNED_MESSAGE}</p>
           : <p>{user === null ? SIGN_IN_MESSAGE : TEAM_REQUIRED_MESSAGE}</p>}
-        <PixelCanvas canvas={canvas} />
+        {onMovePreview && <p>Cliquez sur la toile pour déplacer le modèle.</p>}
+        <PixelCanvas canvas={canvas} preview={preview} onSelectCell={onMovePreview} />
       </>
     )
   }
@@ -97,7 +98,7 @@ export function PixelPlacer({ canvas, user }) {
 
   function handleSubmit(event) {
     event.preventDefault()
-    if (placementDisabled) return
+    if (placementDisabled || onMovePreview) return
     const x = Number(coordinates.x)
     const y = Number(coordinates.y)
     if (!Number.isInteger(x) || !Number.isInteger(y) || x < minX || x > maxX || y < minY || y > maxY) {
@@ -111,8 +112,12 @@ export function PixelPlacer({ canvas, user }) {
     <>
       {agentEnabled && <DrawingAgentPanel control={drawingAgent} />}
       <ColorPalette colors={PALETTE} value={color} onChange={setColor} disabled={pending} />
-      <p>{agentActive ? 'Arrêtez votre agent pour poser un pixel à la main.' : 'Cliquez sur une case de la toile pour y poser la couleur choisie.'}</p>
-      <PixelCanvas canvas={canvas} onSelectCell={placementDisabled ? undefined : place} />
+      <p>{onMovePreview
+        ? 'Cliquez sur la toile pour déplacer le modèle.'
+        : agentActive
+          ? 'Arrêtez votre agent pour poser un pixel à la main.'
+          : 'Cliquez sur une case de la toile pour y poser la couleur choisie.'}</p>
+      <PixelCanvas canvas={canvas} preview={preview} onSelectCell={onMovePreview ?? (placementDisabled ? undefined : place)} />
       <form className={styles.form} onSubmit={handleSubmit} aria-label="Poser un pixel par ses coordonnées">
         <label>
           Colonne (x)
@@ -138,14 +143,14 @@ export function PixelPlacer({ canvas, user }) {
             onChange={(event) => setCoordinates((value) => ({ ...value, y: event.target.value }))}
           />
         </label>
-        <button type="submit" disabled={placementDisabled}>{pending ? 'Pose en cours…' : 'Poser le pixel'}</button>
+        <button type="submit" disabled={placementDisabled || Boolean(onMovePreview)}>{pending ? 'Pose en cours…' : 'Poser le pixel'}</button>
       </form>
       {coolingDown && (
         <p role="timer" aria-live="off">Prochaine pose dans {seconds} s.</p>
       )}
       <p aria-live="polite">
         {coolingDown && 'Délai de pose en cours.'}
-        {!coolingDown && !agentActive && !agentPending && 'Vous pouvez poser un pixel.'}
+        {!coolingDown && !agentActive && !agentPending && !onMovePreview && 'Vous pouvez poser un pixel.'}
       </p>
       {/* Zone toujours présente : un lecteur d'écran annonce le résultat de chaque pose. */}
       <p aria-live="polite" className={feedback?.kind === 'error' ? styles.error : undefined}>{feedback?.text}</p>
