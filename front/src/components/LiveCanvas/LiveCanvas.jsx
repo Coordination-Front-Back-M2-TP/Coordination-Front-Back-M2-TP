@@ -4,6 +4,7 @@ import { createRankingFeed } from '../../api/rankings.js'
 import { HudPortal } from '../HudPortal/HudPortal.jsx'
 import { PixelPlacer } from '../PixelPlacer/PixelPlacer.jsx'
 import { Ranking } from '../Ranking/Ranking.jsx'
+import { PlayerModeration } from '../PlayerModeration/PlayerModeration.jsx'
 import styles from './LiveCanvas.module.css'
 
 const STATUS_MESSAGES = {
@@ -50,6 +51,11 @@ export function LiveCanvas({ user }) {
         <Ranking {...rankingState} onRetry={() => {
           if (!rankingFeed.current?.retry()) setAttempt((value) => value + 1)
         }} />
+        {user?.role === 'admin' && (
+          <div className={`hud ${styles.panel}`}>
+            <PlayerModeration key={user.pseudo} />
+          </div>
+        )}
       </HudPortal>
     </section>
   )

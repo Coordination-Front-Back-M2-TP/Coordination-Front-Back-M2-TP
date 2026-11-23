@@ -28,7 +28,9 @@ Le dépôt est public : le clonage ne demande pas de compte. Pousser une branche
 
 ## 3. Configurer
 
-Le back utilise SQLite dans `back/prisma/dev.db` par défaut. Il n'y a pas de secret à configurer. Le back écoute sur le port 3000, et le front envoie ses appels `/api` vers ce port (`front/vite.config.js`). La variable `PORT` change le port du back, mais le front ne le suivrait pas : la laisser vide en local.
+Le back utilise SQLite dans `back/prisma/dev.db` par défaut. Le jeu démarre sans clé d’API. Le back écoute sur le port 3000, et le front envoie ses appels `/api` vers ce port (`front/vite.config.js`). La variable `PORT` change le port du back, mais le front ne le suivrait pas : la laisser vide en local.
+
+Pour activer la génération de modèles, configurer `OPENAI_API_KEY` et `OPENAI_MODEL` dans l’environnement du serveur. Ajouter `TYPESAFE_API_KEY` pour proposer également la modération par Jev. Voir [la configuration des modèles](docs/modeles-back.md).
 
 Aucun secret ne va dans le dépôt : `.env` est ignoré par Git. Les valeurs de la production sont dans les secrets et variables Actions du dépôt : voir [docs/deploiement.md](docs/deploiement.md).
 

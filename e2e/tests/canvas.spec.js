@@ -73,3 +73,110 @@ test('un pixel posé ailleurs apparaît en moins d’une seconde', async ({ page
   await expect.poll(() => readPixel(page, change.x, change.y), { timeout: 1_000 }).toBe(change.color)
   expect(Date.now() - startedAt).toBeLessThan(1_000)
 })
+
+const navigation = (page) => page.getByRole('region', { name: 'Navigation sur la toile' })
+const viewportScroll = (viewport) => viewport.evaluate(({ scrollLeft, scrollTop }) => [scrollLeft, scrollTop])
+
+async function mockPlayerPlacements(page) {
+  const placements = []
+  await page.route('**/api/auth/me', (route) => route.fulfill({
+    json: { user: { pseudo: 'Sam', team: { id: 'bleu', name: 'Bleu', color: '#2563EB' } } },
+  }))
+  await page.route('**/api/pixels', (route) => {
+    if (route.request().method() !== 'POST') return route.continue()
+    const placement = route.request().postDataJSON()
+    placements.push(placement)
+    const pixel = contract.placePixel(placement)
+    return route.fulfill({ status: 201, json: { pixel, cooldownEndsAt: pixel.updatedAt } })
+  })
+  return placements
+}
+
+test('navigue à la souris et au clavier en 800 × 600 sans poser pendant un glissement', async ({ page }) => {
+  const placements = await mockPlayerPlacements(page)
+  await page.setViewportSize({ width: 800, height: 600 })
+  await page.goto('/')
+  await expect(page.getByRole('button', { name: 'Poser le pixel' })).toBeEnabled()
+
+  const viewport = navigation(page)
+  const zoomIn = page.getByRole('button', { name: 'Zoomer', exact: true })
+  await zoomIn.scrollIntoViewIfNeeded()
+  await expect(zoomIn).toBeInViewport({ ratio: 1 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(800)
+  await zoomIn.click()
+  await expect(page.getByRole('button', { name: 'Dézoomer' })).toBeEnabled()
+  const board = viewport.getByRole('img')
+  await viewport.scrollIntoViewIfNeeded()
+  const frame = await viewport.boundingBox()
+  const x = frame.x + frame.width / 2
+  const y = frame.y + frame.height / 2
+
+  const initial = await viewportScroll(viewport)
+  await page.mouse.move(x, y)
+  await page.mouse.wheel(0, -100)
+  await expect.poll(async () => (await viewportScroll(viewport))[0]).toBeGreaterThan(initial[0])
+
+  const beforeDrag = await viewportScroll(viewport)
+  await page.mouse.down()
+  await page.mouse.move(x - 30, y - 25, { steps: 5 })
+  await page.mouse.up()
+  await expect.poll(() => viewportScroll(viewport)).toEqual([beforeDrag[0] + 30, beforeDrag[1] + 25])
+
+  await viewport.focus()
+  await viewport.press('ArrowLeft')
+  await expect.poll(async () => (await viewportScroll(viewport))[0]).toBe(beforeDrag[0] - 10)
+
+  const zoomed = await board.boundingBox()
+  expect(zoomed.width).toBeGreaterThan(frame.width)
+  // Clique sur une case connue après le zoom et le déplacement.
+  await page.mouse.click(zoomed.x + zoomed.width * 47.5 / 101, zoomed.y + zoomed.height * 52.5 / 101)
+  await expect(page.getByText(/Pixel .* posé en \(-3, 2\)/)).toBeVisible()
+  expect(placements.map(({ x, y }) => [x, y])).toEqual([[-3, 2]])
+
+  await page.getByRole('button', { name: 'Vue d’ensemble' }).click()
+  await expect.poll(() => viewportScroll(viewport)).toEqual([0, 0])
+  // À la vue d'ensemble, on peut encore dézoomer pour voir la toile de plus loin.
+  await expect(page.getByRole('button', { name: 'Vue d’ensemble' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Dézoomer' })).toBeEnabled()
+})
+
+test.describe('sur un écran tactile', () => {
+  test.use({ viewport: { width: 390, height: 640 }, hasTouch: true, isMobile: true })
+
+  test('zoome par pincement et parcourt la toile avec un doigt', async ({ page, context }) => {
+    const placements = await mockPlayerPlacements(page)
+    await page.goto('/')
+    // Sur téléphone, la saisie par coordonnées est repliée : la palette prête signale que la pose est possible.
+    await expect(page.getByRole('radio', { name: 'Noir' })).toBeEnabled()
+    const viewport = navigation(page)
+    await viewport.scrollIntoViewIfNeeded()
+    const frame = await viewport.boundingBox()
+    const x = Math.round(frame.x + frame.width / 2)
+    const y = Math.round(frame.y + frame.height / 2)
+    const touch = await context.newCDPSession(page)
+    const send = (type, touchPoints) => touch.send('Input.dispatchTouchEvent', { type, touchPoints })
+
+    // Sur téléphone, les boutons de zoom sont dans le menu : on vérifie le pincement par la taille de la toile.
+    const boardWidth = async () => (await viewport.getByRole('img').boundingBox()).width
+    const widthBeforePinch = await boardWidth()
+    await send('touchStart', [{ id: 1, x: x - 35, y }, { id: 2, x: x + 35, y }])
+    await send('touchMove', [{ id: 1, x: x - 80, y }, { id: 2, x: x + 80, y }])
+    await send('touchEnd', [])
+    await expect.poll(boardWidth).toBeGreaterThan(widthBeforePinch)
+
+    const beforeDrag = await viewportScroll(viewport)
+    await send('touchStart', [{ id: 1, x, y }])
+    await send('touchMove', [{ id: 1, x: x - 32, y: y - 22 }])
+    await send('touchEnd', [])
+    await expect.poll(() => viewportScroll(viewport)).toEqual([beforeDrag[0] + 32, beforeDrag[1] + 22])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+
+    const board = await viewport.getByRole('img').boundingBox()
+    const targetX = board.x + board.width * 53.5 / 101
+    const targetY = board.y + board.height * 52.5 / 101
+    await send('touchStart', [{ id: 1, x: Math.round(targetX), y: Math.round(targetY) }])
+    await send('touchEnd', [])
+    await expect(page.getByText(/Pixel .* posé en \(3, 2\)/)).toBeVisible()
+    expect(placements.map(({ x, y }) => [x, y])).toEqual([[3, 2]])
+  })
+})

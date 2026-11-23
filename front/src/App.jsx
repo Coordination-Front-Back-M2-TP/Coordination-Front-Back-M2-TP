@@ -4,8 +4,7 @@ import { getCurrentUser } from './api/auth.js'
 import { AccountBar } from './components/AccountBar/AccountBar.jsx'
 import { AuthForm } from './components/AuthForm/AuthForm.jsx'
 import { LiveCanvas } from './components/LiveCanvas/LiveCanvas.jsx'
-import { TeamPicker } from './components/TeamPicker/TeamPicker.jsx'
-import { TeamCreation } from './components/TeamCreation/TeamCreation.jsx'
+import { TeamMembership } from './components/TeamMembership/TeamMembership.jsx'
 import { ServerStatus } from './components/ServerStatus/ServerStatus.jsx'
 import { HudSlotContext } from './components/HudPortal/hud-slot.js'
 import styles from './App.module.css'
@@ -85,21 +84,13 @@ function App() {
               setUser(current)
             }} />}
             {user && <AccountBar user={user} onLoggedOut={() => setUser(null)} />}
-            {/* Sans équipe, le choix reste visible : il faut une équipe pour poser. Avec une équipe, le choix et
-                la création se replient pour laisser la toile visible, surtout sur téléphone. */}
-            {user && !user.team && <TeamPicker key={`${user.pseudo}:`} currentTeam={user.team} onTeamJoined={setUser} />}
-            {user && !user.team && (
-              <details className={styles.teamDetails}>
-                <summary>Créer une équipe</summary>
-                <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />
-              </details>
-            )}
-            {user?.team && (
-              <details className={styles.teamDetails}>
-                <summary>Changer ou créer une équipe</summary>
+            {/* Sans équipe, le choix est ouvert : il faut une équipe pour poser. Avec une équipe, il se replie
+                pour laisser la toile visible, surtout sur téléphone. */}
+            {user && (
+              <details className={styles.teamDetails} open={!user.team || undefined}>
+                <summary>{user.team ? 'Changer ou créer une équipe' : 'Rejoindre ou créer une équipe'}</summary>
                 <div className={styles.teamPanel}>
-                  <TeamPicker key={`${user.pseudo}:${user.team.id}`} currentTeam={user.team} onTeamJoined={setUser} />
-                  <TeamCreation key={user.pseudo} onCreated={({ user: current }) => setUser(current)} />
+                  <TeamMembership key={user.pseudo} user={user} onTeamChanged={setUser} />
                 </div>
               </details>
             )}

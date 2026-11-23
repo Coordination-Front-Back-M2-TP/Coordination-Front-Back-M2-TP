@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { PALETTE } from '../../api/palette.js'
 import { createTeam } from '../../api/team-membership.js'
-import { useCooldown } from '../../hooks/use-cooldown.js'
 import styles from './TeamCreation.module.css'
 
 const MESSAGES = {
@@ -12,14 +11,13 @@ const MESSAGES = {
   TEAM_CHANGE_COOLDOWN: 'Attendez avant de changer à nouveau d’équipe.',
 }
 
-export function TeamCreation({ onCreated }) {
+export function TeamCreation({ cooldownActive = false, onCooldown, onCreated }) {
   const [name, setName] = useState('')
   const [color, setColor] = useState('')
   const [error, setError] = useState(null)
   const [pending, setPending] = useState(false)
   const request = useRef(null)
-  const { seconds, startCooldown } = useCooldown()
-  const disabled = pending || seconds > 0
+  const disabled = pending || cooldownActive
 
   useEffect(() => () => request.current?.abort(), [])
 
@@ -47,7 +45,7 @@ export function TeamCreation({ onCreated }) {
       onCreated(result)
     } catch (failure) {
       if (controller.signal.aborted) return
-      if (failure.code === 'TEAM_CHANGE_COOLDOWN' && failure.retryAfterMs) startCooldown(failure.retryAfterMs)
+      if (failure.code === 'TEAM_CHANGE_COOLDOWN' && failure.retryAfterMs) onCooldown(failure.retryAfterMs)
       else setError(Object.hasOwn(MESSAGES, failure.code) ? MESSAGES[failure.code] : 'Impossible de créer cette équipe. Réessayez.')
     } finally {
       if (!controller.signal.aborted) {
@@ -73,7 +71,6 @@ export function TeamCreation({ onCreated }) {
         </select>
       </p>
       {error && <p role="alert" className={styles.hint}>{error}</p>}
-      {seconds > 0 && <p role="timer" className={styles.hint}>Création possible dans {seconds} s.</p>}
       <button type="submit" disabled={disabled}>{pending ? 'Création en cours…' : 'Créer l’équipe'}</button>
     </form>
   )

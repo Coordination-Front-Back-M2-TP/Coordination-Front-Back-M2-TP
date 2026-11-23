@@ -31,3 +31,16 @@
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-sm);
 }
+
+/* Carte du HUD pour un panneau repliable (modération des joueurs). */
+.panel {
+  max-height: 50vh;
+  padding: var(--space-2) var(--space-3);
+  overflow: auto;
+  font-size: var(--text-sm);
+}
+
+.panel summary {
+  cursor: pointer;
+  font-weight: 600;
+}

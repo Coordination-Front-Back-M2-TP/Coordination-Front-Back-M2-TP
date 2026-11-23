@@ -126,8 +126,14 @@ test('from est inclus, to est exclu', async () => {
 })
 
 test('une date avec un décalage horaire désigne le même instant', async () => {
-  const { body } = await history(`?from=${encodeURIComponent('2026-11-01T11:15:00+01:00')}`)
+  const { body } = await history(`?from=${encodeURIComponent('2026-11-02T00:15:00+14:00')}`)
   assert.deepEqual(colors(body), ['#444444', '#555555'])
+})
+
+test('le 29 février est accepté pendant une année bissextile', async () => {
+  const { status, body } = await history('?from=2024-02-29T23:30:00-02:00')
+  assert.equal(status, 200)
+  assert.deepEqual(colors(body), STORY.map((pose) => pose.color))
 })
 
 test('limit et after parcourent l’historique page par page, sans trou ni doublon', async () => {
@@ -168,6 +174,9 @@ test('refuse en 400 INVALID_INPUT une période ou une page hors contrat', async 
     '?from=2026-11-01',
     '?from=2026-11-01T10:00:00',
     '?to=2026-13-45T10:00:00.000Z',
+    '?from=2026-02-29T10:00:00Z',
+    '?to=2026-02-30T10:00:00Z',
+    '?to=2026-04-31T00:30:00%2B02:00',
     '?from=2026-11-01T10:00:00.000Z&from=2026-11-01T10:05:00.000Z',
     '?from=2026-11-01T10:10:00.000Z&to=2026-11-01T10:10:00.000Z',
     '?from=2026-11-01T10:10:00.000Z&to=2026-11-01T10:00:00.000Z',

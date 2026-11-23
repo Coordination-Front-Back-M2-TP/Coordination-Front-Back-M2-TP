@@ -61,7 +61,7 @@ Chaque EPIC commence par une tâche transverse « contrat », rangée sous sa pr
 | Rejoindre une équipe | Choix de l'équipe, équipe affichée près du pseudo | API des équipes, changement au plus toutes les 5 minutes |
 | Poser un pixel | Palette et clic de pose | Vérifier les coordonnées et la couleur, enregistrer la pose |
 | Voir mon délai | Compte à rebours | Délai vérifié par le serveur, temps restant renvoyé |
-| Demander un modèle à l'IA | Saisie de la consigne, aperçu en transparence, placement | Quota, appel à Jev puis à GPT, contrôle de la grille |
+| Demander un modèle à l'IA | Choix de Jev ou OpenAI, saisie de la consigne, aperçu en transparence, placement | Quota, modération par le service choisi, génération GPT, contrôle de la grille |
 | Confier le modèle à mon agent | Lancer et arrêter l'agent, progression | Agent de dessin sans IA, qui répare les pixels écrasés |
 | Modèle depuis une image | Choix du mode image | Génération de l'image, réduction en pixels |
 | Voir le classement des équipes | Podium en direct | Calcul et diffusion du classement |

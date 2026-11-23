@@ -86,3 +86,39 @@
     display: none;
   }
 }
+
+/* Agent de dessin : carte du HUD dans la colonne de droite. */
+.agent {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.agent h3 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.agent p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.agent form,
+.agent label {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.agent input[type="file"] {
+  max-width: 100%;
+  font-size: var(--text-sm);
+}
+
+.agent progress {
+  width: 100%;
+}
