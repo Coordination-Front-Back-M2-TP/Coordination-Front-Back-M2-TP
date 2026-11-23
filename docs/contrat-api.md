@@ -586,11 +586,13 @@ Une réponse `429` inclut l’en-tête `Retry-After`, en secondes. En cas d’er
 
 ## Modérer la toile
 
-> **Proposition pour l’issue #59, écrite pour livrer les tâches #61 et #63.** Elle reste à relire par le front et le back. Elle couvre les user stories [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31) et [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32).
+Le contrat de la [tâche #59](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/59) décrit les routes implémentées par les tâches #61 et #63. Il couvre les user stories [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31) et [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32). Les schémas HTTP figurent aussi dans [OpenAPI](../back/src/openapi.json).
 
 ### Rôle
 
 Le joueur connecté renvoyé par `GET /api/auth/me` porte un champ `role` : `"player"` ou `"admin"`. Le front s’en sert pour montrer l’outil de modération aux seuls admins. Le serveur revérifie le rôle à chaque requête de modération : sans session, la réponse est `401 UNAUTHORIZED` ; avec un compte joueur, `403 FORBIDDEN`. Aucune route ne donne ni ne retire le rôle.
+
+Un corps JSON illisible reçoit `400 INVALID_JSON` sur les routes `POST`. Avec un JSON valide, les routes contrôlent la session et le rôle avant de valider les champs.
 
 ### `POST /api/moderation/cleanups` — nettoyer une zone
 
@@ -654,7 +656,7 @@ Après l’enregistrement d’un nettoyage, le serveur émet `canvas:cleared` au
 }
 ```
 
-Le client retire de son état chaque pixel de la zone dont la révision est inférieure à `revision`. Un pixel de la zone avec une révision supérieure vient d’une pose faite après le nettoyage : il reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient pas le pseudo de l’admin.
+Le nettoyage affecte tout le rectangle, y compris ses cases déjà vides. Le client applique les [règles de révision](#appliquer-les-événements-de-modération) pour conserver les poses plus récentes. L’événement ne contient pas le pseudo de l’admin.
 
 ### `GET /api/moderation/players` — lister les joueurs
 
@@ -682,7 +684,7 @@ Compte admin requis.
 }
 ```
 
-Les joueurs sont rangés par pseudo, sans tenir compte de la casse. `team` vaut `null` sans équipe, `bannedAt` vaut `null` tant que le joueur n’est pas banni. `nextCursor` se passe dans `after` pour la page suivante ; il vaut `null` à la fin de la liste. Les erreurs sont celles du journal.
+Les joueurs sont rangés par pseudo, sans tenir compte de la casse. `team` vaut `null` sans équipe, `bannedAt` vaut `null` tant que le joueur n’est pas banni. `nextCursor` se passe dans `after` pour la page suivante ; il vaut `null` à la fin de la liste. Une valeur de `limit` ou d’`after` invalide ou répétée reçoit `400 INVALID_INPUT`.
 
 ### `POST /api/moderation/bans` — bannir un joueur
 
@@ -696,7 +698,7 @@ Compte admin requis.
 }
 ```
 
-Le pseudo se lit sans tenir compte de la casse.
+Le serveur retire les espaces autour du pseudo, puis le compare sans tenir compte de la casse. La valeur obtenue doit comporter de 1 à 64 caractères.
 
 **Succès — `200 OK`**
 
@@ -719,11 +721,11 @@ Le pseudo se lit sans tenir compte de la casse.
 
 Le joueur est banni et ses pixels encore visibles sont annulés. Chaque case reprend le pixel d’avant lui, d’après l’historique des poses (`restoredCount`) ; sans pixel d’avant, elle redevient vide (`clearedCount`). Le pixel d’avant ne vient jamais d’un autre joueur banni, ni d’avant un nettoyage de la case. `action` est la ligne ajoutée au journal.
 
-Un joueur banni garde son compte et sa session, mais il ne peut plus poser : `POST /api/pixels` répond `403 ACCOUNT_BANNED`.
+Un joueur banni garde son compte et sa session. La pose et le lancement d’un agent lui sont interdits. Un agent déjà lancé s’arrête au prochain passage où il constate le bannissement.
 
 | Statut | Code | Cas |
 | --- | --- | --- |
-| `400 Bad Request` | `INVALID_INPUT` | `pseudo` absent, vide ou qui n’est pas un texte |
+| `400 Bad Request` | `INVALID_INPUT` | `pseudo` absent, qui n’est pas un texte, vide après retrait des espaces, ou qui dépasse 64 caractères |
 | `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
 | `403 Forbidden` | `FORBIDDEN` | Le compte n’est pas admin |
 | `404 Not Found` | `PLAYER_NOT_FOUND` | Aucun compte n’a ce pseudo |
@@ -748,7 +750,20 @@ Après un bannissement qui change la toile, le serveur émet `canvas:reverted` a
 }
 ```
 
-`restored` liste les pixels remis, au format `Pixel` : ils gardent l’heure et la révision de leur pose d’origine. `cleared` liste les cases vidées. Le client applique chaque case dont le pixel qu’il affiche a une révision inférieure à `revision` : il le remplace par le pixel de `restored`, ou le retire pour `cleared`. Une case dont le pixel a une révision supérieure vient d’une pose faite après le bannissement : elle reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient ni le pseudo du joueur banni ni celui de l’admin.
+`restored` liste les pixels remis, au format `Pixel`. Ils gardent l’heure et la révision de leur pose d’origine. `cleared` liste les cases vidées. L’événement utilise la révision du bannissement et ne contient ni le pseudo du joueur banni ni celui de l’admin. Un bannissement sans pixel visible ajoute une action au journal sans diffuser `canvas:reverted`.
+
+### Appliquer les événements de modération
+
+Après un abonnement, le client installe l’instantané de l’ACK, puis applique les événements mis en attente dont la révision dépasse celle de l’instantané. À la reconnexion, il repart du nouvel instantané. La révision de l’instantané sert de point de départ.
+
+Pour chaque case concernée, le client compare la révision de l’événement à la dernière modification qu’il a appliquée sur cette case, y compris un nettoyage ou un bannissement qui l’a laissée vide. Il applique uniquement un événement plus récent. Un événement tardif peut donc encore modifier une case intacte même s’il est plus ancien qu’une mise à jour reçue pour une autre case.
+
+| Événements reçus après l’instantané | État attendu |
+| --- | --- |
+| Nettoyage à la révision 186, puis réception d’une pose de la révision 185 sur la zone nettoyée | La case reste vide |
+| Bannissement à la révision 187 qui restaure la pose 120, puis réception de la pose 186 du joueur banni sur cette case | La pose 120 reste visible. La dernière modification de la case est 187 |
+| Pose à la révision 188, puis réception du bannissement 187 sur cette même case | La pose 188 reste visible |
+| Pose à la révision 188 sur une case, puis réception du nettoyage 186 sur une autre case intacte depuis l’instantané 180 | Le nettoyage s’applique à cette autre case |
 
 ### `GET /api/moderation/actions` — lire le journal
 
@@ -759,7 +774,7 @@ Compte admin requis.
 | `limit` | entier de `1` à `200` | Nombre maximal d’actions dans la page. `50` par défaut |
 | `before` | entier ≥ 1 | Identifiant de la dernière action déjà reçue : la page commence juste avant |
 
-**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Les actions ont le format de `action` ci-dessus, la plus récente d’abord. `type` vaut `zone_cleanup` ou `player_ban`, et `details` dépend du type. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
+**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Le journal trie les actions par `id` décroissant. Pour `zone_cleanup`, `details` expose le rectangle, `removedCount` et `revision`. Pour `player_ban`, il expose `pseudo`, `restoredCount`, `clearedCount` et `revision`. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
 
 Les erreurs sont celles du nettoyage ; `400 INVALID_INPUT` correspond ici à `limit` ou `before` hors bornes.
 
