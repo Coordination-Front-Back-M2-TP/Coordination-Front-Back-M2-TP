@@ -42,7 +42,8 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
       })
     },
 
-    // placement (facultatif) : compte et équipe de la session, inscrits dans l'historique.
+    // placement (facultatif) : { accountId, teamId } de la session.
+    // L'historique et le pixel visible sont enregistrés dans la même transaction.
     // La route de pose manuelle indique source: 'manual' pour contrôler l'agent sous le même verrou.
     // cooldownMs : délai entre deux poses d'un même compte. Une pose envoyée avant la fin du délai
     // est refusée en 429 et la transaction est annulée : ni toile, ni historique, ni révision ne changent.
@@ -56,15 +57,18 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
           data: { revision: { increment: 1 } },
         })
         const updatedAt = now()
-        // Le bannissement est relu ici, sous le verrou : une pose envoyée pendant un bannissement
-        // passe entièrement avant, et elle est annulée, ou entièrement après, et elle est refusée.
+        let teamId = placement?.teamId
+        // Le bannissement et l'équipe sont relus sous le verrou pour ordonner la pose
+        // avec un changement d'équipe ou un bannissement intervenu depuis la lecture de la session.
         if (placement && ACCOUNT_ID_PATTERN.test(placement.accountId)) {
           const accountId = Number(placement.accountId)
           const account = await transaction.account.findUnique({
             where: { id: accountId },
-            select: { bannedAt: true },
+            select: { bannedAt: true, teamId: true },
           })
           if (account?.bannedAt) throw forbidden('Ce compte est banni : il ne peut plus poser de pixel.', 'ACCOUNT_BANNED')
+          if (account?.teamId === null) throw forbidden('Choisissez une équipe avant de poser un pixel.', 'TEAM_REQUIRED')
+          teamId = account?.teamId ?? teamId
           if (placement.source === 'manual') {
             const agent = await transaction.drawingAgent.findUnique({
               where: { accountId },
@@ -102,7 +106,7 @@ export function createCanvasRepository(client = prisma, { now = () => new Date()
               y,
               color,
               accountId: placement.accountId,
-              teamId: placement.teamId,
+              teamId,
               placedAt: updatedAt,
               revision: state.revision,
             },

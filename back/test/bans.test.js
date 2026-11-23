@@ -307,3 +307,26 @@ test('limit et after parcourent la liste des joueurs page par page, sans trou ni
     assert.equal((await response.json()).error.code, 'INVALID_INPUT')
   }
 })
+
+test('le journal pagine ensemble les nettoyages et les bannissements, avec leurs détails respectifs', async () => {
+  await register('Journal')
+  const zone = { fromX: 49, fromY: 48, toX: 49, toY: 48 }
+  const clean = await request('/api/moderation/cleanups', { method: 'POST', cookie: admin, body: zone })
+  assert.equal(clean.status, 200)
+  const { action: cleanup } = await clean.json()
+  assert.equal(cleanup.type, 'zone_cleanup')
+  assert.deepEqual(cleanup.details, { ...zone, removedCount: 0, revision: cleanup.details.revision })
+
+  const ban = await banned('Journal')
+  assert.equal(ban.type, 'player_ban')
+  assert.deepEqual(ban.details, { pseudo: 'Journal', restoredCount: 0, clearedCount: 0, revision: cleanup.details.revision + 1 })
+
+  const first = await request('/api/moderation/actions?limit=1', { cookie: admin })
+  assert.equal(first.status, 200)
+  assert.deepEqual(await first.json(), { actions: [ban], nextCursor: ban.id })
+
+  const second = await request(`/api/moderation/actions?limit=1&before=${ban.id}`, { cookie: admin })
+  assert.equal(second.status, 200)
+  const page = await second.json()
+  assert.deepEqual(page.actions, [cleanup])
+})

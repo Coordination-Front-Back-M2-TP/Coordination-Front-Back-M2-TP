@@ -9,7 +9,7 @@ Règle de base : rien n'arrive directement sur `main`. Chaque changement passe p
 - Lire le [README.md](README.md) pour comprendre le projet.
 - Installer le projet avec [INSTALL.md](INSTALL.md).
 - Lire [GUIDELINES.md](GUIDELINES.md) avant d'écrire du code.
-- Avoir accès au dépôt et au board : [TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1). Les contributeurs en lecture seule travaillent depuis un fork ; voir « Contribuer depuis un fork ».
+- Avoir accès au dépôt et au board : [TP Coordination Front&Back](https://github.com/orgs/Coordination-Front-Back-M2-TP/projects/1). Les membres de l'équipe et le stagiaire ont le rôle Write et poussent leurs branches sur le dépôt. Une personne extérieure sans ce rôle travaille depuis un fork ; voir « Contribuer depuis un fork ».
 - Respecter le code de conduite : respect, pas de jugement, retours précis et courtois.
 - Si un agent IA travaille sur le dépôt, il lit `AGENTS.md`.
 
@@ -29,7 +29,7 @@ Tout est dans [INSTALL.md](INSTALL.md) : prérequis, configuration, lancement, t
 
 1. Créer l'issue avec le bon gabarit (section 5).
 2. Vérifier qu'elle est prête (section 6).
-3. S'assigner l'issue et la passer en « En cours » sur le board, si l'on dispose des droits nécessaires. Un contributeur en lecture seule demande au tuteur de mettre à jour l'issue et le board.
+3. S'assigner l'issue et la passer en « En cours » sur le board, si l'on dispose des droits nécessaires. Un contributeur extérieur demande à l'équipe de mettre à jour l'issue et le board.
 4. Créer une branche (section 7).
 5. Commiter par petites étapes (section 8).
 6. Ouvrir une pull request avec `Closes #numéro` (section 9).
@@ -149,14 +149,14 @@ Un hook Git vérifie chaque message de commit en local, avant même le push : un
 
 ### Contribuer depuis un fork
 
-Ce flux s'applique notamment au stagiaire, qui a un accès en lecture au dépôt amont et pousse uniquement sur son fork personnel :
+Ce flux s'applique à une personne extérieure à l'équipe, qui n'a pas le droit d'écriture sur le dépôt et pousse sur son fork personnel. Le stagiaire n'est pas concerné : depuis le 20/11/2026, il a le rôle Write et travaille comme le reste de l'équipe ([docs/onboarding.md](docs/onboarding.md), section 2).
 
-1. Créer une branche basée sur la dernière version de `upstream/main` (voir [docs/onboarding.md](docs/onboarding.md)).
+1. Créer une branche basée sur la dernière version de `upstream/main`, où `upstream` désigne le dépôt de l'équipe.
 2. Pousser la branche sur `origin`, qui doit pointer vers le fork : `git push -u origin <nom-de-branche>`.
 3. Ouvrir une PR dont la base est `Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP:main` et la source `<compte-github>:<nom-de-branche>`.
 4. Remplir le gabarit de PR et demander une relecture à l'équipe, comme pour toute autre PR.
 
-Ne pas essayer de pousser sur `upstream` : l'accès en lecture seule est intentionnel. Le stagiaire lit aussi le board en lecture seule, et le tuteur lui assigne ses tickets ([docs/onboarding.md](docs/onboarding.md), section 2).
+Sans le droit d'écriture, un push sur `upstream` est refusé : passer par le fork.
 
 ### Relire une PR de fork
 
