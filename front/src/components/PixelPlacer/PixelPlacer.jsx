@@ -8,6 +8,7 @@ import styles from './PixelPlacer.module.css'
 
 const SIGN_IN_MESSAGE = 'Connectez-vous pour poser un pixel.'
 const TEAM_REQUIRED_MESSAGE = 'Choisissez une équipe avant de poser un pixel.'
+const BANNED_MESSAGE = 'Votre compte est banni et ne peut plus poser de pixels.'
 
 // Les messages sont fixes : le texte d'erreur du serveur n'est jamais inséré dans l'interface.
 function errorMessage(error) {
@@ -40,10 +41,13 @@ export function PixelPlacer({ canvas, user }) {
 
   useEffect(() => () => controller.current?.abort(), [])
 
-  if (user === null || user?.team === null) {
+  const banned = feedback?.code === 'ACCOUNT_BANNED'
+  if (user === null || user?.team === null || banned) {
     return (
       <>
-        <p>{user === null ? SIGN_IN_MESSAGE : TEAM_REQUIRED_MESSAGE}</p>
+        {banned
+          ? <p role="alert">{BANNED_MESSAGE}</p>
+          : <p>{user === null ? SIGN_IN_MESSAGE : TEAM_REQUIRED_MESSAGE}</p>}
         <PixelCanvas canvas={canvas} />
       </>
     )
@@ -73,7 +77,7 @@ export function PixelPlacer({ canvas, user }) {
       if (error?.code === 'COOLDOWN_ACTIVE' && error.retryAfterSeconds !== undefined) {
         startCooldown(error.retryAfterSeconds * 1000)
       } else {
-        setFeedback({ kind: 'error', text: errorMessage(error) })
+        setFeedback({ kind: 'error', text: errorMessage(error), code: error?.code })
       }
     } finally {
       if (!current.signal.aborted) {

@@ -32,6 +32,12 @@ Socket.IO client est une dépendance du front, fixée dans `package-lock.json`. 
 
 Le back fournit le contrat de lecture et de souscription dans [#35](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/35). Il persiste l’état courant dans SQLite et renvoie un instantané public ; la méthode interne qui diffuse une pose après persistance sera appelée par le futur parcours de pose de l’issue #21.
 
+## Bannir un joueur
+
+Un compte admin peut ouvrir « Modérer les joueurs », parcourir la liste et confirmer un bannissement. La liste indique les admins et les comptes déjà bannis. Après confirmation, le serveur donne le nombre de pixels restaurés, le nombre de cases vidées et le numéro de l’action inscrite au journal.
+
+L’événement `canvas:reverted` met à jour la toile de tous les abonnés. Une case retrouve son pixel précédent ou redevient vide. Les poses postérieures au bannissement restent visibles. Un joueur banni garde la consultation de la toile.
+
 ## Vérifications
 
 `npm test --prefix front` couvre :
