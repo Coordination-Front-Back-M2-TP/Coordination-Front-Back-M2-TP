@@ -200,7 +200,7 @@ Exemple : `GET /api/placements?from=2026-10-27T14:00:00.000Z&to=2026-10-27T15:00
 
 | Statut | Code | Cas |
 | --- | --- | --- |
-| `400 Bad Request` | `INVALID_INPUT` | Date mal formée ou sans fuseau, `from` égal ou postérieur à `to`, `limit` ou `after` hors bornes, paramètre répété |
+| `400 Bad Request` | `INVALID_INPUT` | Date inexistante, mal formée ou sans fuseau, `from` égal ou postérieur à `to`, `limit` ou `after` hors bornes, paramètre répété |
 | `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
 
 ### Flux temps réel d’une pose
