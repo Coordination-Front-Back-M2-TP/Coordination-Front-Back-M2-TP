@@ -932,6 +932,52 @@ Un compte, un délai : tant que l’agent du compte existe, `POST /api/pixels` r
 
 L’agent d’un joueur banni s’arrête de lui-même.
 
+## Dessiner avec l’IA — mode image
+
+Proposition pour l’[US #26](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/26), à relire côté front et back avant les tâches #52 et #53. Elle étend la [proposition de génération de modèles de l’US #24](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/pull/181).
+
+### Sélection du mode
+
+`GET /api/models/quota` ajoute `generationModes` à la réponse existante. Ce tableau indique les modes disponibles avec la configuration du serveur. `moderationProviders` continue d’indiquer séparément les services qui peuvent vérifier la consigne.
+
+```json
+{
+  "quota": { "limit": 5, "remaining": 3, "resetsAt": "2026-10-28T00:00:00.000Z" },
+  "moderationProviders": ["jev", "openai"],
+  "generationModes": ["grid", "image"]
+}
+```
+
+Le formulaire propose « Grille » et « Image » avant l’envoi. Il présélectionne `grid` si ce mode est disponible, sélectionne le seul mode disponible s’il n’y en a qu’un et désactive l’envoi si le tableau est vide. Si le champ est absent, le formulaire conserve le comportement de l’US #24, qui propose la grille. Le contrôle de quota et le choix du service de modération restent communs aux deux modes.
+
+### Génération et résultat
+
+`POST /api/models` accepte le champ facultatif `mode`. `grid` ou l’absence du champ lance la génération de grille de l’US #24. `image` lance la génération d’une image à partir de la consigne, puis sa réduction côté serveur. Le corps conserve `prompt` et `moderationProvider`.
+
+```json
+{ "prompt": "Un éclair jaune sur fond transparent", "moderationProvider": "jev", "mode": "image" }
+```
+
+Le serveur vérifie la session, la disponibilité du mode et le quota avant tout appel externe. Il envoie la consigne au service de modération choisi et appelle le générateur d’images seulement si ce service l’autorise. Avec `moderationProvider: "jev"`, Jev contrôle la consigne. Le fournisseur de génération d’images est configuré côté serveur.
+
+Le serveur réduit l’image en une grille de 32 × 32 cases. Il conserve les proportions de l’image, la centre et complète les bords avec des cases transparentes si nécessaire. Les cases visibles prennent une couleur de la [palette du jeu](#palette). La réponse `200 OK` conserve le format `{ model, quota }` de l’US #24, avec `model.width` et `model.height` égaux à 32. Chaque case visible apparaît une fois dans `model.pixels`, avec des coordonnées entières de 0 à 31. Une case absente est transparente. Le même aperçu, les mêmes règles de placement et le même agent s’appliquent dans les deux modes.
+
+Le quota de cinq modèles par jour UTC et la limite d’une génération simultanée par compte s’appliquent aux deux modes ensemble. Un modèle image validé et contenant au moins une case visible coûte une génération. En cas de refus de la consigne, d’échec du fournisseur ou de conversion invalide, le serveur libère la demande en cours et conserve le quota.
+
+Les codes d’erreur de l’US #24 restent applicables. Un `mode` inconnu ou de type incorrect reçoit `400 INVALID_INPUT`. Un mode connu devenu indisponible, une image illisible et une conversion sans case visible reçoivent `500 INTERNAL_SERVER_ERROR`.
+
+### Cas à vérifier côté front et back
+
+| Cas | Résultat attendu |
+| --- | --- |
+| Le mode image est disponible | Le joueur peut choisir « Image » avant l’envoi de sa consigne |
+| Le mode est absent de la requête | Le serveur lance le parcours grille de l’US #24 |
+| Jev refuse une consigne en mode image | Le serveur répond `422 PROMPT_REJECTED`, sans appel de génération ni débit du quota |
+| Le générateur renvoie une image rectangulaire valide | Le modèle mesure 32 × 32, conserve les proportions et contient uniquement des couleurs de la palette |
+| L’image est illisible ou entièrement transparente | Le serveur renvoie une erreur et le quota reste inchangé |
+| Le compte alterne les modes | Les modèles valides sont imputés au même quota |
+| Deux demandes simultanées utilisent des modes différents | Une seule demande peut être en cours pour le compte |
+
 ## Points restant à valider avant implémentation
 
 - Le front et le back retiennent une lecture publique limitée à la résolution et à l’état visible courant des pixels, sans historique ni identité du joueur. L’historique et l’identité ne sont pas nécessaires à l’affichage de la toile et restent dans les contrats des fonctionnalités qui en ont besoin.
