@@ -3,6 +3,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { CanvasWorkspace } from './CanvasWorkspace.jsx'
 
+vi.mock('../../hooks/use-drawing-agent.js', () => ({
+  useDrawingAgent: () => ({ agent: null, loaded: true, pending: false }),
+}))
+
 const canvas = { width: 5, height: 5, pixels: new Map() }
 const user = { pseudo: 'Pixel', team: { id: 'jaune' } }
 const model = {

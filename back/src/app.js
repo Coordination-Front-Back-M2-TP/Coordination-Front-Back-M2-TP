@@ -9,6 +9,10 @@ import { createAgentService } from './agents/agent-service.js'
 import { createAccountRouter, createSessionPlayerResolver } from './accounts/account-routes.js'
 import { createAccountService } from './accounts/account-service.js'
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
+import { createModelProviders } from './models/model-providers.js'
+import { modelRepository } from './models/model-repository.js'
+import { createModelRouter } from './models/model-routes.js'
+import { createModelService } from './models/model-service.js'
 import { moderationRepository } from './moderation/moderation-repository.js'
 import { createModerationRouter } from './moderation/moderation-routes.js'
 import { createModerationService } from './moderation/moderation-service.js'
@@ -37,6 +41,7 @@ const defaultAccountService = createAccountService({ repository: accountReposito
 const defaultTeamService = createTeamService({ repository: teamRepository })
 const defaultModerationService = createModerationService({ repository: moderationRepository })
 const defaultAgentService = createAgentService({ repository: agentRepository, canvasService: defaultCanvasService })
+const defaultModelService = createModelService({ repository: modelRepository, providers: createModelProviders() })
 
 // L'application est séparée du serveur : les tests la lancent sur un port libre, sans toucher au port 3000.
 // resolvePlayer : lit le joueur de la requête, { accountId, teamId } ou null. Par défaut, il vient
@@ -51,9 +56,17 @@ export function createApp({
   moderationService = defaultModerationService,
   rankingService = defaultRankingService,
   agentService = canvasService === defaultCanvasService ? defaultAgentService : null,
+  modelService = accountService === defaultAccountService ? defaultModelService : null,
   resolvePlayer = createSessionPlayerResolver(accountService),
 } = {}) {
   const app = express()
+
+  if (modelService) {
+    app.use('/api/models', (req, res, next) => {
+      res.set('Cache-Control', 'no-store')
+      next()
+    })
+  }
 
   // Analyse les corps de requête JSON
   app.use(express.json())
@@ -69,6 +82,7 @@ export function createApp({
   app.use('/api', createTeamRouter({ teamService, accountService }))
   app.use('/api', createModerationRouter({ moderationService, accountService }))
   if (agentService) app.use('/api', createAgentRouter({ agentService, accountService }))
+  if (modelService) app.use('/api', createModelRouter({ modelService, accountService }))
   app.use('/api', createCanvasRouter({
     canvasService,
     resolvePlayer,
