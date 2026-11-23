@@ -67,6 +67,25 @@ model Account {
   // Heure du bannissement ; vide tant que le compte n'est pas banni.
   bannedAt      DateTime?
   sessions      Session[]
+  modelQuotas   ModelQuota[]
+  modelRequest  ModelRequest?
+}
+
+model ModelQuota {
+  accountId Int
+  day       String
+  used      Int     @default(0)
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@id([accountId, day])
+}
+
+// La réservation protège le compte pendant les appels externes, sans retenir de transaction SQLite.
+model ModelRequest {
+  accountId Int      @id
+  token     String
+  expiresAt DateTime
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 }
 
 // Session d'un compte. tokenHash est l'empreinte SHA-256 du jeton du cookie :

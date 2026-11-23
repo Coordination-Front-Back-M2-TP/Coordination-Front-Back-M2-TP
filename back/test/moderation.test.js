@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { once } from 'node:events'
+import { on, once } from 'node:events'
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,6 +11,7 @@ import { io as createClient } from 'socket.io-client'
 import { createAccountRepository } from '../src/accounts/account-repository.js'
 import { createCanvasRepository } from '../src/canvas/canvas-repository.js'
 import { createModerationRepository } from '../src/moderation/moderation-repository.js'
+import { createRankingRepository } from '../src/rankings/ranking-repository.js'
 import { createCanvasServer } from '../src/server.js'
 import { createTeamRepository } from '../src/teams/team-repository.js'
 
@@ -39,6 +40,7 @@ before(async () => {
     accountRepository: createAccountRepository(prisma),
     teamRepository: createTeamRepository(prisma),
     moderationRepository: createModerationRepository(prisma),
+    rankingRepository: createRankingRepository(prisma),
     cooldownMs: 0,
   })
   server.httpServer.listen(0)
@@ -79,8 +81,8 @@ async function register(pseudo, extra = {}) {
   return response.headers.getSetCookie().find((cookie) => cookie.startsWith('p1x3l_session=')).split(';')[0]
 }
 
-async function pose(x, y) {
-  const response = await request('/api/pixels', { method: 'POST', cookie: player, body: { x, y, color: '#123456' } })
+async function pose(x, y, cookie = player) {
+  const response = await request('/api/pixels', { method: 'POST', cookie, body: { x, y, color: '#123456' } })
   assert.equal(response.status, 200)
   return (await response.json()).pixel
 }
@@ -92,6 +94,24 @@ function clean(zone, cookie = admin) {
 async function visiblePixels() {
   const snapshot = await (await request('/api/pixels')).json()
   return { revision: snapshot.revision, cells: snapshot.pixels.map(({ x, y }) => `${x},${y}`).sort() }
+}
+
+async function moderationRanking(socket, moderate) {
+  const changes = on(socket, 'ranking:updated', { signal: AbortSignal.timeout(2000) })
+  try {
+    const response = await moderate()
+    assert.equal(response.status, 200)
+    const { action } = await response.json()
+    for await (const [ranking] of changes) {
+      if (ranking.revision === action.details.revision) {
+        assert.deepEqual(ranking, await (await request('/api/rankings')).json())
+        return ranking.teams
+      }
+    }
+    assert.fail('Classement de modération non reçu')
+  } finally {
+    await changes.return()
+  }
 }
 
 test('le rôle revient avec le joueur connecté : player par défaut, admin après promotion', async () => {
@@ -299,4 +319,27 @@ test('le script set-role donne et retire le rôle admin à un compte existant', 
   assert.equal(setRole('Promue', 'superadmin').status, 1)
   assert.equal(setRole('Promue').status, 1)
   assert.equal(await roleOf('promue'), 'player')
+})
+
+test('le classement est diffusé après un nettoyage et après la restauration des pixels d’un joueur banni', async (t) => {
+  const blue = await register('JoueurClassement')
+  assert.equal((await request('/api/auth/me/team', {
+    method: 'PUT', cookie: blue, body: { teamId: 'bleue' },
+  })).status, 200)
+
+  await pose(-30, -30)
+  await pose(-29, -30)
+  await pose(-30, -30, blue)
+  const socket = createClient(baseUrl)
+  t.after(() => socket.disconnect())
+  await once(socket, 'connect')
+  await socket.timeout(1000).emitWithAck('canvas:subscribe')
+
+  const afterCleanup = await moderationRanking(socket, () => clean({ fromX: -29, fromY: -30, toX: -29, toY: -30 }))
+  assert.deepEqual(afterCleanup, [{ teamId: 'bleue', pixelCount: 1, rank: 1 }])
+
+  const afterBan = await moderationRanking(socket, () => request('/api/moderation/bans', {
+    method: 'POST', cookie: admin, body: { pseudo: 'JoueurClassement' },
+  }))
+  assert.deepEqual(afterBan, [{ teamId: 'rouge', pixelCount: 1, rank: 1 }])
 })

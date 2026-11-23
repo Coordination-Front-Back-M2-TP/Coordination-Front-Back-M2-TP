@@ -48,7 +48,7 @@ function toPlayer(account) {
   }
 }
 
-// publishCleanup : diffuse la zone nettoyée aux abonnés de la toile.
+// publishCleanup : diffuse la zone nettoyée et signale au serveur combien de pixels ont été retirés.
 // publishRevert : diffuse les cases changées par un bannissement. Sans temps réel, ils ne font rien.
 export function createModerationService({ repository, publishCleanup = () => {}, publishRevert = () => {} }) {
   return {
@@ -65,9 +65,9 @@ export function createModerationService({ repository, publishCleanup = () => {},
         { fromX: zone.fromX, fromY: zone.fromY, toX: zone.toX, toY: zone.toY },
         admin,
       )
-      const { fromX, fromY, toX, toY, revision } = record.details
+      const { fromX, fromY, toX, toY, revision, removedCount } = record.details
       // La diffusion vient après la transaction : elle n'annonce jamais un nettoyage qui a échoué.
-      publishCleanup({ fromX, fromY, toX, toY, revision, clearedAt: record.createdAt })
+      publishCleanup({ fromX, fromY, toX, toY, revision, clearedAt: record.createdAt }, removedCount)
       return { action: toAction(record) }
     },
 

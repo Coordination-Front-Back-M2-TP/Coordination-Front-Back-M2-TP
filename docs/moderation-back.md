@@ -1,6 +1,6 @@
 # Modération : rôle admin, nettoyage d'une zone, journal (back)
 
-Tâche #61, user story [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31). Le back suit la [proposition de contrat](contrat-api.md#modérer-la-toile). Les comptes sont décrits dans [comptes-back.md](comptes-back.md). Le front est la tâche #60. Le bannissement (#63) est décrit dans [bannissement-back.md](bannissement-back.md).
+Tâche #61, user story [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31). Les routes et événements sont décrits dans le [contrat de modération](contrat-api.md#modérer-la-toile). Le front est la tâche #60. Le bannissement (#63) est décrit dans [bannissement-back.md](bannissement-back.md).
 
 ## Routes
 
@@ -28,7 +28,7 @@ npm run account:role --prefix back -- <pseudo> admin
 
 - **Zone** : un rectangle donné par deux coins inclus, `(fromX, fromY)` en haut à gauche et `(toX, toY)` en bas à droite. Les coordonnées sont celles de la toile, de `-50` à `50`. Une zone peut être une seule case ou toute la toile.
 - **Effet** : les pixels visibles de la zone sont supprimés. Les cases redeviennent vides.
-- **En direct** : après l'enregistrement, le serveur émet `canvas:cleared` aux abonnés de la toile, avec la zone, la `revision` et l'heure. Le front retire les pixels de la zone dont la révision est plus ancienne.
+- **En direct** : après l'enregistrement, le serveur émet `canvas:cleared` aux abonnés de la toile, avec la zone, la `revision` et l'heure. Le contrat décrit la [comparaison des révisions par case](contrat-api.md#appliquer-les-événements-de-modération).
 - **Révision** : un nettoyage prend une révision de la toile, comme une pose. Une pose faite juste après garde donc une révision plus récente et reste visible.
 - **Historique** : les poses de la zone restent dans `PixelPlacement`. Le nettoyage ne réécrit pas le passé.
 - **Un refus ne change rien** : ni la toile, ni le journal.
@@ -49,7 +49,6 @@ La migration `add_moderation` ajoute la colonne `role` au compte et crée la tab
 
 ## Points en attente
 
-- **Contrat** : la tâche contrat de l'EPIC (#59) n'est pas faite. La section « Modérer la toile » du contrat est une proposition, écrite pour livrer cette tâche : elle reste à relire par le front (#60) et le back.
 - **Donner le rôle en production** : le script se lance dans le conteneur du back. La façon de faire sur le NAS reste à écrire avec la personne qui s'occupe du déploiement.
 - **Timelapse** (#58) : `GET /api/placements` ne dit pas qu'une zone a été nettoyée. Le timelapse rejoue donc les poses effacées.
 - **Classement** (#56) : les pixels nettoyés ne comptent plus, mais `ranking:updated` n'est pas émis après un nettoyage. À brancher quand les deux seront sur `main`.

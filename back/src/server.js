@@ -37,7 +37,7 @@ function createRankingBroadcaster({ rankingService, emit }) {
       lastTeams = teams
       if (changed) emit(ranking)
     } catch (error) {
-      // La pose est déjà enregistrée et diffusée : un classement en échec ne doit pas la faire échouer.
+      // Le changement de toile est déjà enregistré et diffusé. Il reste valide si le classement échoue.
       logger.error('Diffusion du classement impossible', { errorName: error?.name })
     }
   }
@@ -72,26 +72,27 @@ export function createCanvasServer({
         emit: (ranking) => io.to(CANVAS_ROOM).emit('ranking:updated', ranking),
       })
     : () => {}
+
+  function publishCanvasChange(event, payload, affectsRanking = true) {
+    io.to(CANVAS_ROOM).emit(event, payload)
+    if (affectsRanking) broadcastRanking()
+  }
+
   const canvasService = createCanvasService({
     repository,
     cooldownMs,
-    publish: (pixel) => {
-      io.to(CANVAS_ROOM).emit('pixel:updated', pixel)
-      broadcastRanking()
-    },
+    publish: (pixel) => publishCanvasChange('pixel:updated', pixel),
   })
   const placementService = createPlacementService({ repository: placementRepository })
   const accountService = accountRepository ? createAccountService({ repository: accountRepository }) : undefined
   const teamService = teamRepository
     ? createTeamService({ repository: teamRepository, cooldownMs: teamChangeCooldownMs })
     : undefined
-  // Le nettoyage d'une zone et l'annulation des poses d'un joueur banni sont diffusés
-  // aux abonnés de la toile, comme un changement de pixel.
   const moderationService = moderationRepository
     ? createModerationService({
         repository: moderationRepository,
-        publishCleanup: (cleanup) => io.to(CANVAS_ROOM).emit('canvas:cleared', cleanup),
-        publishRevert: (revert) => io.to(CANVAS_ROOM).emit('canvas:reverted', revert),
+        publishCleanup: (cleanup, removedCount) => publishCanvasChange('canvas:cleared', cleanup, removedCount > 0),
+        publishRevert: (revert) => publishCanvasChange('canvas:reverted', revert),
       })
     : undefined
   // L'agent pose par le service de toile : ses pixels sont diffusés comme ceux d'un joueur.

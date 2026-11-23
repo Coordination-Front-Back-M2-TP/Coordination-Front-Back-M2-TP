@@ -15,7 +15,7 @@ export function createCanvasRouter({ canvasService, resolvePlayer, isAgentActive
     }
   })
 
-  // Pose d'un pixel : compte requis. Le compte et l'équipe viennent de la session, jamais du corps.
+  // La session identifie le compte. L'équipe est confirmée dans la transaction de pose.
   router.post('/pixels', async (req, res, next) => {
     try {
       const player = await resolvePlayer(req)

@@ -1,9 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { useCanvasNavigation } from './use-canvas-navigation.js'
 import styles from './PixelCanvas.module.css'
 
-// Traduit un clic en coordonnées de case, origine au centre. La bordure est retirée pour viser la bonne case.
-function cellFromClick(event, { width, height }) {
-  const element = event.currentTarget
+// Traduit un clic en coordonnées de case à partir de la position affichée de la toile.
+function cellFromPoint(event, element, { width, height }) {
   const rect = element.getBoundingClientRect()
   if (!element.clientWidth || !element.clientHeight) return null
   const column = Math.floor(((event.clientX - rect.left - element.clientLeft) / element.clientWidth) * width)
@@ -18,7 +18,16 @@ export function PixelCanvas({ canvas, onSelectCell }) {
   const captionId = useId()
   const [showPixels, setShowPixels] = useState(false)
   const [canDraw, setCanDraw] = useState(true)
+  const navigationId = useId()
+  const { canZoomIn, canZoomOut, zoomIn, zoomOut, reset, viewportProps } = useCanvasNavigation(canDraw, selectCell)
   const count = canvas.pixels.size
+
+  function selectCell(event) {
+    if (!onSelectCell) return
+    const cell = cellFromPoint(event, ref.current, canvas)
+    if (cell) onSelectCell(cell)
+  }
+
 
   useEffect(() => {
     if (!ref.current) return
@@ -39,21 +48,38 @@ export function PixelCanvas({ canvas, onSelectCell }) {
   return (
     <figure className={styles.figure}>
       {canDraw ? (
-        <canvas
-          ref={ref}
-          width={canvas.width}
-          height={canvas.height}
-          className={onSelectCell ? `${styles.canvas} ${styles.selectable}` : styles.canvas}
-          onClick={onSelectCell ? (event) => {
-            const cell = cellFromClick(event, canvas)
-            if (cell) onSelectCell(cell)
-          } : undefined}
-          role="img"
-          aria-label={`Toile partagée de ${canvas.width} par ${canvas.height} pixels`}
-          aria-describedby={captionId}
-        >
-          Les coordonnées et les couleurs sont disponibles dans la liste des pixels ci-dessous.
-        </canvas>
+        <>
+          <div className={styles.controls} role="group" aria-label="Zoom de la toile">
+            <button type="button" onClick={zoomOut} disabled={!canZoomOut}>Dézoomer</button>
+            <button type="button" onClick={zoomIn} disabled={!canZoomIn}>Zoomer</button>
+            <button type="button" onClick={reset}>Vue d’ensemble</button>
+          </div>
+          <p id={navigationId} className={styles.caption}>
+            Zoomez à la molette ou en pinçant. Déplacez la toile en la faisant glisser ou avec les flèches du clavier.
+          </p>
+          <div
+            {...viewportProps}
+            className={styles.viewport}
+            role="region"
+            aria-label="Navigation sur la toile"
+            aria-describedby={navigationId}
+            tabIndex={0}
+            style={{ aspectRatio: `${canvas.width} / ${canvas.height}` }}
+          >
+            <canvas
+              ref={ref}
+              width={canvas.width}
+              height={canvas.height}
+              className={onSelectCell ? `${styles.canvas} ${styles.selectable}` : styles.canvas}
+              onClick={onSelectCell ? selectCell : undefined}
+              role="img"
+              aria-label={`Toile partagée de ${canvas.width} par ${canvas.height} pixels`}
+              aria-describedby={captionId}
+            >
+              Les coordonnées et les couleurs sont disponibles dans la liste des pixels ci-dessous.
+            </canvas>
+          </div>
+        </>
       ) : <p role="alert">L’affichage graphique est indisponible. Consultez les pixels en texte ci-dessous.</p>}
       <figcaption id={captionId} className={styles.caption}>
         {count === 0 ? 'Aucun pixel posé.' : `${count} pixel${count > 1 ? 's' : ''} coloré${count > 1 ? 's' : ''}.`}

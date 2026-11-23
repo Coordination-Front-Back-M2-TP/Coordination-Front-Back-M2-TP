@@ -10,7 +10,7 @@ Une toile partagée où des équipes s'affrontent pixel par pixel, aidées par d
 
 1. Je crée un compte, puis je rejoins une équipe ou j'en crée une.
 2. Je pose un pixel de la couleur de mon choix, puis j'attends la fin du délai. Le délai est compté par le serveur, pas par le navigateur.
-3. Je demande un modèle à l'IA, par exemple « un dragon rouge ». Jev vérifie la consigne, GPT dessine le modèle, qui s'affiche en transparence sur la toile.
+3. Je demande un modèle à l'IA, par exemple « un dragon rouge ». Je choisis Jev ou OpenAI pour vérifier la consigne. GPT dessine le modèle, qui s'affiche en transparence sur la toile.
 4. Je pose le modèle moi-même, pixel par pixel, ou je le confie à mon agent de dessin, qui pose un pixel à chaque fin de délai en mon nom.
 5. Un classement des équipes et un timelapse (la toile rejouée en accéléré) montrent qui domine la toile.
 
@@ -37,7 +37,7 @@ Les décisions datent du 9 octobre 2026, sauf la palette et les équipes, revues
 
 | Acteur | Ce qu'il fait | Appels à une IA |
 | --- | --- | --- |
-| Jev | Vérifie la consigne du joueur et refuse ce qui est choquant | 1 par modèle |
+| Jev ou OpenAI | Le service choisi par le joueur vérifie sa consigne | 1 par demande contrôlée |
 | GPT | Transforme la consigne en grille de pixels (JSON aux couleurs de la palette) | 1 par modèle |
 | Agent de dessin | Programme du serveur, sans IA. À chaque fin de délai, compare le modèle et la toile, pose le prochain pixel qui ne correspond pas, et répare les pixels écrasés par une autre équipe | Aucun |
 
@@ -45,9 +45,9 @@ Un dessin coûte donc deux appels courts, quel que soit son nombre de pixels.
 
 Parcours d'une demande de modèle :
 
-1. Le front envoie la consigne.
+1. Le front envoie la consigne et le service de modération choisi.
 2. Le back vérifie le quota du compte.
-3. Jev vérifie la consigne. Si elle est refusée, le joueur voit pourquoi, et le quota n'est pas consommé.
+3. Le service choisi vérifie la consigne. Si elle est refusée, le joueur voit pourquoi et le quota reste inchangé.
 4. GPT renvoie la grille. Le back la valide (taille, couleurs de la palette) avant de la renvoyer au front.
 5. Le front affiche le modèle en transparence. Le joueur le place sur la toile, puis le pose lui-même ou lance son agent.
 
@@ -62,7 +62,7 @@ Les EPICs sortent de la [story map](story-map.md) : ce sont les 6 activités du 
 | 1. Découvrir la toile | Voir la toile en direct. Naviguer sur la toile. | Affichage de la toile en direct, zoom, déplacement | Toile en base SQLite, envoi au chargement, diffusion Socket.IO |
 | 2. Rejoindre le jeu | Créer un compte et se connecter. Rejoindre une équipe. | Inscription, connexion, choix de l'équipe | Mot de passe haché, session, API des équipes, changement limité |
 | 3. Dessiner à la main | Poser un pixel. Voir mon délai. | Palette, pose, compte à rebours | Vérification de la pose, délai compté par le serveur, historique |
-| 4. Dessiner avec l'IA | Demander un modèle. Le confier à mon agent. En option : modèle depuis une image. | Saisie de la consigne, aperçu en transparence, bouton de l'agent et progression | Quota, Jev puis GPT, validation de la grille, agent de dessin, pixellisation en option |
+| 4. Dessiner avec l'IA | Demander un modèle. Le confier à mon agent. En option : modèle depuis une image. | Saisie de la consigne, choix du service de modération, aperçu en transparence, bouton de l'agent et progression | Quota, modération de la consigne puis génération GPT, validation de la grille, agent de dessin, pixellisation en option |
 | 5. Suivre la bataille | Voir le classement des équipes. Revoir la toile en accéléré. | Podium en direct, lecteur du timelapse | Pixels de chaque équipe, API de l'historique des poses |
 | 6. Modérer la toile | Nettoyer une zone. Bannir un joueur et annuler ses pixels. | Écran admin : zone à nettoyer, liste des joueurs | Rôle admin, nettoyage de zone, bannissement, annulation des poses, journal des actions |
 
@@ -72,20 +72,20 @@ Les EPICs sortent de la [story map](story-map.md) : ce sont les 6 activités du 
 - Application mobile native. Le site reste jouable sur le navigateur d'un smartphone.
 - Paiement.
 
-Jusqu'à l'EPIC 6, un joueur peut dessiner à la main quelque chose de choquant, comme dans toute pixel war : Jev ne filtre que les consignes données à l'IA.
+Jusqu'à l'EPIC 6, la modération s’applique aux consignes envoyées à l'IA. La pose manuelle reste possible sans vérification du dessin.
 
 ## 7. Critères de réussite pour la démo
 
 - Au moins 3 navigateurs jouent en même temps, et un pixel posé apparaît chez tout le monde en moins d'une seconde.
 - Un agent de dessin termine un modèle de bout en bout, puis répare un pixel écrasé.
-- Jev refuse une consigne choquante, et le quota n'est pas consommé.
+- Le service de modération choisi refuse une consigne choquante et le quota reste inchangé.
 - Le classement suit la toile en direct.
 
 ## 8. Contraintes
 
 - Stack : React (Vite) pour le front, Node.js (Express, Socket.IO) pour le back, SQLite avec Prisma pour les données. Les versions et les conventions iront dans [INSTALL.md](../INSTALL.md) et [GUIDELINES.md](../GUIDELINES.md) au démarrage du code.
-- Les clés d'API de GPT et de Jev restent côté serveur, dans des variables d'environnement. Jamais dans le dépôt ni dans le front.
-- Seule la consigne part vers GPT et Jev : ni pseudo, ni mot de passe, ni autre donnée du compte.
+- Les clés d'API d'OpenAI et de TypeSafe restent côté serveur, dans des variables d'environnement. Jamais dans le dépôt ni dans le front.
+- La consigne est la seule donnée du joueur transmise au service de modération choisi puis à GPT.
 - Le contrat entre le front et le back (routes, messages temps réel, format des erreurs) est écrit avant le code, par les tâches « contrat ».
 
 ## 9. Questions ouvertes
