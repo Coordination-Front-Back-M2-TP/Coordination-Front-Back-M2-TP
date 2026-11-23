@@ -7,6 +7,8 @@
 
 Ce document couvre la lecture de la toile et sa mise à jour en direct pour la user story [#15 — Voir la toile en direct](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/15), ainsi que la pose manuelle et le délai des user stories [#21 — Poser un pixel](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/21) et [#22 — Voir mon délai](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/22). Les choix signalés comme propositions restent à valider par l’équipe.
 
+La [génération de modèles côté serveur](modeles-back.md) décrit les routes de l’US #24, leur configuration et le décompte du quota.
+
 ## Conventions
 
 - L’API HTTP est préfixée par `/api`. Les corps HTTP sont en JSON ; les clés sont en `camelCase`.
@@ -138,7 +140,7 @@ En développement, le middleware ajoute `stack` et, si disponibles, `details` da
 
 `pixel` est l’état canonique enregistré par le serveur. `cooldownEndsAt` est l’heure serveur à laquelle le compte pourra poser à nouveau un pixel ; le front s’en sert pour afficher le compte à rebours. La durée proposée pour la démo est de 10 secondes, réglable côté serveur ; sa valeur définitive reste à confirmer.
 
-Chaque pose acceptée crée aussi une entrée d’historique contenant le compte et l’équipe issus de la session, les coordonnées, la couleur et l’heure serveur. L’historique conserve chaque pose, y compris lorsqu’elle remplace un pixel visible ; il n’est pas renvoyé dans cette réponse ni diffusé sur la toile.
+Chaque pose acceptée crée aussi une entrée d’historique contenant le compte identifié par la session, son équipe au moment de l’enregistrement, les coordonnées, la couleur et l’heure serveur. Un changement d’équipe enregistré avant la pose s’applique à cette pose. L’historique conserve chaque pose, y compris lorsqu’elle remplace un pixel visible. Il n’est pas renvoyé dans cette réponse ni diffusé sur la toile.
 
 #### Erreurs
 
@@ -200,7 +202,7 @@ Exemple : `GET /api/placements?from=2026-10-27T14:00:00.000Z&to=2026-10-27T15:00
 
 | Statut | Code | Cas |
 | --- | --- | --- |
-| `400 Bad Request` | `INVALID_INPUT` | Date mal formée ou sans fuseau, `from` égal ou postérieur à `to`, `limit` ou `after` hors bornes, paramètre répété |
+| `400 Bad Request` | `INVALID_INPUT` | Date inexistante, mal formée ou sans fuseau, `from` égal ou postérieur à `to`, `limit` ou `after` hors bornes, paramètre répété |
 | `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Erreur inattendue |
 
 ### Flux temps réel d’une pose
@@ -584,11 +586,13 @@ Une réponse `429` inclut l’en-tête `Retry-After`, en secondes. En cas d’er
 
 ## Modérer la toile
 
-> **Proposition pour l’issue #59, écrite pour livrer les tâches #61 et #63.** Elle reste à relire par le front et le back. Elle couvre les user stories [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31) et [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32).
+Le contrat de la [tâche #59](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/59) décrit les routes implémentées par les tâches #61 et #63. Il couvre les user stories [#31 — Nettoyer une zone](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/31) et [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32). Les schémas HTTP figurent aussi dans [OpenAPI](../back/src/openapi.json).
 
 ### Rôle
 
 Le joueur connecté renvoyé par `GET /api/auth/me` porte un champ `role` : `"player"` ou `"admin"`. Le front s’en sert pour montrer l’outil de modération aux seuls admins. Le serveur revérifie le rôle à chaque requête de modération : sans session, la réponse est `401 UNAUTHORIZED` ; avec un compte joueur, `403 FORBIDDEN`. Aucune route ne donne ni ne retire le rôle.
+
+Un corps JSON illisible reçoit `400 INVALID_JSON` sur les routes `POST`. Avec un JSON valide, les routes contrôlent la session et le rôle avant de valider les champs.
 
 ### `POST /api/moderation/cleanups` — nettoyer une zone
 
@@ -652,7 +656,7 @@ Après l’enregistrement d’un nettoyage, le serveur émet `canvas:cleared` au
 }
 ```
 
-Le client retire de son état chaque pixel de la zone dont la révision est inférieure à `revision`. Un pixel de la zone avec une révision supérieure vient d’une pose faite après le nettoyage : il reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient pas le pseudo de l’admin.
+Le nettoyage affecte tout le rectangle, y compris ses cases déjà vides. Le client applique les [règles de révision](#appliquer-les-événements-de-modération) pour conserver les poses plus récentes. L’événement ne contient pas le pseudo de l’admin.
 
 ### `GET /api/moderation/players` — lister les joueurs
 
@@ -680,7 +684,7 @@ Compte admin requis.
 }
 ```
 
-Les joueurs sont rangés par pseudo, sans tenir compte de la casse. `team` vaut `null` sans équipe, `bannedAt` vaut `null` tant que le joueur n’est pas banni. `nextCursor` se passe dans `after` pour la page suivante ; il vaut `null` à la fin de la liste. Les erreurs sont celles du journal.
+Les joueurs sont rangés par pseudo, sans tenir compte de la casse. `team` vaut `null` sans équipe, `bannedAt` vaut `null` tant que le joueur n’est pas banni. `nextCursor` se passe dans `after` pour la page suivante ; il vaut `null` à la fin de la liste. Une valeur de `limit` ou d’`after` invalide ou répétée reçoit `400 INVALID_INPUT`.
 
 ### `POST /api/moderation/bans` — bannir un joueur
 
@@ -694,7 +698,7 @@ Compte admin requis.
 }
 ```
 
-Le pseudo se lit sans tenir compte de la casse.
+Le serveur retire les espaces autour du pseudo, puis le compare sans tenir compte de la casse. La valeur obtenue doit comporter de 1 à 64 caractères.
 
 **Succès — `200 OK`**
 
@@ -717,11 +721,11 @@ Le pseudo se lit sans tenir compte de la casse.
 
 Le joueur est banni et ses pixels encore visibles sont annulés. Chaque case reprend le pixel d’avant lui, d’après l’historique des poses (`restoredCount`) ; sans pixel d’avant, elle redevient vide (`clearedCount`). Le pixel d’avant ne vient jamais d’un autre joueur banni, ni d’avant un nettoyage de la case. `action` est la ligne ajoutée au journal.
 
-Un joueur banni garde son compte et sa session, mais il ne peut plus poser : `POST /api/pixels` répond `403 ACCOUNT_BANNED`.
+Un joueur banni garde son compte et sa session. La pose et le lancement d’un agent lui sont interdits. Un agent déjà lancé s’arrête au prochain passage où il constate le bannissement.
 
 | Statut | Code | Cas |
 | --- | --- | --- |
-| `400 Bad Request` | `INVALID_INPUT` | `pseudo` absent, vide ou qui n’est pas un texte |
+| `400 Bad Request` | `INVALID_INPUT` | `pseudo` absent, qui n’est pas un texte, vide après retrait des espaces, ou qui dépasse 64 caractères |
 | `401 Unauthorized` | `UNAUTHORIZED` | Compte non connecté |
 | `403 Forbidden` | `FORBIDDEN` | Le compte n’est pas admin |
 | `404 Not Found` | `PLAYER_NOT_FOUND` | Aucun compte n’a ce pseudo |
@@ -746,7 +750,20 @@ Après un bannissement qui change la toile, le serveur émet `canvas:reverted` a
 }
 ```
 
-`restored` liste les pixels remis, au format `Pixel` : ils gardent l’heure et la révision de leur pose d’origine. `cleared` liste les cases vidées. Le client applique chaque case dont le pixel qu’il affiche a une révision inférieure à `revision` : il le remplace par le pixel de `restored`, ou le retire pour `cleared`. Une case dont le pixel a une révision supérieure vient d’une pose faite après le bannissement : elle reste. Comme pour `pixel:updated`, un événement reçu avant l’ACK d’abonnement est mis en attente, puis ignoré si sa révision est déjà dans l’instantané. L’événement ne contient ni le pseudo du joueur banni ni celui de l’admin.
+`restored` liste les pixels remis, au format `Pixel`. Ils gardent l’heure et la révision de leur pose d’origine. `cleared` liste les cases vidées. L’événement utilise la révision du bannissement et ne contient ni le pseudo du joueur banni ni celui de l’admin. Un bannissement sans pixel visible ajoute une action au journal sans diffuser `canvas:reverted`.
+
+### Appliquer les événements de modération
+
+Après un abonnement, le client installe l’instantané de l’ACK, puis applique les événements mis en attente dont la révision dépasse celle de l’instantané. À la reconnexion, il repart du nouvel instantané. La révision de l’instantané sert de point de départ.
+
+Pour chaque case concernée, le client compare la révision de l’événement à la dernière modification qu’il a appliquée sur cette case, y compris un nettoyage ou un bannissement qui l’a laissée vide. Il applique uniquement un événement plus récent. Un événement tardif peut donc encore modifier une case intacte même s’il est plus ancien qu’une mise à jour reçue pour une autre case.
+
+| Événements reçus après l’instantané | État attendu |
+| --- | --- |
+| Nettoyage à la révision 186, puis réception d’une pose de la révision 185 sur la zone nettoyée | La case reste vide |
+| Bannissement à la révision 187 qui restaure la pose 120, puis réception de la pose 186 du joueur banni sur cette case | La pose 120 reste visible. La dernière modification de la case est 187 |
+| Pose à la révision 188, puis réception du bannissement 187 sur cette même case | La pose 188 reste visible |
+| Pose à la révision 188 sur une case, puis réception du nettoyage 186 sur une autre case intacte depuis l’instantané 180 | Le nettoyage s’applique à cette autre case |
 
 ### `GET /api/moderation/actions` — lire le journal
 
@@ -757,13 +774,109 @@ Compte admin requis.
 | `limit` | entier de `1` à `200` | Nombre maximal d’actions dans la page. `50` par défaut |
 | `before` | entier ≥ 1 | Identifiant de la dernière action déjà reçue : la page commence juste avant |
 
-**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Les actions ont le format de `action` ci-dessus, la plus récente d’abord. `type` vaut `zone_cleanup` ou `player_ban`, et `details` dépend du type. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
+**Succès — `200 OK`** : `{ "actions": [ … ], "nextCursor": 5 }`. Le journal trie les actions par `id` décroissant. Pour `zone_cleanup`, `details` expose le rectangle, `removedCount` et `revision`. Pour `player_ban`, il expose `pseudo`, `restoredCount`, `clearedCount` et `revision`. `nextCursor` se passe dans `before` pour la page suivante ; il vaut `null` à la fin du journal.
 
 Les erreurs sont celles du nettoyage ; `400 INVALID_INPUT` correspond ici à `limit` ou `before` hors bornes.
 
+## Dessiner avec l’IA — demander un modèle
+
+> Proposition pour la tâche [#47](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/47), à relire côté front et côté back avant les tâches #48 et #49. Elle couvre l’US [#24 — Demander un modèle à l’IA](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/24). Le quota de cinq modèles par jour est décidé dans le [besoin](besoin.md#3-règles-du-jeu). Les routes, la remise à zéro en UTC et les limites de saisie ci-dessous sont proposées.
+
+Les deux routes utilisent le cookie de session existant et renvoient `Cache-Control: no-store`. Le serveur déduit le compte de la session. La génération et le quota se traitent en HTTP.
+
+### `GET /api/models/quota` — consulter le quota et les services de modération
+
+**Succès — `200 OK`**.
+
+```json
+{
+  "quota": {
+    "limit": 5,
+    "remaining": 3,
+    "resetsAt": "2026-10-28T00:00:00.000Z"
+  },
+  "moderationProviders": ["jev", "openai"]
+}
+```
+
+`remaining` compte les générations encore disponibles, entre zéro et `limit`. `resetsAt` donne le prochain minuit UTC, au format ISO 8601. Le front lit le quota à l’ouverture du formulaire et l’affiche avant le premier envoi. Il désactive l’envoi si `remaining` vaut zéro et relit le quota à `resetsAt`. Sans session, le serveur répond `401 UNAUTHORIZED`.
+
+`moderationProviders` énumère les services configurés côté serveur. Le formulaire permet au joueur de choisir entre « Jev » (`jev`) et « OpenAI » (`openai`) quand les deux sont proposés. Jev est présélectionné quand il est proposé. Si un seul service est proposé, le formulaire le sélectionne et l’affiche. Une liste vide rend l’envoi indisponible et le formulaire l’indique.
+
+### `POST /api/models` — générer un modèle
+
+**Requête — `application/json`**.
+
+```json
+{ "prompt": "Un éclair jaune et un point noir", "moderationProvider": "openai" }
+```
+
+`prompt` est une chaîne de 1 à 500 points de code Unicode après retrait des espaces de début et de fin. `moderationProvider` est obligatoire et vaut `jev` ou `openai`. L’envoi reste désactivé dans le formulaire tant que sa demande est en cours.
+
+**Succès — `200 OK`**, avec le modèle et le quota actualisé au même format que la lecture du quota.
+
+```json
+{
+  "model": {
+    "width": 3,
+    "height": 2,
+    "pixels": [
+      { "x": 1, "y": 0, "color": "#FACC15" },
+      { "x": 0, "y": 1, "color": "#FACC15" },
+      { "x": 2, "y": 1, "color": "#000000" }
+    ]
+  },
+  "quota": {
+    "limit": 5,
+    "remaining": 2,
+    "resetsAt": "2026-10-28T00:00:00.000Z"
+  }
+}
+```
+
+- `width` et `height` sont des entiers compris entre 1 et 32. L’origine `(0, 0)` est le coin supérieur gauche du modèle. `x` augmente à droite et `y` vers le bas.
+- `pixels` contient entre 1 et `width × height` entrées. Les coordonnées sont des entiers à l’intérieur du modèle. Chaque case apparaît au plus une fois, avec une `color` au format `#RRGGBB` issue de la [palette](#palette). Les cases absentes sont transparentes.
+- Le front affiche un aperçu en transparence et permet de déplacer son coin supérieur gauche `(originX, originY)` sur la toile. Il valide le placement quand le rectangle tient entièrement dans les dimensions de l’instantané. Pour une case du modèle, les coordonnées de la toile sont `(originX + x, originY + y)`. La pose manuelle et le lancement de l’agent utilisent leurs routes existantes. La génération et la validation du placement n’émettent aucun événement Socket.IO.
+
+### Vérification de la consigne et décompte
+
+1. Le serveur valide la session, la consigne et le service choisi, puis vérifie que le compte ne soumet qu’une génération à la fois et que son quota le permet. Le même quota s’applique aux deux services.
+2. Le service choisi contrôle la consigne. Pour `jev`, le serveur utilise [Jev de TypeSafe](https://docs.typesafe.ai/cookbooks/llm_guardrails). Pour `openai`, il utilise [l’API de modération OpenAI](https://developers.openai.com/api/docs/guides/moderation). Le serveur appelle GPT pour générer la grille uniquement après une autorisation explicite du service choisi. En cas d’échec ou de refus, il arrête la demande sans appeler l’autre service. Seule la consigne est transmise comme donnée joueur. Les clés restent côté serveur.
+3. GPT propose une grille. Le serveur la valide avant de débiter le quota. Un refus, une erreur fournisseur ou une grille invalide laisse le quota intact et libère la demande en cours.
+4. Un modèle validé compte pour la journée UTC pendant laquelle la demande a été acceptée. Si le résultat arrive après minuit, la réponse expose le quota de la nouvelle journée. Le serveur enregistre le débit avant de répondre.
+
+Les réponses d’erreur reprennent `{ "error": { "code": "…", "message": "…" } }`. Le front affiche un message du jeu, indépendant des réponses brutes des services.
+
+| Statut | Code | Cas |
+| --- | --- | --- |
+| `400 Bad Request` | `INVALID_JSON` | Corps JSON illisible |
+| `400 Bad Request` | `INVALID_INPUT` | Consigne absente ou hors des limites, ou valeur de `moderationProvider` absente ou inconnue |
+| `401 Unauthorized` | `UNAUTHORIZED` | Session absente ou expirée |
+| `409 Conflict` | `MODEL_REQUEST_IN_PROGRESS` | Ce compte a déjà une génération en cours |
+| `422 Unprocessable Content` | `PROMPT_REJECTED` | Le service choisi refuse la consigne. Le quota reste inchangé |
+| `429 Too Many Requests` | `MODEL_QUOTA_EXHAUSTED` | Le compte a épuisé son quota |
+| `500 Internal Server Error` | `INTERNAL_SERVER_ERROR` | Le service choisi n’est pas configuré, le contrôle ou la génération échoue, la grille est invalide ou une erreur interne survient |
+
+Sur `429`, l’en-tête `Retry-After` donne le nombre de secondes jusqu’à `resetsAt`, arrondi à l’entier supérieur. Le front relit alors le quota pour synchroniser son affichage. Après une réponse réseau incertaine, il relit le quota avant de réactiver l’envoi.
+
+### Cas à vérifier dans les tâches front et back
+
+| Cas | Résultat attendu |
+| --- | --- |
+| Quota à zéro lors de l’ouverture | Le formulaire affiche le quota épuisé sans envoyer de `POST` |
+| Le joueur choisit l’un des deux services | Le serveur fait contrôler la consigne uniquement par ce service avant d’appeler GPT |
+| Aucun service de modération n’est configuré | Le formulaire indique l’indisponibilité et désactive l’envoi |
+| Jev ou OpenAI refuse une consigne | Un message explique le refus, GPT n’est pas appelé, le quota est inchangé |
+| Le service choisi ou GPT échoue, ou GPT renvoie une case invalide | Le serveur ne renvoie aucun modèle et conserve le quota |
+| Deux demandes concurrentes sur un compte à une génération restante, avec des services différents | Au plus une demande aboutit et le quota ne passe jamais sous zéro |
+| Un modèle valide est reçu | Le quota diminue d’une unité, l’aperçu respecte les cases transparentes et se déplace jusqu’aux bords de la toile |
+| Une demande finit après le changement de jour | Elle est comptée sur le jour de son acceptation et la réponse donne le quota du nouveau jour |
+
+Le modèle GPT, le coût par appel et le protocole d’appel à Jev restent dans les [questions ouvertes](besoin.md#9-questions-ouvertes). Le [mode image](story-map.md#carte) appartient à l’US #26.
+
 ## Dessiner avec l’IA — agent de dessin
 
-> **Proposition pour l’issue #47, écrite pour livrer la tâche #51.** Elle reste à relire par le front et le back. Elle couvre la user story [#25 — Confier le modèle à mon agent](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/25). La demande d’un modèle à l’IA (#24) n’y est pas encore.
+> **Proposition pour l’issue #47, écrite pour livrer la tâche #51.** Elle reste à relire par le front et le back. Elle couvre la user story [#25 — Confier le modèle à mon agent](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/25). Le [contrat de génération](#dessiner-avec-lia--demander-un-modèle) décrit le modèle avant placement.
 
 L’agent de dessin est un programme du serveur, sans IA. Il pose le modèle du joueur au rythme du délai de son compte, même quand le joueur est déconnecté. Les trois routes demandent un compte connecté : l’agent est toujours celui du compte de la session.
 
@@ -835,6 +948,52 @@ L’agent pose un pixel à chaque fin de délai du compte, dans l’ordre du mod
 Un compte, un délai : tant que l’agent du compte existe, `POST /api/pixels` répond `409 AGENT_ACTIVE`. Le joueur arrête son agent pour reposer à la main.
 
 Le bannissement retire l’agent du joueur dans la même transaction. Après la réponse de bannissement, `GET /api/agent` renvoie `{ "agent": null }` pour son compte.
+
+## Dessiner avec l’IA — mode image
+
+Proposition pour l’[US #26](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/26), à relire côté front et back avant les tâches #52 et #53. Elle étend la [proposition de génération de modèles de l’US #24](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/pull/181).
+
+### Sélection du mode
+
+`GET /api/models/quota` ajoute `generationModes` à la réponse existante. Ce tableau indique les modes disponibles avec la configuration du serveur. `moderationProviders` continue d’indiquer séparément les services qui peuvent vérifier la consigne.
+
+```json
+{
+  "quota": { "limit": 5, "remaining": 3, "resetsAt": "2026-10-28T00:00:00.000Z" },
+  "moderationProviders": ["jev", "openai"],
+  "generationModes": ["grid", "image"]
+}
+```
+
+Le formulaire propose « Grille » et « Image » avant l’envoi. Il présélectionne `grid` si ce mode est disponible, sélectionne le seul mode disponible s’il n’y en a qu’un et désactive l’envoi si le tableau est vide. Si le champ est absent, le formulaire conserve le comportement de l’US #24, qui propose la grille. Le contrôle de quota et le choix du service de modération restent communs aux deux modes.
+
+### Génération et résultat
+
+`POST /api/models` accepte le champ facultatif `mode`. `grid` ou l’absence du champ lance la génération de grille de l’US #24. `image` lance la génération d’une image à partir de la consigne, puis sa réduction côté serveur. Le corps conserve `prompt` et `moderationProvider`.
+
+```json
+{ "prompt": "Un éclair jaune sur fond transparent", "moderationProvider": "jev", "mode": "image" }
+```
+
+Le serveur vérifie la session, la disponibilité du mode et le quota avant tout appel externe. Il envoie la consigne au service de modération choisi et appelle le générateur d’images seulement si ce service l’autorise. Avec `moderationProvider: "jev"`, Jev contrôle la consigne. Le fournisseur de génération d’images est configuré côté serveur.
+
+Le serveur réduit l’image en une grille de 32 × 32 cases. Il conserve les proportions de l’image, la centre et complète les bords avec des cases transparentes si nécessaire. Les cases visibles prennent une couleur de la [palette du jeu](#palette). La réponse `200 OK` conserve le format `{ model, quota }` de l’US #24, avec `model.width` et `model.height` égaux à 32. Chaque case visible apparaît une fois dans `model.pixels`, avec des coordonnées entières de 0 à 31. Une case absente est transparente. Le même aperçu, les mêmes règles de placement et le même agent s’appliquent dans les deux modes.
+
+Le quota de cinq modèles par jour UTC et la limite d’une génération simultanée par compte s’appliquent aux deux modes ensemble. Un modèle image validé et contenant au moins une case visible coûte une génération. En cas de refus de la consigne, d’échec du fournisseur ou de conversion invalide, le serveur libère la demande en cours et conserve le quota.
+
+Les codes d’erreur de l’US #24 restent applicables. Un `mode` inconnu ou de type incorrect reçoit `400 INVALID_INPUT`. Un mode connu devenu indisponible, une image illisible et une conversion sans case visible reçoivent `500 INTERNAL_SERVER_ERROR`.
+
+### Cas à vérifier côté front et back
+
+| Cas | Résultat attendu |
+| --- | --- |
+| Le mode image est disponible | Le joueur peut choisir « Image » avant l’envoi de sa consigne |
+| Le mode est absent de la requête | Le serveur lance le parcours grille de l’US #24 |
+| Jev refuse une consigne en mode image | Le serveur répond `422 PROMPT_REJECTED`, sans appel de génération ni débit du quota |
+| Le générateur renvoie une image rectangulaire valide | Le modèle mesure 32 × 32, conserve les proportions et contient uniquement des couleurs de la palette |
+| L’image est illisible ou entièrement transparente | Le serveur renvoie une erreur et le quota reste inchangé |
+| Le compte alterne les modes | Les modèles valides sont imputés au même quota |
+| Deux demandes simultanées utilisent des modes différents | Une seule demande peut être en cours pour le compte |
 
 ## Points restant à valider avant implémentation
 

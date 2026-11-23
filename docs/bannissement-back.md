@@ -1,6 +1,6 @@
 # Modération : bannissement et annulation des poses (back)
 
-Tâche #63, user story [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32). Le back suit la [proposition de contrat](contrat-api.md#modérer-la-toile). Le rôle admin, le nettoyage et le journal sont décrits dans [moderation-back.md](moderation-back.md). Le front est la tâche #62.
+Tâche #63, user story [#32 — Bannir un joueur et annuler ses pixels](https://github.com/Coordination-Front-Back-M2-TP/Coordination-Front-Back-M2-TP/issues/32). Les routes et événements sont décrits dans le [contrat de modération](contrat-api.md#modérer-la-toile). Le rôle admin, le nettoyage et le journal sont décrits dans [moderation-back.md](moderation-back.md). Le front est la tâche #62.
 
 ## Routes
 
@@ -38,7 +38,7 @@ Le bannissement annule les pixels du joueur encore visibles, dans la même trans
 
 ## En direct
 
-Quand le bannissement change la toile, le serveur émet `canvas:reverted` aux abonnés : `revision`, `revertedAt`, les pixels remis (`restored`) et les cases vidées (`cleared`). Le front applique chaque case dont le pixel affiché a une révision plus ancienne que `revision`. L'événement ne dit pas qui est banni.
+Quand le bannissement change la toile, le serveur émet `canvas:reverted` aux abonnés. Il transmet la révision du bannissement, son heure, les pixels remis (`restored`) et les cases vidées (`cleared`). Le front compare cette révision à celle de la dernière modification appliquée sur chaque case, selon les [règles du contrat](contrat-api.md#appliquer-les-événements-de-modération).
 
 ## Pose et bannissement en même temps
 
@@ -56,7 +56,6 @@ La migration `add_account_ban` ajoute la colonne `bannedAt` au compte et un inde
 
 ## Points en attente
 
-- **Contrat** : la tâche contrat de l'EPIC (#59) n'est pas faite. Les routes, l'événement `canvas:reverted` et les codes d'erreur sont une proposition : à relire par le front (#62) et le back.
 - **Lever un bannissement** : aucune route ne le fait, la user story ne le demande pas. Un bannissement fait par erreur se corrige dans la base, et les pixels annulés ne reviennent pas.
 - **Pixels sans historique** : un pixel posé avant l'arrivée de l'historique n'a pas de ligne dans `PixelPlacement`. Si le joueur banni a posé dessus, la case redevient vide.
 - **Timelapse** (#58) : `GET /api/placements` rend encore les poses du joueur banni.

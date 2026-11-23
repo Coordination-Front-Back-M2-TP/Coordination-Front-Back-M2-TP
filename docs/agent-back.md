@@ -43,6 +43,21 @@ Le back ne sait pas d'où vient le modèle : il peut venir de l'IA (#49) ou d'ai
 
 Aucun événement temps réel ne porte la progression. Le front relit la route, ou compte lui-même à partir de `pixel:updated`.
 
+## Utiliser l’agent depuis la toile
+
+Connectez-vous et rejoignez une équipe. Dans « Agent de dessin », importez un fichier JSON qui contient les pixels déjà placés, puis choisissez « Lancer l’agent ».
+
+```json
+{
+  "pixels": [
+    { "x": 10, "y": 10, "color": "#D93A3A" },
+    { "x": 11, "y": 10, "color": "#D93A3A" }
+  ]
+}
+```
+
+Le front relit la progression toutes les deux secondes et retrouve l’agent après un rechargement. « Arrêter l’agent » rend la pose manuelle disponible. Les pixels déjà posés restent sur la toile. La génération par consigne est suivie dans l’US #24.
+
 ## Comment c'est fait
 
 Le code est dans `back/src/agents/` : `agent-routes.js`, `agent-service.js` et `agent-repository.js` ([GUIDELINES.md](../GUIDELINES.md), section 5). Le refus de la pose à la main est dans `back/src/canvas/canvas-routes.js`.

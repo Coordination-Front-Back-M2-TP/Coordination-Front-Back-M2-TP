@@ -6,7 +6,7 @@ Tâche #44, user story [#21 — Poser un pixel](https://github.com/Coordination-
 
 1. `resolvePlayer(req)` lit la session et renvoie `{ accountId, teamId }`, ou `null`. Sans joueur : `401 UNAUTHORIZED`, rien n'est écrit.
 2. Le service vérifie `x` et `y` (entiers de `-50` à `50`) et `color` (`#RRGGBB`). Sinon : `400 INVALID_INPUT`. Seuls `x`, `y` et `color` sont lus dans le corps : un `accountId` ou un `teamId` envoyé par le client est ignoré. La couleur est enregistrée en majuscules.
-3. Une seule transaction incrémente la révision, met à jour le pixel visible et ajoute une ligne à l'historique.
+3. Une seule transaction incrémente la révision, relit l'équipe du compte sous le verrou d'écriture, met à jour le pixel visible et ajoute une ligne à l'historique. Un changement d'équipe enregistré avant la pose s'applique à cette pose. Les poses déjà enregistrées conservent leur équipe.
 4. Après la transaction, `pixel:updated` est diffusé à la toile. La réponse est `{ pixel, cooldownEndsAt }`.
 
 ## Historique
