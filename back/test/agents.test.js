@@ -206,6 +206,32 @@ test('pendant que l’agent travaille, le joueur ne pose pas à la main : 409 AG
   assert.equal((await pose()).status, 200)
 })
 
+test('une pose manuelle est refusée si l’agent démarre entre la session et l’écriture', async (t) => {
+  const cookie = await createPlayer('PoseConcurrente')
+  const account = await prisma.account.findUniqueOrThrow({ where: { pseudoKey: 'poseconcurrente' } })
+  const before = await server.canvasService.getSnapshot()
+  const placePixel = server.canvasService.placePixel
+  t.mock.method(server.canvasService, 'placePixel', async (pixel, placement) => {
+    // Le lancement a enregistré son modèle et son minuteur n'a encore rien posé.
+    await prisma.drawingAgent.create({
+      data: { accountId: account.id, pixels: JSON.stringify(row(0, 12, 1)), startedAt: new Date() },
+    })
+    return placePixel(pixel, placement)
+  }, { times: 1 })
+  t.after(() => request('/api/agent', { method: 'DELETE', cookie }))
+
+  const pose = () => request('/api/pixels', { method: 'POST', cookie, body: { x: 20, y: 12, color: '#FFFFFF' } })
+  const refused = await pose()
+  assert.equal(refused.status, 409)
+  assert.equal((await refused.json()).error.code, 'AGENT_ACTIVE')
+  assert.equal(await colorAt(20, 12), null)
+  assert.equal((await server.canvasService.getSnapshot()).revision, before.revision)
+  assert.equal(await prisma.pixelPlacement.count({ where: { accountId: String(account.id) } }), 0)
+
+  assert.equal((await request('/api/agent', { method: 'DELETE', cookie })).status, 204)
+  assert.equal((await pose()).status, 200)
+})
+
 test('l’agent repose un pixel de son modèle écrasé par une autre équipe', async (t) => {
   const cookie = await createPlayer('Gardien', 'verte')
   const rival = await createPlayer('Rival', 'jaune')

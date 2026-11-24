@@ -19,7 +19,7 @@ export function readCooldownMs(env = process.env) {
 }
 
 export function createCanvasService({ repository, publish = () => {}, cooldownMs = readCooldownMs() }) {
-  // placement : { accountId, teamId } issus de la session, pour l'historique et le délai.
+  // placement : compte et équipe de la session, avec source: 'manual' pour la route POST /api/pixels.
   async function savePixel(pixel, placement = null) {
     if (!pixel || typeof pixel !== 'object'
       || !isCoordinate(pixel.x) || !isCoordinate(pixel.y)

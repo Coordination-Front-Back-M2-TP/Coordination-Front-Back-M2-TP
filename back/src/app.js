@@ -86,7 +86,6 @@ export function createApp({
   app.use('/api', createCanvasRouter({
     canvasService,
     resolvePlayer,
-    isAgentActive: agentService ? (accountId) => agentService.isActive(accountId) : null,
   }))
   app.use('/api', createPlacementRouter({ placementService }))
 
